@@ -23,9 +23,12 @@ public class Sucursal {
     @OneToOne
     private Caja caja;
 
+    @OneToOne
+    private Caja cajaDigital;
+
     @OneToMany(mappedBy = "sucursal")
     private List<Venta> ventas;
 
-    
+
 
 }
