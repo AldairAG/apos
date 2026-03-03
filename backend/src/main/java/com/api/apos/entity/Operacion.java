@@ -19,5 +19,7 @@ public abstract class Operacion {
 
     private LocalDateTime fecha;
 
+    private Categoria categoria;
+
     
 }

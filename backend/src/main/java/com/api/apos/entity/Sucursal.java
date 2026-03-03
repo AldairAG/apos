@@ -29,6 +29,22 @@ public class Sucursal {
     @OneToMany(mappedBy = "sucursal")
     private List<Venta> ventas;
 
+    @OneToMany(mappedBy = "sucursal")
+    private List<Gasto> gastos;
+
+    @OneToMany(mappedBy = "sucursal")
+    private List<Ingreso> ingresos;
+
+    @OneToMany(mappedBy = "sucursal")
+    private List<Transferencia> transferencias;
+
+    @OneToMany(mappedBy = "sucursal")
+    private List<Salidas> salidas;
+
+
+
+    
+
 
 
 }
