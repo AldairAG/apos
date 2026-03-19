@@ -6,34 +6,38 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 @Entity
-@Table(name = "gastos")
+@Table(name = "orden_items")
 @Data
-public class Gasto {
+public class OrdenItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String descripcion;
+    @Column(nullable = false)
+    private Integer cantidad;
 
     @Column(nullable = false)
-    private BigDecimal monto;
-
-    @Column(nullable = false)
-    private LocalDate fecha;
+    private BigDecimal precioUnitario;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "categoria_id")
+    @JoinColumn(name = "orden_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private CategoriaGasto categoria;
+    private Orden orden;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sucursal_id", nullable = false)
+    @JoinColumn(name = "producto_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Sucursal sucursal;
+    private Producto producto;
+
+    // Silla opcional: permite asociar cada item a un comensal específico
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "silla_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Silla silla;
 }

@@ -1,31 +1,35 @@
 package com.api.apos.entity;
 
-import com.api.apos.enums.TipoCaja;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
-@Table(name = "cajas")
+@Table(name = "gastos_reinversion")
 @Data
-public class Caja {
+public class GastoReinversion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
+    private String descripcion;
+
     @Column(nullable = false)
-    private TipoCaja tipoCaja;
+    private BigDecimal monto;
 
-    private BigDecimal saldo;
+    @Column(nullable = false)
+    private LocalDate fecha;
 
-    private LocalDateTime fechaApertura;
-    private LocalDateTime fechaCierre;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoria_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private CategoriaGasto categoria;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sucursal_id", nullable = false)

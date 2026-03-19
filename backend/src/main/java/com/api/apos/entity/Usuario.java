@@ -1,18 +1,17 @@
 package com.api.apos.entity;
 
-import java.util.List;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import com.api.apos.enums.Rol;
+import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "usuarios")
-@Data   
+@Data
 public class Usuario {
 
     @Id
@@ -22,9 +21,11 @@ public class Usuario {
     private String email;
     private String password;
 
-    @OneToMany(mappedBy = "usuario")
-    private List<Sucursal> sucursales;
+    @Enumerated(EnumType.STRING)
+    private Rol rol;
 
-    @OneToMany(mappedBy = "usuario")
-    private List<Categoria> categorias;
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Sucursal> sucursales = new ArrayList<>();
 }
