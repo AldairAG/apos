@@ -28,4 +28,9 @@ public class Usuario {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<Sucursal> sucursales = new ArrayList<>();
+
+    @OneToMany(mappedBy = "usuarioResponsable", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<CorteCaja> cortesCaja = new ArrayList<>();
 }

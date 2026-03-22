@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // 🚀 Backend Spring Boot
+      "type": "java",
+      "name": "Spring Boot-Application<apos>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/backend", 
+      "mainClass": "com.api.apos.AposApplication",
+      "projectName": "apos",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      // 🌐 Frontend React con Vite
+      "name": "Debug Vite (React)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173", 
+      "webRoot": "${workspaceFolder}/frontend"
+    }
+  ]
+}

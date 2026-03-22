@@ -8,6 +8,8 @@ import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "cajas")
@@ -32,4 +34,9 @@ public class Caja {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Sucursal sucursal;
+
+    @OneToMany(mappedBy = "caja", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<CorteCaja> cortesCaja = new ArrayList<>();
 }
