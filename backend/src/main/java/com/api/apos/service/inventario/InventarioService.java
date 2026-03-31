@@ -6,8 +6,12 @@ import java.util.Optional;
 
 public interface InventarioService {
     List<Inventario> findAll();
+
     Optional<Inventario> findById(Long id);
+
     Optional<Inventario> findBySucursalId(Long sucursalId);
+
     Inventario save(Inventario inventario);
+
     void deleteById(Long id);
 }

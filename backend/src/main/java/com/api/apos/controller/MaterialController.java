@@ -30,7 +30,8 @@ public class MaterialController {
 
     @GetMapping("/inventario/{inventarioId}")
     public ResponseEntity<ApiResponseWrapper<List<Material>>> findByInventarioId(@PathVariable Long inventarioId) {
-        return ResponseEntity.ok(new ApiResponseWrapper<>(true, materialService.findByInventarioId(inventarioId), null));
+        return ResponseEntity
+                .ok(new ApiResponseWrapper<>(true, materialService.findByInventarioId(inventarioId), null));
     }
 
     @PostMapping

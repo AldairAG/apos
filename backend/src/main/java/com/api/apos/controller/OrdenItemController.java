@@ -39,7 +39,8 @@ public class OrdenItemController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponseWrapper<OrdenItem>> update(@PathVariable Long id, @RequestBody OrdenItem ordenItem) {
+    public ResponseEntity<ApiResponseWrapper<OrdenItem>> update(@PathVariable Long id,
+            @RequestBody OrdenItem ordenItem) {
         return ResponseEntity.ok(new ApiResponseWrapper<>(true, ordenItemService.update(id, ordenItem), null));
     }
 

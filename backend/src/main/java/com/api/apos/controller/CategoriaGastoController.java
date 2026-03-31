@@ -34,8 +34,10 @@ public class CategoriaGastoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponseWrapper<CategoriaGasto>> update(@PathVariable Long id, @RequestBody CategoriaGasto categoriaGasto) {
-        return ResponseEntity.ok(new ApiResponseWrapper<>(true, categoriaGastoService.update(id, categoriaGasto), null));
+    public ResponseEntity<ApiResponseWrapper<CategoriaGasto>> update(@PathVariable Long id,
+            @RequestBody CategoriaGasto categoriaGasto) {
+        return ResponseEntity
+                .ok(new ApiResponseWrapper<>(true, categoriaGastoService.update(id, categoriaGasto), null));
     }
 
     @DeleteMapping("/{id}")

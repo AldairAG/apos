@@ -6,9 +6,14 @@ import java.util.Optional;
 
 public interface OrdenItemService {
     List<OrdenItem> findAll();
+
     Optional<OrdenItem> findById(Long id);
+
     List<OrdenItem> findByOrdenId(Long ordenId);
+
     OrdenItem save(OrdenItem ordenItem);
+
     OrdenItem update(Long id, OrdenItem ordenItem);
+
     void deleteById(Long id);
 }

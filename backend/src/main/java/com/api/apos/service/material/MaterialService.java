@@ -6,9 +6,14 @@ import java.util.Optional;
 
 public interface MaterialService {
     List<Material> findAll();
+
     Optional<Material> findById(Long id);
+
     List<Material> findByInventarioId(Long inventarioId);
+
     Material save(Material material);
+
     Material update(Long id, Material material);
+
     void deleteById(Long id);
 }

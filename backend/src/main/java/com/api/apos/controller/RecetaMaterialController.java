@@ -39,8 +39,10 @@ public class RecetaMaterialController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponseWrapper<RecetaMaterial>> update(@PathVariable Long id, @RequestBody RecetaMaterial recetaMaterial) {
-        return ResponseEntity.ok(new ApiResponseWrapper<>(true, recetaMaterialService.update(id, recetaMaterial), null));
+    public ResponseEntity<ApiResponseWrapper<RecetaMaterial>> update(@PathVariable Long id,
+            @RequestBody RecetaMaterial recetaMaterial) {
+        return ResponseEntity
+                .ok(new ApiResponseWrapper<>(true, recetaMaterialService.update(id, recetaMaterial), null));
     }
 
     @DeleteMapping("/{id}")

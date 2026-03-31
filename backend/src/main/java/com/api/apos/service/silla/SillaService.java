@@ -6,9 +6,14 @@ import java.util.Optional;
 
 public interface SillaService {
     List<Silla> findAll();
+
     Optional<Silla> findById(Long id);
+
     List<Silla> findByMesaId(Long mesaId);
+
     Silla save(Silla silla);
+
     Silla update(Long id, Silla silla);
+
     void deleteById(Long id);
 }

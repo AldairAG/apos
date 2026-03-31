@@ -45,7 +45,8 @@ public class VentaController {
     }
 
     @PatchMapping("/{id}/estado")
-    public ResponseEntity<ApiResponseWrapper<Venta>> updateEstado(@PathVariable Long id, @RequestParam EstadoVenta estado) {
+    public ResponseEntity<ApiResponseWrapper<Venta>> updateEstado(@PathVariable Long id,
+            @RequestParam EstadoVenta estado) {
         return ResponseEntity.ok(new ApiResponseWrapper<>(true, ventaService.updateEstado(id, estado), null));
     }
 

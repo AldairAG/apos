@@ -11,9 +11,14 @@ import java.util.Optional;
 
 public interface UsuarioService extends UserDetailsService {
     AuthResponse register(RegisterRequest request);
+
     AuthResponse login(LoginRequest request);
+
     List<Usuario> findAll();
+
     Optional<Usuario> findById(Long id);
+
     Usuario update(Long id, Usuario usuario);
+
     void deleteById(Long id);
 }

@@ -7,7 +7,10 @@ import java.util.List;
 
 public interface OrdenRepository extends JpaRepository<Orden, Long> {
     List<Orden> findBySucursalId(Long sucursalId);
+
     List<Orden> findByMesaId(Long mesaId);
+
     List<Orden> findByEstadoOrden(EstadoOrden estadoOrden);
+
     List<Orden> findBySucursalIdAndEstadoOrden(Long sucursalId, EstadoOrden estadoOrden);
 }

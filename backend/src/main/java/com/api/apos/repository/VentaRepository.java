@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface VentaRepository extends JpaRepository<Venta, Long> {
     List<Venta> findBySucursalId(Long sucursalId);
+
     List<Venta> findByEstadoVenta(EstadoVenta estadoVenta);
+
     List<Venta> findBySucursalIdAndEstadoVenta(Long sucursalId, EstadoVenta estadoVenta);
 }

@@ -6,5 +6,6 @@ import java.util.List;
 
 public interface GastoRepository extends JpaRepository<Gasto, Long> {
     List<Gasto> findBySucursalId(Long sucursalId);
+
     List<Gasto> findByCategoriaId(Long categoriaId);
 }

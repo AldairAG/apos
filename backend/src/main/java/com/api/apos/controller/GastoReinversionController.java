@@ -30,7 +30,8 @@ public class GastoReinversionController {
 
     @GetMapping("/sucursal/{sucursalId}")
     public ResponseEntity<ApiResponseWrapper<List<GastoReinversion>>> findBySucursalId(@PathVariable Long sucursalId) {
-        return ResponseEntity.ok(new ApiResponseWrapper<>(true, gastoReinversionService.findBySucursalId(sucursalId), null));
+        return ResponseEntity
+                .ok(new ApiResponseWrapper<>(true, gastoReinversionService.findBySucursalId(sucursalId), null));
     }
 
     @PostMapping
@@ -39,8 +40,10 @@ public class GastoReinversionController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponseWrapper<GastoReinversion>> update(@PathVariable Long id, @RequestBody GastoReinversion gastoReinversion) {
-        return ResponseEntity.ok(new ApiResponseWrapper<>(true, gastoReinversionService.update(id, gastoReinversion), null));
+    public ResponseEntity<ApiResponseWrapper<GastoReinversion>> update(@PathVariable Long id,
+            @RequestBody GastoReinversion gastoReinversion) {
+        return ResponseEntity
+                .ok(new ApiResponseWrapper<>(true, gastoReinversionService.update(id, gastoReinversion), null));
     }
 
     @DeleteMapping("/{id}")

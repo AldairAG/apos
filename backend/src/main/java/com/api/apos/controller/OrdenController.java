@@ -47,7 +47,8 @@ public class OrdenController {
     @GetMapping("/sucursal/{sucursalId}/estado/{estado}")
     public ResponseEntity<ApiResponseWrapper<List<Orden>>> findBySucursalIdAndEstado(
             @PathVariable Long sucursalId, @PathVariable EstadoOrden estado) {
-        return ResponseEntity.ok(new ApiResponseWrapper<>(true, ordenService.findBySucursalIdAndEstado(sucursalId, estado), null));
+        return ResponseEntity
+                .ok(new ApiResponseWrapper<>(true, ordenService.findBySucursalIdAndEstado(sucursalId, estado), null));
     }
 
     @PostMapping
@@ -56,7 +57,8 @@ public class OrdenController {
     }
 
     @PatchMapping("/{id}/estado")
-    public ResponseEntity<ApiResponseWrapper<Orden>> updateEstado(@PathVariable Long id, @RequestParam EstadoOrden estado) {
+    public ResponseEntity<ApiResponseWrapper<Orden>> updateEstado(@PathVariable Long id,
+            @RequestParam EstadoOrden estado) {
         return ResponseEntity.ok(new ApiResponseWrapper<>(true, ordenService.updateEstado(id, estado), null));
     }
 
