@@ -1,6 +1,7 @@
 package com.api.apos.entity;
 
 import com.api.apos.enums.EstadoOrden;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -41,10 +42,12 @@ public class Orden {
     @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private List<OrdenItem> items = new ArrayList<>();
 
     @OneToOne(mappedBy = "orden")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private Venta venta;
 }

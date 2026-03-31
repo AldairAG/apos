@@ -1,5 +1,6 @@
 package com.api.apos.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,10 +26,12 @@ public class Receta {
     @OneToMany(mappedBy = "receta", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private List<RecetaMaterial> ingredientes = new ArrayList<>();
 
     @OneToOne(mappedBy = "receta", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private Producto producto;
 }

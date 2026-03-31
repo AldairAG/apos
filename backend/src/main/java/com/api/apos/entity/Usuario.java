@@ -1,6 +1,8 @@
 package com.api.apos.entity;
 
 import com.api.apos.enums.Rol;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,6 +26,8 @@ public class Usuario implements UserDetails {
     private Long id;
 
     private String email;
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     private Boolean activo;
 
@@ -33,11 +37,13 @@ public class Usuario implements UserDetails {
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private List<Sucursal> sucursales = new ArrayList<>();
 
     @OneToMany(mappedBy = "usuarioResponsable", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private List<CorteCaja> cortesCaja = new ArrayList<>();
 
         // UserDetails implementation

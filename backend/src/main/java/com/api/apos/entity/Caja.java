@@ -1,6 +1,7 @@
 package com.api.apos.entity;
 
 import com.api.apos.enums.TipoCaja;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -38,5 +39,6 @@ public class Caja {
     @OneToMany(mappedBy = "caja", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private List<CorteCaja> cortesCaja = new ArrayList<>();
 }
