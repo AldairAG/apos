@@ -1,6 +1,5 @@
 package com.api.apos.entity;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
