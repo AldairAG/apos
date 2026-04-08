@@ -1,6 +1,5 @@
 package com.api.apos.entity;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
@@ -31,8 +30,8 @@ public class InventarioProducto {
     @JoinColumn(name = "producto_elaborado_id")
     private ProductoElaborado productoElaborado;
     
-    private BigDecimal cantidad;
-    private BigDecimal stockMinimo;
+    private Double cantidad;
+    private Double stockMinimo;
     
     private LocalDateTime fechaUltimaActualizacion;
     private LocalDateTime fechaUltimaProduccion;

@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.api.apos.enums.TipoReceta;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -49,9 +51,4 @@ public class Receta {
     
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaActualizacion;
-    
-    public enum TipoReceta {
-        INTERMEDIA,  // Ej: "Masa de banderilla" - se usa en otras recetas
-        FINAL        // Ej: "Banderillas terminadas" - producto final para venta
-    }
 }

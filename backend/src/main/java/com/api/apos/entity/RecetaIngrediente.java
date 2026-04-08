@@ -2,6 +2,8 @@ package com.api.apos.entity;
 
 import java.math.BigDecimal;
 
+import com.api.apos.enums.TipoIngrediente;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -44,9 +46,5 @@ public class RecetaIngrediente {
     
     private BigDecimal cantidadRequerida;
     private String notas; // Ej: "picado finamente", "a temperatura ambiente"
-    
-    public enum TipoIngrediente {
-        MATERIAL,           // Ingrediente básico
-        PRODUCTO_ELABORADO  // Resultado de otra receta
-    }
+
 }
