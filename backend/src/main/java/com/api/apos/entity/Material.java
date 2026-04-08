@@ -1,36 +1,32 @@
 package com.api.apos.entity;
 
 import com.api.apos.enums.TipoMaterial;
-import jakarta.persistence.*;
+import com.api.apos.enums.TipoUnidad;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
-import java.math.BigDecimal;
-
-@Entity
-@Table(name = "materiales")
 @Data
+@Entity
 public class Material {
-
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
+    
     private String nombre;
-
-    private BigDecimal cantidad;
-
-    private String unidadMedida;
-
+    private String descripcion;
+    
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private TipoMaterial tipoMaterial;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "inventario_id", nullable = false)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private Inventario inventario;
+    
+    @Enumerated(EnumType.STRING)
+    private TipoUnidad tipoUnidad;
+    
+    private Boolean activo;
 }

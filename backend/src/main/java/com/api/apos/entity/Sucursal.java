@@ -1,16 +1,19 @@
 package com.api.apos.entity;
 
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
-
-import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "sucursales")
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import lombok.Data;
+
 @Data
+@Entity
 public class Sucursal {
 
     @Id
@@ -20,55 +23,15 @@ public class Sucursal {
     private String nombre;
     private String direccion;
     private String telefono;
+    private String propietario;
+    private Boolean activa;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id", nullable = false)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private Usuario usuario;
-
-    @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<Caja> cajas = new ArrayList<>();
-
-    @OneToOne(mappedBy = "sucursal", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
+    @OneToOne(mappedBy = "sucursal", cascade = CascadeType.ALL)
     private Inventario inventario;
 
-    @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<Venta> ventas = new ArrayList<>();
+    @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL)
+    private List<Receta> recetas;
 
-    @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<Entrada> entradas = new ArrayList<>();
-
-    @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<Salida> salidas = new ArrayList<>();
-
-    @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<Gasto> gastos = new ArrayList<>();
-
-    @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<GastoReinversion> gastosReinversion = new ArrayList<>();
-
-    @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<Mesa> mesas = new ArrayList<>();
-
-    @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<Orden> ordenes = new ArrayList<>();
+    @ManyToMany(mappedBy = "sucursales")
+    private List<Usuario> usuarios;
 }
