@@ -41,6 +41,10 @@ public class Usuario implements UserDetails {
     )
     List<Sucursal> sucursales;
 
+
+
+
+    
     // UserDetails implementation
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

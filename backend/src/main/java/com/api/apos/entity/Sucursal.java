@@ -2,6 +2,8 @@ package com.api.apos.entity;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -22,16 +24,18 @@ public class Sucursal {
 
     private String nombre;
     private String direccion;
-    private String telefono;
     private String propietario;
     private Boolean activa;
 
+    @JsonIgnore
     @OneToOne(mappedBy = "sucursal", cascade = CascadeType.ALL)
     private Inventario inventario;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL)
     private List<Receta> recetas;
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "sucursales")
     private List<Usuario> usuarios;
 }
