@@ -2,6 +2,8 @@ package com.api.apos.entity;
 
 import java.time.LocalDateTime;
 
+import com.api.apos.enums.TipoUnidad;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -30,7 +32,7 @@ public class ProductoElaborado {
     @JoinColumn(name = "receta_origen_id")
     private Receta recetaOrigen; // Receta que crea este producto
     
-    private String unidadMedida; // Ej: "porciones", "kilos", "litros"
+    private TipoUnidad unidadMedida; // Ej: "porciones", "kilos", "litros"
     private Boolean activo;
     private LocalDateTime fechaCreacion;
 }

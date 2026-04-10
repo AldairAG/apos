@@ -2,6 +2,9 @@ package com.api.apos.entity;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -22,10 +25,12 @@ public class Inventario {
     
     @OneToOne
     @JoinColumn(name = "sucursal_id")
+    @JsonIgnore
     private Sucursal sucursal;
     
     // Materiales básicos (ingredientes, insumos, etc.)
     @OneToMany(mappedBy = "inventario", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<InventarioItem> items;
     
     // Productos elaborados (resultados de recetas que se almacenan)

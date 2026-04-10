@@ -10,9 +10,9 @@ import java.util.List;
 @Repository
 public interface RecetaRepository extends JpaRepository<Receta, Long> {
     
-    List<Receta> findBySucursalId(Long sucursalId);
+    List<Receta> findBySucursal_Id(Long sucursalId);
     
     List<Receta> findByActivaTrue();
     
-    List<Receta> findBySucursalIdAndActivaTrue(Long sucursalId);
+    List<Receta> findBySucursal_IdAndActivaTrue(Long sucursalId);
 }

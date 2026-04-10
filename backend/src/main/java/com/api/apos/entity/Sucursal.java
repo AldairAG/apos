@@ -3,6 +3,7 @@ package com.api.apos.entity;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -33,6 +34,7 @@ public class Sucursal {
 
     @JsonIgnore
     @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<Receta> recetas;
 
     @JsonIgnore

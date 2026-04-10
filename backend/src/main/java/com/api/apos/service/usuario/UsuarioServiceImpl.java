@@ -67,7 +67,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .email(email)
                 .password(encodedPassword)
                 .activo(true)
-                .rol(com.api.apos.enums.Rol.ADMINISTRADOR) // Asignar un rol por defecto
+                .rol(com.api.apos.enums.Rol.ADMINISTRADOR) // Asignar rol por defecto, se puede modificar según la lógica de negocio
                 .build();
 
         usuarioRepository.save(nuevoUsuario);

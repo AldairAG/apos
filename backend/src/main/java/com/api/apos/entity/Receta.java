@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.api.apos.enums.TipoReceta;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -32,13 +34,18 @@ public class Receta {
     private Integer tiempoPreparacion; // en minutos
     private Integer porciones;
     private BigDecimal precioVenta;
+    private Double costoTotal; // Calculado a partir de los ingredientes
+    private Double margenGanancia; // Calculado a partir del costo total y precio de venta
+    private Double gananciaNeta;
     private Boolean activa;
     
     @ManyToOne
     @JoinColumn(name = "sucursal_id")
+    @JsonBackReference
     private Sucursal sucursal;
     
     @OneToMany(mappedBy = "receta", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<RecetaIngrediente> ingredientes;
     
     // Si esta receta genera un producto elaborado que se puede almacenar

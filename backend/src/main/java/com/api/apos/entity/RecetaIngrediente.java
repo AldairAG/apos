@@ -3,6 +3,7 @@ package com.api.apos.entity;
 import java.math.BigDecimal;
 
 import com.api.apos.enums.TipoIngrediente;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -28,6 +29,7 @@ public class RecetaIngrediente {
     
     @ManyToOne
     @JoinColumn(name = "receta_id")
+    @JsonBackReference
     private Receta receta;
     
     // OPCIÓN 1: Material básico (harina, azúcar, etc.)
@@ -38,6 +40,7 @@ public class RecetaIngrediente {
     // OPCIÓN 2: Producto elaborado (masa, salsa, etc.) - resultado de otra receta
     @ManyToOne
     @JoinColumn(name = "producto_elaborado_id")
+    @JsonBackReference
     private ProductoElaborado productoElaborado;
     
     // Indica qué tipo de ingrediente es
