@@ -248,9 +248,54 @@
 
 ## 4. Gestión de Inventario - Productos Elaborados
 
-### CU-011: Registrar Producto Elaborado en Inventario
+### CU-011: Agregar Producto Elaborado al Inventario
+**Actor**: Administrador/Gerente  
+**Descripción**: Agregar un producto elaborado nuevo al inventario de la sucursal
+
+**Endpoint**: `POST /api/inventario/{inventarioId}/productos-elaborados`
+
+**Precondiciones**:
+- Usuario autenticado
+- Inventario debe existir
+
+**Flujo Principal**:
+1. Usuario ingresa datos del producto elaborado:
+   - Opción A: ID de producto elaborado existente
+   - Opción B: Crear nuevo producto (nombre, descripción, unidad de medida, receta origen)
+2. Usuario especifica stock inicial y stock mínimo
+3. Sistema valida que el producto no exista ya en el inventario
+4. Sistema crea o asocia el ProductoElaborado
+5. Sistema crea el InventarioProducto vinculado al inventario
+6. Sistema registra fecha de actualización
+
+**Request Body**:
+```json
+{
+  "productoElaboradoId": null,  // Si existe, usar este ID
+  "nombre": "Masa de Banderilla",
+  "descripcion": "Masa preparada para banderillas",
+  "recetaOrigenId": 5,
+  "unidadMedida": "UNIDADES",
+  "cantidad": 0.0,
+  "stockMinimo": 5.0
+}
+```
+
+**Postcondiciones**:
+- ProductoElaborado agregado al inventario
+- Stock registrado y listo para usar
+
+**Flujo Alternativo**: Producto ya existe
+- Sistema rechaza la operación si el producto ya está en el inventario
+- Usuario debe usar actualización de stock en su lugar
+
+---
+
+### CU-011b: Incrementar Stock de Producto Elaborado (Automático)
 **Actor**: Sistema (automático al producir receta INTERMEDIA)  
-**Descripción**: Al producir una receta intermedia, el resultado se guarda en inventario
+**Descripción**: Al producir una receta intermedia, el resultado se guarda automáticamente en inventario
+
+**Método del Servicio**: `incrementarStockProducto(inventarioId, productoElaboradoId, cantidad)`
 
 **Precondiciones**:
 - Receta tipo INTERMEDIA existe
@@ -258,7 +303,7 @@
 - Materiales/productos necesarios disponibles
 
 **Flujo Principal**:
-1. Sistema produce receta intermedia (ver CU-018)
+1. Sistema produce receta intermedia (ver CU-024)
 2. Sistema busca o crea InventarioProducto para ese ProductoElaborado
 3. Sistema incrementa cantidad en inventario
 4. Sistema actualiza fechaUltimaProduccion
@@ -272,9 +317,48 @@
 
 ---
 
-### CU-012: Consumir Producto Elaborado
+### CU-012: Actualizar Stock de Producto Elaborado
+**Actor**: Empleado/Gerente  
+**Descripción**: Modificar cantidades y configuración de un producto elaborado
+
+**Endpoint**: `PUT /api/inventario/productos-elaborados/{inventarioProductoId}`
+
+**Precondiciones**:
+- Producto elaborado existe en inventario
+- Usuario autenticado
+
+**Flujo Principal**:
+1. Usuario selecciona producto elaborado a actualizar
+2. Usuario modifica:
+   - Cantidad en stock
+   - Stock mínimo
+3. Sistema actualiza el InventarioProducto
+4. Sistema registra fecha de actualización
+
+**Request Body**:
+```json
+{
+  "cantidad": 15.0,
+  "stockMinimo": 10.0
+}
+```
+
+**Postcondiciones**:
+- Stock actualizado
+- Fecha de última actualización registrada
+
+**Casos de Uso**:
+- Ajuste de inventario físico
+- Corrección de errores de registro
+- Actualización de stock mínimo requerido
+
+---
+
+### CU-012b: Consumir Producto Elaborado (Automático)
 **Actor**: Sistema (automático al producir receta FINAL)  
 **Descripción**: Al producir una receta final que usa productos elaborados, se consumen del inventario
+
+**Método del Servicio**: `consumirProductoElaborado(inventarioId, productoElaboradoId, cantidad)`
 
 **Precondiciones**:
 - ProductoElaborado existe en inventario
@@ -284,10 +368,14 @@
 1. Sistema valida disponibilidad del producto elaborado
 2. Sistema descuenta cantidad requerida del InventarioProducto
 3. Sistema actualiza fechaUltimaActualizacion
-4. Si cantidad llega a 0, puede mantener o eliminar el registro
+4. Si cantidad llega a 0, mantiene el registro para historial
 
 **Postcondiciones**:
 - Cantidad de ProductoElaborado reducida
+
+**Flujo Alternativo**: Stock insuficiente
+- Sistema lanza excepción indicando stock disponible vs requerido
+- Usuario debe producir más del producto intermedio primero
 
 **Ejemplo**: Al hacer 10 Banderillas que requieren 10 porciones de Masa, se descuentan del inventario.
 
@@ -295,23 +383,52 @@
 
 ### CU-013: Consultar Productos Elaborados en Inventario
 **Actor**: Chef/Gerente  
-**Descripción**: Ver qué productos elaborados están disponibles
+**Descripción**: Ver todos los productos elaborados disponibles en el inventario
+
+**Endpoint**: `GET /api/inventario/{inventarioId}/productos-elaborados`
 
 **Precondiciones**:
 - Usuario autenticado
 - Inventario inicializado
 
 **Flujo Principal**:
-1. Usuario consulta inventario de productos elaborados
-2. Sistema retorna lista de InventarioProducto con:
+1. Usuario solicita lista de productos elaborados
+2. Sistema retorna lista completa con:
+   - ID del inventario producto
    - Nombre del producto elaborado
+   - Descripción
+   - Unidad de medida
    - Cantidad disponible
    - Stock mínimo
-   - Receta origen
+   - Receta origen (ID y nombre)
+   - Fecha última actualización
    - Fecha última producción
 
+**Response**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "inventarioProductoId": 1,
+      "productoElaboradoId": 1,
+      "nombre": "Masa de Banderilla",
+      "descripcion": "Masa preparada para banderillas",
+      "unidadMedida": "UNIDADES",
+      "cantidad": 15.0,
+      "stockMinimo": 10.0,
+      "recetaOrigenId": 5,
+      "recetaOrigenNombre": "Receta Masa Banderilla",
+      "fechaUltimaActualizacion": "2026-04-10T14:30:00",
+      "fechaUltimaProduccion": "2026-04-10T10:15:00"
+    }
+  ],
+  "message": null
+}
+```
+
 **Postcondiciones**:
-- Usuario conoce disponibilidad de productos elaborados
+- Usuario conoce disponibilidad de todos los productos elaborados
 
 ---
 
@@ -319,27 +436,98 @@
 **Actor**: Sistema/Chef  
 **Descripción**: Identificar productos elaborados que necesitan producirse
 
+**Endpoint**: `GET /api/inventario/{inventarioId}/productos-elaborados/stock-bajo`
+
 **Precondiciones**:
 - Productos elaborados con stock mínimo configurado
 
 **Flujo Principal**:
 1. Usuario solicita alertas de productos elaborados
-2. Sistema compara cantidad vs stockMinimo
-3. Sistema retorna lista con:
+2. Sistema compara cantidad vs stockMinimo para cada producto
+3. Sistema filtra productos donde cantidad < stockMinimo
+4. Sistema calcula déficit (stockMinimo - cantidad)
+5. Sistema retorna lista con:
    - Productos con stock bajo
    - Déficit de cantidad
    - Receta recomendada a producir
 
+**Response**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "inventarioProductoId": 1,
+      "productoElaboradoId": 1,
+      "nombre": "Masa de Banderilla",
+      "cantidad": 3.0,
+      "stockMinimo": 10.0,
+      "deficit": 7.0,
+      "recetaOrigenId": 5,
+      "recetaOrigenNombre": "Receta Masa Banderilla"
+    }
+  ],
+  "message": null
+}
+```
+
 **Postcondiciones**:
 - Chef sabe qué recetas intermedias debe producir
 
-**Ejemplo**: "Masa de Banderilla: 0 disponibles, mínimo 5. Producir receta: Masa de Banderilla"
+**Ejemplo**: "Masa de Banderilla: 3 disponibles, mínimo 10. Déficit: 7. Producir receta: Masa de Banderilla"
+
+---
+
+### CU-015: Consultar Detalle de Producto Elaborado
+**Actor**: Chef/Gerente  
+**Descripción**: Ver información detallada de un producto elaborado específico
+
+**Endpoint**: `GET /api/inventario/productos-elaborados/{inventarioProductoId}`
+
+**Precondiciones**:
+- Usuario autenticado
+- Producto elaborado existe en inventario
+
+**Flujo Principal**:
+1. Usuario selecciona producto elaborado
+2. Sistema retorna información completa:
+   - Todos los datos del producto
+   - Stock actual y mínimo
+   - Historial de fechas
+   - Receta origen asociada
+
+**Postcondiciones**:
+- Usuario visualiza información completa del producto
+
+---
+
+### CU-016: Eliminar Producto Elaborado del Inventario
+**Actor**: Administrador  
+**Descripción**: Eliminar un producto elaborado del inventario de la sucursal
+
+**Endpoint**: `DELETE /api/inventario/productos-elaborados/{inventarioProductoId}`
+
+**Precondiciones**:
+- Producto elaborado existe en inventario
+- Usuario autenticado con permisos
+
+**Flujo Principal**:
+1. Usuario selecciona producto elaborado a eliminar
+2. Sistema valida permisos
+3. Sistema elimina InventarioProducto
+4. Sistema confirma eliminación
+
+**Postcondiciones**:
+- Producto removido del inventario
+- ProductoElaborado sigue existiendo en catálogo global
+
+**Nota**: No elimina el ProductoElaborado del catálogo, solo del inventario de esa sucursal.
 
 ---
 
 ## 5. Gestión de Recetas
 
-### CU-015: Crear Receta Intermedia (Producto Almacenable)
+### CU-017: Crear Receta Intermedia (Producto Almacenable)
 **Actor**: Chef/Administrador  
 **Descripción**: Crear una receta cuyo resultado se almacena en inventario
 
@@ -374,7 +562,7 @@
 
 ---
 
-### CU-016: Crear Receta Final (Producto para Venta)
+### CU-018: Crear Receta Final (Producto para Venta)
 **Actor**: Chef/Administrador  
 **Descripción**: Crear una receta de producto final que no se almacena
 
@@ -407,7 +595,7 @@
 
 ---
 
-### CU-017: Actualizar Receta
+### CU-019: Actualizar Receta
 **Actor**: Chef/Administrador  
 **Descripción**: Modificar una receta existente
 
@@ -434,7 +622,7 @@
 
 ---
 
-### CU-018: Listar Recetas de Sucursal
+### CU-020: Listar Recetas de Sucursal
 **Actor**: Chef/Cualquier usuario  
 **Descripción**: Obtener lista de recetas disponibles
 
@@ -458,7 +646,7 @@
 
 ---
 
-### CU-019: Activar/Desactivar Receta
+### CU-021: Activar/Desactivar Receta
 **Actor**: Administrador/Chef  
 **Descripción**: Cambiar el estado activo de una receta
 
@@ -482,7 +670,7 @@
 
 ---
 
-### CU-020: Eliminar Receta
+### CU-022: Eliminar Receta
 **Actor**: Administrador  
 **Descripción**: Eliminar permanentemente una receta
 
@@ -509,7 +697,7 @@
 
 ## 6. Producción de Recetas
 
-### CU-021: Verificar Disponibilidad de Ingredientes
+### CU-023: Verificar Disponibilidad de Ingredientes
 **Actor**: Chef/Sistema  
 **Descripción**: Validar que todos los ingredientes estén disponibles antes de producir
 
@@ -538,7 +726,7 @@
 
 ---
 
-### CU-022: Producir Receta Intermedia
+### CU-024: Producir Receta Intermedia
 **Actor**: Chef  
 **Descripción**: Elaborar una receta intermedia, guardando el resultado en inventario
 
@@ -571,7 +759,7 @@
 
 ---
 
-### CU-023: Producir Receta Final
+### CU-025: Producir Receta Final
 **Actor**: Chef  
 **Descripción**: Elaborar una receta final, consumiendo inventario sin guardar resultado
 
@@ -605,7 +793,7 @@
 
 ---
 
-### CU-024: Producción en Cascada (Recetas Anidadas)
+### CU-026: Producción en Cascada (Recetas Anidadas)
 **Actor**: Chef  
 **Descripción**: Producir una receta que requiere productos elaborados no disponibles
 
@@ -620,9 +808,9 @@
 3. Sistema notifica al usuario:
    - "Falta Masa de Banderilla"
    - "Debe producir primero receta: Masa de Banderilla"
-4. Usuario produce primero la receta intermedia (CU-022)
+4. Usuario produce primero la receta intermedia (CU-024)
 5. Sistema agrega producto elaborado al inventario
-6. Usuario ahora puede producir la receta final (CU-023)
+6. Usuario ahora puede producir la receta final (CU-025)
 
 **Postcondiciones**:
 - Productos intermedios producidos y almacenados
@@ -633,7 +821,7 @@
 
 ---
 
-### CU-025: Consultar Historial de Producción
+### CU-027: Consultar Historial de Producción
 **Actor**: Administrador/Gerente  
 **Descripción**: Ver registro histórico de recetas elaboradas
 
@@ -686,22 +874,22 @@
 2. Login (CU-002)
 3. Crear Sucursal (CU-003)
 4. Agregar Materiales al Inventario (CU-006)
-5. Crear Recetas Intermedias (CU-015)
-6. Crear Recetas Finales (CU-016)
+5. Crear Recetas Intermedias (CU-017)
+6. Crear Recetas Finales (CU-018)
 7. Sistema listo para operar
 ```
 
 ### Flujo: Producción Diaria de Banderillas
 ```
-1. Verificar Ingredientes (CU-021)
+1. Verificar Ingredientes (CU-023)
    └─ Falta Masa de Banderilla
-2. Producir Masa (CU-022)
+2. Producir Masa (CU-024)
    └─ Descuenta: Harina, Agua
    └─ Agrega: 10 porciones Masa a inventario
-3. Producir Banderillas (CU-023)
+3. Producir Banderillas (CU-025)
    └─ Descuenta: Masa, Salchichas, Aceite
    └─ Producto final para venta
-4. Consultar Historial (CU-025)
+4. Consultar Historial (CU-027)
    └─ Verificar costos y producción
 ```
 
@@ -712,7 +900,7 @@
 3. Comprar Materiales Faltantes
 4. Actualizar Stock (CU-007)
 5. Revisar Productos Elaborados (CU-013, CU-014)
-6. Producir Recetas Intermedias Faltantes (CU-022)
+6. Producir Recetas Intermedias Faltantes (CU-024)
 ```
 
 ---
@@ -733,6 +921,74 @@
 
 ---
 
-**Versión**: 1.0  
-**Última actualización**: Abril 2026  
+## 📡 Resumen de Endpoints - Productos Elaborados
+
+### Gestión de Productos Elaborados en Inventario
+
+| Método | Endpoint | Descripción | Caso de Uso |
+|--------|----------|-------------|-------------|
+| POST | `/api/inventario/{inventarioId}/productos-elaborados` | Agregar producto elaborado al inventario | CU-011 |
+| PUT | `/api/inventario/productos-elaborados/{inventarioProductoId}` | Actualizar stock de producto elaborado | CU-012 |
+| DELETE | `/api/inventario/productos-elaborados/{inventarioProductoId}` | Eliminar producto elaborado del inventario | CU-016 |
+| GET | `/api/inventario/{inventarioId}/productos-elaborados` | Listar productos elaborados del inventario | CU-013 |
+| GET | `/api/inventario/{inventarioId}/productos-elaborados/stock-bajo` | Obtener alertas de stock bajo | CU-014 |
+| GET | `/api/inventario/productos-elaborados/{inventarioProductoId}` | Consultar detalle de un producto elaborado | CU-015 |
+
+### Ejemplos de Uso
+
+#### 1. Agregar Producto Elaborado
+```http
+POST /api/inventario/1/productos-elaborados
+Content-Type: application/json
+
+{
+  "nombre": "Masa de Banderilla",
+  "descripcion": "Masa preparada para banderillas",
+  "recetaOrigenId": 5,
+  "unidadMedida": "UNIDADES",
+  "cantidad": 0.0,
+  "stockMinimo": 10.0
+}
+```
+
+#### 2. Actualizar Stock
+```http
+PUT /api/inventario/productos-elaborados/1
+Content-Type: application/json
+
+{
+  "cantidad": 25.0,
+  "stockMinimo": 15.0
+}
+```
+
+#### 3. Consultar Alertas de Stock Bajo
+```http
+GET /api/inventario/1/productos-elaborados/stock-bajo
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "inventarioProductoId": 1,
+      "productoElaboradoId": 1,
+      "nombre": "Masa de Banderilla",
+      "cantidad": 5.0,
+      "stockMinimo": 15.0,
+      "deficit": 10.0,
+      "recetaOrigenId": 5,
+      "recetaOrigenNombre": "Receta Masa Banderilla"
+    }
+  ],
+  "message": null
+}
+```
+
+---
+
+**Versión**: 1.1  
+**Última actualización**: Abril 10, 2026  
 **Autor**: Equipo Backend APOS
