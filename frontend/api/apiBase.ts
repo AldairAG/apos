@@ -20,7 +20,7 @@ export interface ApiError {
 const API_CONFIG = {
   baseURL: __DEV__ 
     ? 'http://localhost:8080/api' // Desarrollo
-    : 'https://tu-api-produccion.com/api', // Producción
+    : 'http://localhost:8080/api', // Producción
   timeout: 30000, // 30 segundos
   headers: {
     'Content-Type': 'application/json',

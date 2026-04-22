@@ -1,51 +1,60 @@
+import { authThunks } from '@/features/auth/auth.thunks';
+import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { Formik } from 'formik';
+import React from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
+import * as Yup from 'yup';
+
+const registerSchema = Yup.object({
+  email: Yup.string().email('Por favor ingresa un correo valido').required('El correo es requerido'),
+  password: Yup.string()
+    .min(6, 'La contrasena debe tener al menos 6 caracteres')
+    .required('La contrasena es requerida'),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref('password')], 'Las contrasenas no coinciden')
+    .required('Confirma tu contrasena'),
+});
+
+interface RegisterFormValues {
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
 
 export default function RegisterScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const colorScheme = useColorScheme();
+  const dispatch = useAppDispatch();
+  const authError = useAppSelector((state) => state.auth.error);
   const isDark = colorScheme === 'dark';
 
-  const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+  const handleRegister = async (values: RegisterFormValues) => {
+    const result = await dispatch(
+      authThunks.register({
+        email: values.email.trim(),
+        password: values.password,
+      })
+    );
+
+    if (result.success) {
+      Alert.alert('Exito', 'Registro exitoso');
+      router.back();
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-
-    // Validación básica de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Por favor ingresa un correo válido');
-      return;
-    }
-
-    setLoading(true);
+    Alert.alert('Error', result.error || authError || 'No fue posible completar el registro');
   };
 
   return (
@@ -59,61 +68,87 @@ export default function RegisterScreen() {
           Regístrate para comenzar
         </Text>
 
-        <View style={styles.form}>
-          <TextInput
-            style={[styles.input, isDark && styles.inputDark]}
-            placeholder="Correo electrónico"
-            placeholderTextColor={isDark ? '#888' : '#666'}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-          />
+        <Formik<RegisterFormValues>
+          initialValues={{ email: '', password: '', confirmPassword: '' }}
+          validationSchema={registerSchema}
+          onSubmit={handleRegister}
+        >
+          {({
+            handleChange,
+            handleBlur,
+            handleSubmit,
+            values,
+            errors,
+            touched,
+            isSubmitting,
+          }) => (
+            <View style={styles.form}>
+              <TextInput
+                style={[styles.input, isDark && styles.inputDark]}
+                placeholder="Correo electronico"
+                placeholderTextColor={isDark ? '#888' : '#666'}
+                value={values.email}
+                onChangeText={handleChange('email')}
+                onBlur={handleBlur('email')}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+              />
+              {touched.email && errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
 
-          <TextInput
-            style={[styles.input, isDark && styles.inputDark]}
-            placeholder="Contraseña"
-            placeholderTextColor={isDark ? '#888' : '#666'}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoComplete="password"
-          />
+              <TextInput
+                style={[styles.input, isDark && styles.inputDark]}
+                placeholder="Contrasena"
+                placeholderTextColor={isDark ? '#888' : '#666'}
+                value={values.password}
+                onChangeText={handleChange('password')}
+                onBlur={handleBlur('password')}
+                secureTextEntry
+                autoCapitalize="none"
+                autoComplete="password"
+              />
+              {touched.password && errors.password ? (
+                <Text style={styles.errorText}>{errors.password}</Text>
+              ) : null}
 
-          <TextInput
-            style={[styles.input, isDark && styles.inputDark]}
-            placeholder="Confirmar contraseña"
-            placeholderTextColor={isDark ? '#888' : '#666'}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoComplete="password"
-          />
+              <TextInput
+                style={[styles.input, isDark && styles.inputDark]}
+                placeholder="Confirmar contrasena"
+                placeholderTextColor={isDark ? '#888' : '#666'}
+                value={values.confirmPassword}
+                onChangeText={handleChange('confirmPassword')}
+                onBlur={handleBlur('confirmPassword')}
+                secureTextEntry
+                autoCapitalize="none"
+                autoComplete="password"
+              />
+              {touched.confirmPassword && errors.confirmPassword ? (
+                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+              ) : null}
 
-          <TouchableOpacity 
-            style={[styles.registerButton]} 
-            onPress={handleRegister}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.registerButtonText}>Registrarse</Text>
-            )}
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.registerButton]}
+                onPress={() => handleSubmit()}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.registerButtonText}>Registrarse</Text>
+                )}
+              </TouchableOpacity>
 
-          <View style={styles.loginContainer}>
-            <Text style={[styles.loginText, isDark && styles.textDark]}>
-              ¿Ya tienes una cuenta?{' '}
-            </Text>
-            <TouchableOpacity onPress={() => router.back()}>
-              <Text style={styles.loginLink}>Inicia sesión</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+              <View style={styles.loginContainer}>
+                <Text style={[styles.loginText, isDark && styles.textDark]}>
+                  ¿Ya tienes una cuenta?{' '}
+                </Text>
+                <TouchableOpacity onPress={() => router.back()}>
+                  <Text style={styles.loginLink}>Inicia sesion</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </Formik>
       </View>
     </KeyboardAvoidingView>
   );
@@ -191,5 +226,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#007AFF',
     fontWeight: '600',
+  },
+  errorText: {
+    color: '#ff4d4f',
+    fontSize: 12,
+    marginTop: -8,
+    marginBottom: 10,
   },
 });

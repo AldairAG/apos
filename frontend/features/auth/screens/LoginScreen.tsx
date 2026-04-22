@@ -1,17 +1,19 @@
+import { authThunks } from '@/features/auth/auth.thunks';
+import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { USER_ROUTES } from '@/utils/routes';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 export default function LoginScreen() {
@@ -19,6 +21,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const authError = useAppSelector((state) => state.auth.error);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -30,12 +34,22 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      
-      // Navegar a la pantalla principal después del login exitoso
-      // router.replace('/(tabs)');
-      Alert.alert('Éxito', 'Inicio de sesión exitoso');
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Credenciales inválidas');
+      const result = await dispatch(
+        authThunks.login({
+          email: email.trim(),
+          password,
+        })
+      );
+
+      if (result.success) {
+        router.replace(USER_ROUTES.DASHBOARD);
+        return;
+      }
+
+      Alert.alert('Error', result.error || authError || 'Credenciales invalidas');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Credenciales invalidas';
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
