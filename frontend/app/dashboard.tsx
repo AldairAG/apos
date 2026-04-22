@@ -1,14 +1,15 @@
 import { authThunks } from '@/features/auth/auth.thunks';
+import InventarioList from '@/features/inventario/InventarioList';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { ComponentType, useMemo, useState } from 'react';
 import {
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 
 type UserRole = 'administrador' | 'operador' | 'mesero';
@@ -21,7 +22,27 @@ type SidebarOption =
   | 'configuracion'
   | 'produccion'
   | 'pedidos'
+  | 'productos'
   | 'menu';
+
+// Componente placeholder para secciones sin implementar
+const PlaceholderSection = ({ description }: { description: string }) => (
+  <Text style={styles.description}>{description}</Text>
+);
+
+// Mapeo de secciones a componentes
+const sectionComponents: Record<SidebarOption, ComponentType<any> | null> = {
+  inicio: null,
+  inventario: InventarioList,
+  recetas: null,
+  reportes: null,
+  sucursales: null,
+  configuracion: null,
+  produccion: null,
+  pedidos: null,
+  productos: null,
+  menu: null,
+};
 
 const userRoles: { key: UserRole; label: string }[] = [
   { key: 'administrador', label: 'Admin' },
@@ -36,6 +57,7 @@ const sidebarByRole: Record<UserRole, { key: SidebarOption; label: string }[]> =
     { key: 'recetas', label: 'Recetas' },
     { key: 'reportes', label: 'Reportes' },
     { key: 'sucursales', label: 'Sucursales' },
+    { key: 'productos', label: 'Productos' },
     { key: 'configuracion', label: 'Configuracion' },
   ],
   operador: [
@@ -104,6 +126,16 @@ export default function DashboardScreen() {
     setSelected(firstOption);
   };
 
+  const renderContent = () => {
+    const SectionComponent = sectionComponents[selected];
+    
+    if (SectionComponent) {
+      return <SectionComponent />;
+    }
+    
+    return <PlaceholderSection description={sectionDescription} />;
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -123,7 +155,7 @@ export default function DashboardScreen() {
           <ScrollView contentContainerStyle={styles.content}>
             <Text style={styles.title}>{sectionTitle}</Text>
             <Text style={styles.subtitle}>Usuario: {user?.email || 'Sin sesion'}</Text>
-            <Text style={styles.description}>{sectionDescription}</Text>
+            {renderContent()}
           </ScrollView>
         </View>
 
