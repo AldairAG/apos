@@ -8,7 +8,7 @@ import jakarta.persistence.Enumerated;
 import lombok.Data;
 
 @Data
-public class AgregarItemRequest {
+public class  AgregarItemRequest {
     // Material
     private Long materialId; // Para editar, se necesita el ID del material
     private String nombre;

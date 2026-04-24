@@ -16,6 +16,19 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 
+export interface ApiResponseWrapper<T> {
+	success: boolean;
+	data: T;
+	error: string | null;
+}
+
+export interface JwtResponse {
+	token: string;
+	type: string;
+	id: number;
+	email: string;
+}
+
 // Configuración base
 const API_CONFIG = {
   baseURL: __DEV__ 

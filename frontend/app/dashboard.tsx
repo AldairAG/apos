@@ -1,5 +1,5 @@
 import { authThunks } from '@/features/auth/auth.thunks';
-import InventarioList from '@/features/inventario/InventarioList';
+import InventarioList from '@/features/inventario/screens/InventarioList';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { useRouter } from 'expo-router';
 import React, { ComponentType, useMemo, useState } from 'react';

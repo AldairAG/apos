@@ -1,21 +1,8 @@
-import { api, apiUtils } from '@/api/apiBase';
+import { api, ApiResponseWrapper, apiUtils, JwtResponse } from '@/api/apiBase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AxiosError } from 'axios';
 
 import { AuthRequest } from './auth.types';
-
-interface ApiResponseWrapper<T> {
-	success: boolean;
-	data: T;
-	error: string | null;
-}
-
-export interface JwtResponse {
-	token: string;
-	type: string;
-	id: number;
-	email: string;
-}
 
 const AUTH_BASE_PATH = '/usuarios';
 

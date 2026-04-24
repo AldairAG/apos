@@ -1,5 +1,5 @@
+import { JwtResponse } from '@/api/apiBase';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { JwtResponse } from './auth.service';
 
 interface Usuario {
   id: number;
