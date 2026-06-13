@@ -12,8 +12,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.api.apos.domain.usuario.service.UsuarioService;
 import com.api.apos.helpers.JwtHelper;
-import com.api.apos.service.usuario.UsuarioService;
 
 import java.io.IOException;
 
