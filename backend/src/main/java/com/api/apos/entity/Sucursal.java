@@ -12,7 +12,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import lombok.Data;
 
 @Data
@@ -27,10 +26,6 @@ public class Sucursal {
     private String direccion;
     private String propietario;
     private Boolean activa;
-
-    @JsonIgnore
-    @OneToOne(mappedBy = "sucursal", cascade = CascadeType.ALL)
-    private Inventario inventario;
 
     @JsonIgnore
     @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL)

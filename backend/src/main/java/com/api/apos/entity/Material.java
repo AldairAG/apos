@@ -2,7 +2,6 @@ package com.api.apos.entity;
 
 import com.api.apos.enums.TipoMaterial;
 import com.api.apos.enums.TipoUnidad;
-import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,9 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -38,8 +35,4 @@ public class Material {
     private TipoUnidad tipoUnidad;
     
     private Boolean activo;
-
-    @OneToMany(mappedBy = "material")
-    @JsonBackReference
-    private List<InventarioItem> inventarioItem; // Relación bidireccional con InventarioItem
 }

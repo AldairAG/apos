@@ -11,7 +11,5 @@ public interface SucursalService {
 
     void eliminarSucursal(Long id);
 
-    void asignarUsuarioASucursal(Long sucursalId, Long usuarioId);
-
     List<Sucursal> obtenerSucursalesPorPropietario(Long propietarioId);
 }
