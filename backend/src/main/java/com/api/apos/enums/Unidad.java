@@ -1,6 +1,6 @@
 package com.api.apos.enums;
 
-public enum TipoUnidad {
+public enum Unidad {
     ML,
     GR,
     PZ,

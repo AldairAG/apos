@@ -2,10 +2,14 @@ package com.api.apos.domain.receta;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
-import com.api.apos.domain.sucursal.Sucursal;
-import com.api.apos.enums.TipoReceta;
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.api.apos.domain.detalleReceta.DetalleReceta;
+import com.api.apos.domain.producto.Producto;
+import com.api.apos.domain.usuario.Usuario;
+import com.api.apos.enums.Unidad;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -14,6 +18,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import lombok.Data;
 
 @Data
@@ -25,24 +30,27 @@ public class Receta {
     private Long id;
     
     private String nombre;
+
     private String descripcion;
-    private Integer tiempoPreparacion; // en minutos
-    private Integer porciones;
-    private BigDecimal precioVenta;
-    private Double costoTotal; // Calculado a partir de los ingredientes
-    private Double margenGanancia; // Calculado a partir del costo total y precio de venta
-    private Double gananciaNeta;
-    private Boolean activa;
-    
-    @ManyToOne
-    @JoinColumn(name = "sucursal_id")
-    @JsonBackReference
-    private Sucursal sucursal;
-    
-    // Indica si esta receta es un producto intermedio o final
+
+    private Float rendimiento;
+
     @Enumerated(EnumType.STRING)
-    private TipoReceta tipoReceta;
+    private Unidad unidadMedida;
+
+    private BigDecimal costoTotal;
     
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaActualizacion;
+
+    @OneToMany(mappedBy = "receta", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DetalleReceta> detalles;
+
+    @ManyToOne
+    @JoinColumn(name = "usuario_id")
+    private Usuario usuario;
+
+    @OneToMany(mappedBy = "receta", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Producto> productos;
 }
+    

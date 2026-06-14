@@ -1,5 +1,7 @@
 package com.api.apos.domain.usuario;
 
+import com.api.apos.domain.material.Material;
+import com.api.apos.domain.receta.Receta;
 import com.api.apos.domain.sucursal.Sucursal;
 import com.api.apos.enums.Rol;
 import jakarta.persistence.*;
@@ -34,15 +36,15 @@ public class Usuario implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Rol rol;
 
-    @ManyToMany
-    @JoinTable(
-        name = "usuario_sucursal",
-        joinColumns = @JoinColumn(name = "usuario_id"),
-        inverseJoinColumns = @JoinColumn(name = "sucursal_id")
-    )
-    List<Sucursal> sucursales;
 
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Material> materiales;
 
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Receta> recetas;
+
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Sucursal> sucursales;
 
 
     
