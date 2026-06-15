@@ -2,8 +2,8 @@ package com.api.apos.domain.material;
 
 import java.util.List;
 
-import com.api.apos.domain.detalleReceta.DetalleReceta;
-import com.api.apos.domain.existenciaMaterial.ExistenciaMaterial;
+import com.api.apos.domain.inventario.entity.ExistenciaMaterial;
+import com.api.apos.domain.receta.entity.DetalleReceta;
 import com.api.apos.domain.usuario.Usuario;
 import com.api.apos.enums.Unidad;
 

@@ -1,7 +1,7 @@
 package com.api.apos.domain.usuario;
 
 import com.api.apos.domain.material.Material;
-import com.api.apos.domain.receta.Receta;
+import com.api.apos.domain.receta.entity.Receta;
 import com.api.apos.domain.sucursal.Sucursal;
 import com.api.apos.enums.Rol;
 import jakarta.persistence.*;

@@ -1,6 +1,6 @@
 package com.api.apos.domain.producto;
 
-import com.api.apos.domain.receta.Receta;
+import com.api.apos.domain.receta.entity.Receta;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

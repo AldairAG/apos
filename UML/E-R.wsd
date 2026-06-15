@@ -1,0 +1,443 @@
+@startuml
+
+title Appos - Modelo Completo E-R (POS + Inventario + Restaurante + Caja)
+skinparam backgroundColor #121212
+
+skinparam ArrowColor white
+skinparam ArrowFontColor white
+
+skinparam EntityBorderColor white
+'==================================================
+' EMPRESA
+'==================================================
+
+entity Usuario {
+    * id : Long
+    --
+    nombre : String
+    correo : String
+    activo : Boolean
+}
+
+entity Sucursal {
+    * id : Long
+    --
+    nombre : String
+    direccion : String
+    codigo : String
+    activo : Boolean
+}
+
+'==================================================
+' INVENTARIO
+'==================================================
+
+entity Material {
+    * id : Long
+    --
+    nombre : String
+    unidadMedida : String
+    costoUnitario : Decimal
+    activo : Boolean
+    descripcion : String
+}
+
+entity ExistenciaMaterial {
+    * id : Long
+    --
+    stockActual : Decimal
+    stockMinimo : Decimal
+    stockMaximo : Decimal
+}
+
+'==================================================
+' RECETAS
+'==================================================
+
+entity Receta {
+    * id : Long
+    --
+    nombre : String
+    descripcion : String
+    rendimiento : Decimal
+    unidadRendimiento : String
+    activo : Boolean
+    costoTotal : Decimal
+    tiempoPreparacion : Integer
+    instrucciones : Text
+}
+
+entity RecetaDetalle {
+    * id : Long
+    --
+    cantidad : Decimal
+    unidadMedida : String
+    merma : Decimal
+}
+
+'==================================================
+' PRODUCCION
+'==================================================
+
+entity Produccion {
+    * id : Long
+    --
+    fecha : LocalDateTime
+    cantidadProducida : Decimal
+    costoProduccion : Decimal
+    observaciones : String
+}
+
+'==================================================
+' PRODUCTOS
+'==================================================
+
+entity Categoria {
+    * id : Long
+    --
+    nombre : String
+    descripcion : String
+    activo : Boolean
+}
+
+entity Producto {
+    * id : Long
+    --
+    nombre : String
+    descripcion : String
+    precioVenta : Decimal
+    activo : Boolean
+    disponible : Boolean
+    costo : Decimal
+    margen : Decimal
+}
+
+'==================================================
+' EXTRAS
+'==================================================
+
+entity GrupoExtra {
+    * id : Long
+    --
+    nombre : String
+    descripcion : String
+    activo : Boolean
+}
+
+entity OpcionExtra {
+    * id : Long
+    --
+    nombre : String
+    precio : Decimal
+    activo : Boolean
+}
+
+entity ProductoGrupoExtra {
+    * id : Long
+    --
+    minimo : Integer
+    maximo : Integer
+    obligatorio : Boolean
+}
+
+'==================================================
+' SEGURIDAD
+'==================================================
+
+entity Rol {
+    * id : Long
+    --
+    nombre : String
+    descripcion : String
+}
+entity Empleado {
+    * id : Long
+    --
+    nombre : String
+    correo : String
+    password : String
+    activo : Boolean
+    telefono : String
+    fechaNacimiento : LocalDate
+    fechaContratacion : LocalDate
+    numeroEmpleado : String
+    salario : Decimal
+    turno : String
+}
+
+'==================================================
+' RESTAURANTE
+'==================================================
+
+entity Mesa {
+    * id : Long
+    --
+    nombre : String
+    capacidad : Integer
+    estado : String
+    codigo : String
+    ubicacion : String
+    activa : Boolean
+}
+
+'==================================================
+' ORDENES
+'==================================================
+
+entity Orden {
+    * id : Long
+    --
+    tipo : String
+    estado : String
+    subtotal : Decimal
+    total : Decimal
+    observaciones : String
+    numeroPersonas : Integer
+    descuento : Decimal
+    tiempoPreparacion : Integer
+    horaEntrega : LocalDateTime
+    createdAt : LocalDateTime
+}
+
+entity DetalleOrden {
+    * id : Long
+    --
+    cantidad : Integer
+    precioUnitario : Decimal
+    subtotal : Decimal
+}
+
+entity DetalleOrdenExtra {
+    * id : Long
+    --
+    cantidad : Integer
+    precioUnitario : Decimal
+    subtotal : Decimal
+}
+
+entity HistorialOrden {
+    * id : Long
+    --
+    accion : String
+    fecha : LocalDateTime
+    observacion : String
+}
+
+'==================================================
+' CAJA
+'==================================================
+
+entity Caja {
+    * id : Long
+    --
+    nombre : String
+    activa : Boolean
+    createdAt : LocalDateTime
+    updatedAt : LocalDateTime
+}
+
+entity CorteCaja {
+    * id : Long
+    --
+    fechaInicio : LocalDateTime
+    fechaFin : LocalDateTime
+    montoInicial : Decimal
+    montoFinal : Decimal
+    efectivoCalculado : Decimal
+    efectivoReal : Decimal
+    diferencia : Decimal
+    observaciones : String
+    cerrado : Boolean
+    tarjetas : Decimal
+    transferencias : Decimal
+    totalVentas : Decimal
+    totalGastos : Decimal
+    numeroOrdenes : Integer
+    createdAt : LocalDateTime
+    updatedAt : LocalDateTime
+}
+
+entity MovimientoCaja {
+    * id : Long
+    --
+    fecha : LocalDateTime
+    tipo : String
+    concepto : String
+    monto : Decimal
+    metodoPago : String
+    referencia : String
+    comprobante : String
+    aprobado : Boolean
+    autorizadoPor : Long
+    createdAt : LocalDateTime
+}
+
+'==================================================
+' GASTOS
+'==================================================
+
+entity Gasto {
+    * id : Long
+    --
+    fecha : LocalDateTime
+    concepto : String
+    descripcion : String
+    monto : Decimal
+    tipo : String
+    createdAt : LocalDateTime
+}
+
+'==================================================
+' COMPRAS INVENTARIO
+'==================================================
+
+entity CompraInventario {
+    * id : Long
+    --
+    fecha : LocalDateTime
+    total : Decimal
+    observaciones : String
+    estado : String
+    fechaRecepcion : LocalDateTime
+    createdAt : LocalDateTime
+}
+
+entity CompraDetalle {
+    * id : Long
+    --
+    cantidad : Decimal
+    costoUnitario : Decimal
+    subtotal : Decimal
+    createdAt : LocalDateTime
+}
+
+'==================================================
+' RELACIONES EMPRESA
+'==================================================
+
+Usuario "1" -- "N" Sucursal
+
+Usuario "1" -- "N" Material
+Usuario "1" -- "N" Receta
+Usuario "1" -- "N" Categoria
+Usuario "1" -- "N" GrupoExtra
+
+'==================================================
+' INVENTARIO
+'==================================================
+
+Sucursal "1" -- "N" ExistenciaMaterial
+Material "1" -- "N" ExistenciaMaterial
+
+'==================================================
+' RECETAS
+'==================================================
+
+Receta "1" -- "N" RecetaDetalle
+Material "1" -- "N" RecetaDetalle
+
+'==================================================
+' PRODUCCION
+'==================================================
+
+Receta "1" -- "N" Produccion
+
+Empleado "1" -- "N" Produccion
+
+Material "1" -- "N" Produccion : materialProducido
+
+'==================================================
+' PRODUCTOS
+'==================================================
+
+Categoria "1" -- "N" Producto
+Receta "0..1" -- "N" Producto
+
+'==================================================
+' EXTRAS
+'==================================================
+
+GrupoExtra "1" -- "N" OpcionExtra
+
+Material "0..1" -- "N" OpcionExtra
+
+Producto "1" -- "N" ProductoGrupoExtra
+GrupoExtra "1" -- "N" ProductoGrupoExtra
+
+'==================================================
+' EMPLEADOS
+'==================================================
+
+Sucursal "1" -- "N" Empleado
+
+Rol "1" -- "N" Empleado
+
+'==================================================
+' MESAS
+'==================================================
+
+Sucursal "1" -- "N" Mesa
+
+'==================================================
+' ORDENES
+'==================================================
+
+Sucursal "1" -- "N" Orden
+
+Empleado "1" -- "N" Orden : creadoPor
+
+Mesa "0..1" -- "N" Orden
+
+Orden "1" -- "N" DetalleOrden
+
+Producto "1" -- "N" DetalleOrden
+
+DetalleOrden "1" -- "N" DetalleOrdenExtra
+
+OpcionExtra "1" -- "N" DetalleOrdenExtra
+
+Orden "1" -- "N" HistorialOrden
+
+Empleado "1" -- "N" HistorialOrden : registradoPor
+
+'==================================================
+' CAJA
+'==================================================
+
+Sucursal "1" -- "N" Caja
+
+Caja "1" -- "N" CorteCaja
+
+Caja "1" -- "N" MovimientoCaja
+
+Empleado "1" -- "N" CorteCaja : realizadoPor
+
+Empleado "1" -- "N" MovimientoCaja : registradoPor
+
+Orden "1" -- "0..1" MovimientoCaja
+
+'==================================================
+' GASTOS
+'==================================================
+
+Gasto "1" -- "1" MovimientoCaja
+
+Empleado "1" -- "N" Gasto : registradoPor
+
+Sucursal "1" -- "N" Gasto
+
+'==================================================
+' COMPRAS INVENTARIO
+'==================================================
+
+CompraInventario "1" -- "N" CompraDetalle
+
+Material "1" -- "N" CompraDetalle
+
+Empleado "1" -- "N" CompraInventario : registradoPor
+
+CompraInventario "1" -- "1" MovimientoCaja
+
+Sucursal "1" -- "N" CompraInventario
+
+@enduml
