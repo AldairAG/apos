@@ -1,4 +1,4 @@
-@startuml
+@startuml DiagramaER
 
 title Appos - Modelo Completo E-R (POS + Inventario + Restaurante + Caja)
 skinparam backgroundColor #121212

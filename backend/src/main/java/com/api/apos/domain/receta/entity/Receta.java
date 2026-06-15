@@ -29,18 +29,25 @@ public class Receta {
     private Long id;
     
     private String nombre;
-
+    private String codigo;
     private String descripcion;
+    private String instrucciones;
+    private String imagen;
 
-    private Float rendimiento;
+    private BigDecimal rendimiento;
 
     @Enumerated(EnumType.STRING)
-    private Unidad unidadMedida;
+    private Unidad unidadRendimiento;
 
     private BigDecimal costoTotal;
+    private Integer tiempoPreparacion;
+    private Boolean activo;
     
     private LocalDateTime fechaCreacion;
-    private LocalDateTime fechaActualizacion;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private Long createdBy;
+    private Long updatedBy;
 
     @OneToMany(mappedBy = "receta", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleReceta> detalles;
@@ -51,5 +58,7 @@ public class Receta {
 
     @OneToMany(mappedBy = "receta", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Producto> productos;
-}
     
+    @OneToMany(mappedBy = "receta", cascade = CascadeType.ALL)
+    private List<com.api.apos.domain.produccion.entity.Produccion> producciones;
+}

@@ -1,0 +1,329 @@
+@startuml CasosDeUso
+
+title Sistema POS - Casos de Uso Completo
+
+left to right direction
+skinparam packageStyle rectangle
+
+' ==================================================
+' ACTORES
+' ==================================================
+
+actor "Administrador\nSistema" as Admin
+actor "Gerente" as Gerente
+actor "Cajero" as Cajero
+actor "Mesero" as Mesero
+actor "Cocinero" as Cocinero
+actor "Almacenista" as Almacenista
+
+' ==================================================
+' MÓDULO: GESTIÓN DE USUARIOS Y PERMISOS
+' ==================================================
+
+package "Gestión de Usuarios" {
+    usecase "Crear Usuario" as UC_CrearUsuario
+    usecase "Actualizar Usuario" as UC_ActualizarUsuario
+    usecase "Eliminar Usuario" as UC_EliminarUsuario
+    usecase "Consultar Usuarios" as UC_ConsultarUsuarios
+}
+
+package "Gestión de Empleados" {
+    usecase "Crear Empleado" as UC_CrearEmpleado
+    usecase "Actualizar Empleado" as UC_ActualizarEmpleado
+    usecase "Consultar Empleados" as UC_ConsultarEmpleados
+    usecase "Eliminar Empleado" as UC_EliminarEmpleado
+}
+
+package "Gestión de Roles y Permisos" {
+    usecase "Crear Rol" as UC_CrearRol
+    usecase "Asignar Permisos" as UC_AsignarPermisos
+    usecase "Consultar Roles" as UC_ConsultarRoles
+    usecase "Gestionar Permisos" as UC_GestionarPermisos
+}
+
+' ==================================================
+' MÓDULO: CONFIGURACIÓN
+' ==================================================
+
+package "Gestión de Sucursales" {
+    usecase "Crear Sucursal" as UC_CrearSucursal
+    usecase "Actualizar Sucursal" as UC_ActualizarSucursal
+    usecase "Consultar Sucursales" as UC_ConsultarSucursales
+}
+
+package "Gestión de Mesas" {
+    usecase "Crear Mesa" as UC_CrearMesa
+    usecase "Actualizar Mesa" as UC_ActualizarMesa
+    usecase "Cambiar Estado Mesa" as UC_CambiarEstadoMesa
+    usecase "Consultar Mesas Disponibles" as UC_ConsultarMesasDisponibles
+}
+
+package "Gestión de Categorías" {
+    usecase "Crear Categoría" as UC_CrearCategoria
+    usecase "Actualizar Categoría" as UC_ActualizarCategoria
+    usecase "Consultar Categorías" as UC_ConsultarCategorias
+}
+
+' ==================================================
+' MÓDULO: PRODUCTOS Y RECETAS
+' ==================================================
+
+package "Gestión de Productos" {
+    usecase "Crear Producto" as UC_CrearProducto
+    usecase "Actualizar Producto" as UC_ActualizarProducto
+    usecase "Consultar Productos" as UC_ConsultarProductos
+    usecase "Configurar Extras" as UC_ConfigurarExtras
+}
+
+package "Gestión de Extras" {
+    usecase "Crear Grupo Extra" as UC_CrearGrupoExtra
+    usecase "Crear Opción Extra" as UC_CrearOpcionExtra
+    usecase "Asignar Extras a Producto" as UC_AsignarExtrasProducto
+    usecase "Consultar Extras" as UC_ConsultarExtras
+}
+
+package "Gestión de Recetas" {
+    usecase "Crear Receta" as UC_CrearReceta
+    usecase "Actualizar Receta" as UC_ActualizarReceta
+    usecase "Consultar Recetas" as UC_ConsultarRecetas
+    usecase "Eliminar Receta" as UC_EliminarReceta
+}
+
+' ==================================================
+' MÓDULO: INVENTARIO
+' ==================================================
+
+package "Gestión de Materiales" {
+    usecase "Crear Material" as UC_CrearMaterial
+    usecase "Actualizar Material" as UC_ActualizarMaterial
+    usecase "Consultar Materiales" as UC_ConsultarMateriales
+}
+
+package "Gestión de Inventario" {
+    usecase "Consultar Existencias" as UC_ConsultarExistencias
+    usecase "Actualizar Stock" as UC_ActualizarStock
+    usecase "Consultar Alertas Stock" as UC_ConsultarAlertasStock
+}
+
+package "Compras de Inventario" {
+    usecase "Crear Compra" as UC_CrearCompra
+    usecase "Recibir Compra" as UC_RecibirCompra
+    usecase "Consultar Compras" as UC_ConsultarCompras
+    usecase "Cancelar Compra" as UC_CancelarCompra
+}
+
+package "Producción" {
+    usecase "Registrar Producción" as UC_RegistrarProduccion
+    usecase "Consultar Producciones" as UC_ConsultarProducciones
+    usecase "Actualizar Producción" as UC_ActualizarProduccion
+}
+
+' ==================================================
+' MÓDULO: OPERACIONES (PUNTO DE VENTA)
+' ==================================================
+
+package "Gestión de Órdenes" {
+    usecase "Crear Orden" as UC_CrearOrden
+    usecase "Agregar Productos a Orden" as UC_AgregarProductosOrden
+    usecase "Agregar Extras a Producto" as UC_AgregarExtrasOrden
+    usecase "Consultar Órdenes" as UC_ConsultarOrdenes
+    usecase "Cambiar Estado Orden" as UC_CambiarEstadoOrden
+    usecase "Cancelar Orden" as UC_CancelarOrden
+    usecase "Ver Historial Orden" as UC_VerHistorialOrden
+}
+
+' ==================================================
+' MÓDULO: CAJA
+' ==================================================
+
+package "Gestión de Cajas" {
+    usecase "Crear Caja" as UC_CrearCaja
+    usecase "Activar/Desactivar Caja" as UC_ActivarCaja
+    usecase "Consultar Cajas" as UC_ConsultarCajas
+}
+
+package "Cortes de Caja" {
+    usecase "Abrir Corte Caja" as UC_AbrirCorteCaja
+    usecase "Cerrar Corte Caja" as UC_CerrarCorteCaja
+    usecase "Consultar Cortes" as UC_ConsultarCortes
+    usecase "Ver Corte Activo" as UC_VerCorteActivo
+}
+
+package "Movimientos de Caja" {
+    usecase "Registrar Movimiento" as UC_RegistrarMovimiento
+    usecase "Aprobar Movimiento" as UC_AprobarMovimiento
+    usecase "Consultar Movimientos" as UC_ConsultarMovimientos
+}
+
+package "Gestión de Gastos" {
+    usecase "Registrar Gasto" as UC_RegistrarGasto
+    usecase "Consultar Gastos" as UC_ConsultarGastos
+    usecase "Actualizar Gasto" as UC_ActualizarGasto
+}
+
+' ==================================================
+' MÓDULO: REPORTES
+' ==================================================
+
+package "Reportes" {
+    usecase "Reporte de Ventas" as UC_ReporteVentas
+    usecase "Reporte de Inventario" as UC_ReporteInventario
+    usecase "Reporte de Gastos" as UC_ReporteGastos
+    usecase "Reporte de Producción" as UC_ReporteProduccion
+    usecase "Reporte de Cortes" as UC_ReporteCortes
+}
+
+' ==================================================
+' RELACIONES ADMINISTRADOR
+' ==================================================
+
+Admin --> UC_CrearUsuario
+Admin --> UC_ActualizarUsuario
+Admin --> UC_EliminarUsuario
+Admin --> UC_ConsultarUsuarios
+
+Admin --> UC_CrearEmpleado
+Admin --> UC_ActualizarEmpleado
+Admin --> UC_ConsultarEmpleados
+Admin --> UC_EliminarEmpleado
+
+Admin --> UC_CrearRol
+Admin --> UC_AsignarPermisos
+Admin --> UC_ConsultarRoles
+Admin --> UC_GestionarPermisos
+
+Admin --> UC_CrearSucursal
+Admin --> UC_ActualizarSucursal
+Admin --> UC_ConsultarSucursales
+
+' ==================================================
+' RELACIONES GERENTE
+' ==================================================
+
+Gerente --> UC_ConsultarEmpleados
+
+Gerente --> UC_CrearMesa
+Gerente --> UC_ActualizarMesa
+Gerente --> UC_ConsultarMesasDisponibles
+
+Gerente --> UC_CrearCategoria
+Gerente --> UC_ActualizarCategoria
+Gerente --> UC_ConsultarCategorias
+
+Gerente --> UC_CrearProducto
+Gerente --> UC_ActualizarProducto
+Gerente --> UC_ConsultarProductos
+Gerente --> UC_ConfigurarExtras
+
+Gerente --> UC_CrearGrupoExtra
+Gerente --> UC_CrearOpcionExtra
+Gerente --> UC_AsignarExtrasProducto
+Gerente --> UC_ConsultarExtras
+
+Gerente --> UC_CrearReceta
+Gerente --> UC_ActualizarReceta
+Gerente --> UC_ConsultarRecetas
+Gerente --> UC_EliminarReceta
+
+Gerente --> UC_CrearMaterial
+Gerente --> UC_ActualizarMaterial
+Gerente --> UC_ConsultarMateriales
+
+Gerente --> UC_ConsultarExistencias
+Gerente --> UC_ConsultarAlertasStock
+
+Gerente --> UC_CrearCaja
+Gerente --> UC_ActivarCaja
+Gerente --> UC_ConsultarCajas
+
+Gerente --> UC_ConsultarCortes
+Gerente --> UC_ConsultarMovimientos
+Gerente --> UC_AprobarMovimiento
+
+Gerente --> UC_ConsultarGastos
+
+Gerente --> UC_ReporteVentas
+Gerente --> UC_ReporteInventario
+Gerente --> UC_ReporteGastos
+Gerente --> UC_ReporteProduccion
+Gerente --> UC_ReporteCortes
+
+' ==================================================
+' RELACIONES CAJERO
+' ==================================================
+
+Cajero --> UC_AbrirCorteCaja
+Cajero --> UC_CerrarCorteCaja
+Cajero --> UC_VerCorteActivo
+
+Cajero --> UC_RegistrarMovimiento
+Cajero --> UC_ConsultarMovimientos
+
+Cajero --> UC_RegistrarGasto
+
+Cajero --> UC_CrearOrden
+Cajero --> UC_AgregarProductosOrden
+Cajero --> UC_AgregarExtrasOrden
+Cajero --> UC_ConsultarOrdenes
+Cajero --> UC_CambiarEstadoOrden
+Cajero --> UC_CancelarOrden
+
+' ==================================================
+' RELACIONES MESERO
+' ==================================================
+
+Mesero --> UC_ConsultarMesasDisponibles
+Mesero --> UC_CambiarEstadoMesa
+
+Mesero --> UC_CrearOrden
+Mesero --> UC_AgregarProductosOrden
+Mesero --> UC_AgregarExtrasOrden
+Mesero --> UC_ConsultarOrdenes
+Mesero --> UC_CambiarEstadoOrden
+Mesero --> UC_VerHistorialOrden
+
+Mesero --> UC_ConsultarProductos
+Mesero --> UC_ConsultarExtras
+
+' ==================================================
+' RELACIONES COCINERO
+' ==================================================
+
+Cocinero --> UC_ConsultarOrdenes
+Cocinero --> UC_CambiarEstadoOrden
+
+Cocinero --> UC_RegistrarProduccion
+Cocinero --> UC_ConsultarProducciones
+
+Cocinero --> UC_ConsultarRecetas
+Cocinero --> UC_ConsultarMateriales
+
+' ==================================================
+' RELACIONES ALMACENISTA
+' ==================================================
+
+Almacenista --> UC_ConsultarMateriales
+Almacenista --> UC_ConsultarExistencias
+Almacenista --> UC_ActualizarStock
+Almacenista --> UC_ConsultarAlertasStock
+
+Almacenista --> UC_CrearCompra
+Almacenista --> UC_RecibirCompra
+Almacenista --> UC_ConsultarCompras
+Almacenista --> UC_CancelarCompra
+
+Almacenista --> UC_RegistrarProduccion
+Almacenista --> UC_ConsultarProducciones
+Almacenista --> UC_ActualizarProduccion
+
+' ==================================================
+' RELACIONES EXTEND/INCLUDE
+' ==================================================
+
+UC_CrearOrden ..> UC_AgregarProductosOrden : <<include>>
+UC_AgregarProductosOrden ..> UC_AgregarExtrasOrden : <<extend>>
+UC_CerrarCorteCaja ..> UC_ConsultarMovimientos : <<include>>
+UC_RecibirCompra ..> UC_ActualizarStock : <<include>>
+UC_RegistrarProduccion ..> UC_ActualizarStock : <<include>>
+
+@enduml

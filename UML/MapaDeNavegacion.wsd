@@ -1,0 +1,269 @@
+@startuml MapaNavegacion
+
+title Sistema POS - Mapa de Navegación de Usuario
+
+!define SCREEN_COLOR #E8F5E9
+!define MODULE_COLOR #B2DFDB
+!define ADMIN_COLOR #FFE0B2
+!define OPERATION_COLOR #BBDEFB
+
+skinparam rectangle {
+    BackgroundColor SCREEN_COLOR
+    BorderColor #424242
+    FontSize 11
+}
+
+' ==================================================
+' PANTALLA DE INICIO
+' ==================================================
+
+rectangle "Login" as Login #FFF9C4 {
+}
+
+' ==================================================
+' DASHBOARD PRINCIPAL
+' ==================================================
+
+rectangle "Dashboard Principal" as Dashboard #C5CAE9 {
+    rectangle "- Resumen de Ventas del Día\n- Órdenes Activas\n- Estado de Mesas\n- Alertas de Inventario\n- Estado de Cajas" as DashboardContent
+}
+
+Login --> Dashboard : "Autenticación"
+
+' ==================================================
+' MÓDULO ADMINISTRACIÓN
+' ==================================================
+
+package "Administración del Sistema" #FFE0B2 {
+    
+    rectangle "Gestión de Usuarios" as PantallaUsuarios {
+        rectangle "- Listado de Usuarios\n- Crear/Editar Usuario\n- Asignar Roles" as ContentUsuarios
+    }
+    
+    rectangle "Gestión de Empleados" as PantallaEmpleados {
+        rectangle "- Listado de Empleados\n- Crear/Editar Empleado\n- Asignar a Sucursal\n- Asignar Rol y Turno" as ContentEmpleados
+    }
+    
+    rectangle "Roles y Permisos" as PantallaRoles {
+        rectangle "- Listado de Roles\n- Crear/Editar Rol\n- Asignar Permisos\n- Gestión de Permisos" as ContentRoles
+    }
+    
+    rectangle "Gestión de Sucursales" as PantallaSucursales {
+        rectangle "- Listado de Sucursales\n- Crear/Editar Sucursal\n- Configuración (horarios, ubicación)" as ContentSucursales
+    }
+}
+
+Dashboard --> PantallaUsuarios
+Dashboard --> PantallaEmpleados
+Dashboard --> PantallaRoles
+Dashboard --> PantallaSucursales
+
+' ==================================================
+' MÓDULO CONFIGURACIÓN
+' ==================================================
+
+package "Configuración" #B2DFDB {
+    
+    rectangle "Gestión de Mesas" as PantallaMesas {
+        rectangle "- Listado de Mesas\n- Crear/Editar Mesa\n- Cambiar Estado\n- Ver Mesas Disponibles" as ContentMesas
+    }
+    
+    rectangle "Gestión de Categorías" as PantallaCategorias {
+        rectangle "- Listado de Categorías\n- Crear/Editar Categoría\n- Ordenar Categorías" as ContentCategorias
+    }
+    
+    rectangle "Gestión de Cajas" as PantallaCajas {
+        rectangle "- Listado de Cajas\n- Crear/Editar Caja\n- Activar/Desactivar" as ContentCajas
+    }
+}
+
+Dashboard --> PantallaMesas
+Dashboard --> PantallaCategorias
+Dashboard --> PantallaCajas
+
+' ==================================================
+' MÓDULO PRODUCTOS Y MENÚ
+' ==================================================
+
+package "Productos y Menú" #B2DFDB {
+    
+    rectangle "Gestión de Productos" as PantallaProductos {
+        rectangle "- Listado de Productos\n- Crear/Editar Producto\n- Asignar Categoría\n- Configurar Precio y Costo\n- Asignar Receta" as ContentProductos
+    }
+    
+    rectangle "Configurar Extras" as PantallaExtras {
+        rectangle "- Grupos de Extras\n- Opciones de Extras\n- Asignar Extras a Productos" as ContentExtras
+    }
+    
+    rectangle "Gestión de Recetas" as PantallaRecetas {
+        rectangle "- Listado de Recetas\n- Crear/Editar Receta\n- Agregar Ingredientes (Materiales)\n- Calcular Costo Total" as ContentRecetas
+    }
+}
+
+Dashboard --> PantallaProductos
+PantallaProductos --> PantallaExtras : "Configurar Extras"
+PantallaProductos --> PantallaRecetas : "Asignar/Ver Receta"
+
+' ==================================================
+' MÓDULO INVENTARIO
+' ==================================================
+
+package "Inventario" #B2DFDB {
+    
+    rectangle "Gestión de Materiales" as PantallaMateriales {
+        rectangle "- Listado de Materiales\n- Crear/Editar Material\n- Ver Proveedores\n- Configurar Stock Mín/Máx" as ContentMateriales
+    }
+    
+    rectangle "Control de Existencias" as PantallaExistencias {
+        rectangle "- Ver Existencias por Sucursal\n- Alertas de Stock Bajo\n- Actualizar Stock Manual\n- Ver Historial de Movimientos" as ContentExistencias
+    }
+    
+    rectangle "Compras" as PantallaCompras {
+        rectangle "- Listado de Compras\n- Nueva Compra\n- Recibir Compra\n- Ver Detalles\n- Cancelar Compra" as ContentCompras
+    }
+    
+    rectangle "Producción" as PantallaProduccion {
+        rectangle "- Registrar Producción\n- Listado de Producciones\n- Ver Producciones por Receta\n- Calcular Costo de Producción" as ContentProduccion
+    }
+}
+
+Dashboard --> PantallaMateriales
+Dashboard --> PantallaExistencias
+PantallaMateriales --> PantallaExistencias : "Ver Existencias"
+PantallaExistencias --> PantallaCompras : "Nueva Compra"
+Dashboard --> PantallaCompras
+Dashboard --> PantallaProduccion
+PantallaRecetas --> PantallaProduccion : "Producir"
+
+' ==================================================
+' MÓDULO OPERACIONES (POS)
+' ==================================================
+
+package "Punto de Venta" #BBDEFB {
+    
+    rectangle "Vista de Mesas" as PantallaVistaMesas {
+        rectangle "- Mapa de Mesas\n- Estado (Libre/Ocupada/Reservada)\n- Ver Orden Actual\n- Asignar/Liberar Mesa" as ContentVistaMesas
+    }
+    
+    rectangle "Crear Orden" as PantallaCrearOrden {
+        rectangle "- Seleccionar Tipo (Mesa/Llevar/Delivery)\n- Seleccionar Mesa (si aplica)\n- Agregar Productos\n- Configurar Extras\n- Ver Total\n- Aplicar Descuento" as ContentCrearOrden
+    }
+    
+    rectangle "Gestión de Órdenes" as PantallaOrdenes {
+        rectangle "- Listado de Órdenes\n- Filtrar por Estado/Tipo\n- Ver Detalle de Orden\n- Cambiar Estado\n- Cancelar Orden\n- Ver Historial" as ContentOrdenes
+    }
+    
+    rectangle "Detalle de Orden" as PantallaDetalleOrden {
+        rectangle "- Productos y Extras\n- Estado de Preparación\n- Información del Cliente\n- Historial de Cambios\n- Editar Orden\n- Procesar Pago" as ContentDetalleOrden
+    }
+    
+    rectangle "Pantalla de Cocina" as PantallaCocina {
+        rectangle "- Órdenes Pendientes\n- Órdenes en Preparación\n- Marcar como Lista\n- Ver Receta del Producto\n- Tiempo de Preparación" as ContentCocina
+    }
+}
+
+Dashboard --> PantallaVistaMesas
+PantallaVistaMesas --> PantallaCrearOrden : "Nueva Orden"
+Dashboard --> PantallaCrearOrden
+PantallaCrearOrden --> PantallaDetalleOrden : "Orden Creada"
+Dashboard --> PantallaOrdenes
+PantallaOrdenes --> PantallaDetalleOrden : "Ver Detalle"
+Dashboard --> PantallaCocina
+
+' ==================================================
+' MÓDULO CAJA
+' ==================================================
+
+package "Gestión de Caja" #BBDEFB {
+    
+    rectangle "Apertura de Caja" as PantallaAperturaCaja {
+        rectangle "- Seleccionar Caja\n- Ingresar Monto Inicial\n- Abrir Corte" as ContentAperturaCaja
+    }
+    
+    rectangle "Punto de Venta / Cobro" as PantallaPOS {
+        rectangle "- Ver Orden a Cobrar\n- Seleccionar Método de Pago\n- Calcular Cambio\n- Agregar Propina\n- Imprimir Ticket\n- Registrar Movimiento" as ContentPOS
+    }
+    
+    rectangle "Movimientos de Caja" as PantallaMovimientos {
+        rectangle "- Listado de Movimientos\n- Registrar Ingreso/Egreso\n- Filtrar por Tipo/Método\n- Ver Comprobantes\n- Aprobar Movimientos" as ContentMovimientos
+    }
+    
+    rectangle "Cierre de Caja" as PantallaCierreCaja {
+        rectangle "- Ver Resumen del Corte\n- Ingresar Efectivo Real\n- Ver Diferencia\n- Desglose por Método de Pago\n- Total de Órdenes\n- Cerrar Corte" as ContentCierreCaja
+    }
+    
+    rectangle "Gestión de Gastos" as PantallaGastos {
+        rectangle "- Listado de Gastos\n- Registrar Gasto\n- Filtrar por Tipo/Fecha\n- Ver Comprobantes" as ContentGastos
+    }
+}
+
+Dashboard --> PantallaAperturaCaja : "Iniciar Turno"
+PantallaAperturaCaja --> PantallaPOS : "Caja Abierta"
+PantallaDetalleOrden --> PantallaPOS : "Cobrar"
+Dashboard --> PantallaPOS
+Dashboard --> PantallaMovimientos
+Dashboard --> PantallaGastos
+Dashboard --> PantallaCierreCaja : "Cerrar Turno"
+PantallaMovimientos --> PantallaGastos : "Registrar Gasto"
+
+' ==================================================
+' MÓDULO REPORTES
+' ==================================================
+
+package "Reportes y Análisis" {
+    
+    rectangle "Reporte de Ventas" as PantallaReporteVentas {
+        rectangle "- Ventas por Período\n- Ventas por Producto\n- Ventas por Categoría\n- Ventas por Empleado\n- Gráficas y Estadísticas" as ContentReporteVentas
+    }
+    
+    rectangle "Reporte de Inventario" as PantallaReporteInventario {
+        rectangle "- Existencias Actuales\n- Materiales Bajo Stock\n- Historial de Movimientos\n- Compras Realizadas\n- Producciones Registradas" as ContentReporteInventario
+    }
+    
+    rectangle "Reporte de Gastos" as PantallaReporteGastos {
+        rectangle "- Gastos por Período\n- Gastos por Tipo\n- Gastos por Sucursal\n- Comparativa Mensual" as ContentReporteGastos
+    }
+    
+    rectangle "Reporte de Cortes" as PantallaReporteCortes {
+        rectangle "- Cortes por Período\n- Diferencias en Caja\n- Movimientos por Método\n- Análisis de Cajeros" as ContentReporteCortes
+    }
+}
+
+Dashboard --> PantallaReporteVentas
+Dashboard --> PantallaReporteInventario
+Dashboard --> PantallaReporteGastos
+Dashboard --> PantallaReporteCortes
+
+' ==================================================
+' PERFIL Y CONFIGURACIÓN PERSONAL
+' ==================================================
+
+rectangle "Perfil de Usuario" as PantallaPerfil {
+    rectangle "- Ver/Editar Información Personal\n- Cambiar Contraseña\n- Ver Permisos Asignados\n- Configuración de Preferencias" as ContentPerfil
+}
+
+Dashboard --> PantallaPerfil
+
+note right of Dashboard
+  <b>NAVEGACIÓN PRINCIPAL</b>
+  
+  Acceso rápido a:
+  • Crear Orden
+  • Vista de Mesas
+  • Órdenes Activas
+  • Abrir/Cerrar Caja
+  • Alertas del Sistema
+end note
+
+note bottom of Login
+  <b>ROLES DEL SISTEMA:</b>
+  
+  • <b>Admin:</b> Acceso total
+  • <b>Gerente:</b> Config. + Reportes
+  • <b>Cajero:</b> POS + Caja
+  • <b>Mesero:</b> Órdenes + Mesas
+  • <b>Cocinero:</b> Cocina + Producción
+  • <b>Almacenista:</b> Inventario
+end note
+
+@enduml

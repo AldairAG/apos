@@ -19,11 +19,18 @@ public class ExistenciaMaterial {
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
     private Long id;
 
-    private Float stockActual;
-    private Float stockMinimo;
-    private Float stockMaximo;
+    private java.math.BigDecimal stockActual;
+    private java.math.BigDecimal stockMinimo;
+    private java.math.BigDecimal stockMaximo;
+    
+    private String ubicacion;
+    private String lote;
+    private java.time.LocalDate fechaVencimiento;
+    private Boolean alertaBajoStock;
 
-    private LocalDateTime fechaUltimaActualizacion;
+    private LocalDateTime ultimaActualizacion;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     @ManyToOne
     @JoinColumn(name = "material_id")

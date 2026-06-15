@@ -33,14 +33,23 @@ public class Material {
     private Long id;
 
     private String nombre;
+    private String codigo;
+    private String descripcion;
+    private String proveedor;
+    private String categoriaInventario;
 
     @Enumerated(EnumType.STRING)
-    
     private Unidad unidadMedida;
     
-    private Float costoUnitario;
-
-    private String descripcion;
+    private java.math.BigDecimal costoUnitario;
+    private Boolean activo;
+    private Boolean perecedero;
+    private Integer diasVencimiento;
+    
+    private java.time.LocalDateTime createdAt;
+    private java.time.LocalDateTime updatedAt;
+    private Long createdBy;
+    private Long updatedBy;
 
 
     @ManyToOne
@@ -52,6 +61,15 @@ public class Material {
 
     @OneToMany(mappedBy = "material", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleReceta> detallesReceta;
+    
+    @OneToMany(mappedBy = "material", cascade = CascadeType.ALL)
+    private List<com.api.apos.domain.extra.entity.OpcionExtra> opcionesExtra;
+    
+    @OneToMany(mappedBy = "material", cascade = CascadeType.ALL)
+    private List<com.api.apos.domain.compra.entity.CompraDetalle> compraDetalles;
+    
+    @OneToMany(mappedBy = "materialProducido", cascade = CascadeType.ALL)
+    private List<com.api.apos.domain.produccion.entity.Produccion> producciones;
 
 
 }
