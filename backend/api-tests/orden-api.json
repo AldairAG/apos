@@ -1,0 +1,445 @@
+{
+  "info": {
+    "name": "Orden API Tests",
+    "description": "Pruebas para endpoints de Orden y DetalleOrden",
+    "baseUrl": "http://localhost:8080/api"
+  },
+  "ordenes": {
+    "baseUrl": "/ordenes",
+    "requests": [
+      {
+        "name": "Crear Orden",
+        "method": "POST",
+        "endpoint": "/",
+        "body": {
+          "tipo": "COMER_AQUI",
+          "numeroPersonas": 2,
+          "observaciones": "Sin cebolla",
+          "nombreCliente": "Juan Pérez",
+          "telefonoCliente": "5551234567",
+          "sucursal": {
+            "id": 1
+          },
+          "mesa": {
+            "id": 1
+          },
+          "empleado": {
+            "id": 1
+          }
+        }
+      },
+      {
+        "name": "Actualizar Orden",
+        "method": "PUT",
+        "endpoint": "/{id}",
+        "params": {
+          "id": 1
+        },
+        "body": {
+          "tipo": "PARA_LLEVAR",
+          "numeroPersonas": 3,
+          "observaciones": "Sin cebolla, extra salsa",
+          "nombreCliente": "Juan Pérez García",
+          "telefonoCliente": "5551234567",
+          "updatedBy": 1
+        }
+      },
+      {
+        "name": "Cancelar Orden",
+        "method": "PATCH",
+        "endpoint": "/{id}/cancelar",
+        "params": {
+          "id": 1
+        },
+        "queryParams": {
+          "motivo": "Cliente canceló el pedido"
+        }
+      },
+      {
+        "name": "Obtener Orden por ID",
+        "method": "GET",
+        "endpoint": "/{id}",
+        "params": {
+          "id": 1
+        }
+      },
+      {
+        "name": "Obtener Orden por Folio",
+        "method": "GET",
+        "endpoint": "/folio/{folio}",
+        "params": {
+          "folio": "SUC1-20260616-00001"
+        }
+      },
+      {
+        "name": "Obtener Órdenes por Sucursal",
+        "method": "GET",
+        "endpoint": "/sucursal/{idSucursal}",
+        "params": {
+          "idSucursal": 1
+        }
+      },
+      {
+        "name": "Obtener Órdenes por Estado",
+        "method": "GET",
+        "endpoint": "/sucursal/{idSucursal}/estado/{estado}",
+        "params": {
+          "idSucursal": 1,
+          "estado": "PENDIENTE"
+        },
+        "note": "Estados disponibles: PENDIENTE, EN_PREPARACION, LISTA, ENTREGADA, CANCELADA"
+      },
+      {
+        "name": "Obtener Órdenes por Tipo",
+        "method": "GET",
+        "endpoint": "/sucursal/{idSucursal}/tipo/{tipo}",
+        "params": {
+          "idSucursal": 1,
+          "tipo": "COMER_AQUI"
+        },
+        "note": "Tipos: COMER_AQUI, PARA_LLEVAR, DOMICILIO"
+      },
+      {
+        "name": "Obtener Órdenes por Mesa",
+        "method": "GET",
+        "endpoint": "/mesa/{idMesa}",
+        "params": {
+          "idMesa": 1
+        }
+      },
+      {
+        "name": "Obtener Órdenes del Día",
+        "method": "GET",
+        "endpoint": "/sucursal/{idSucursal}/dia",
+        "params": {
+          "idSucursal": 1
+        },
+        "queryParams": {
+          "fecha": "2026-06-16"
+        }
+      },
+      {
+        "name": "Obtener Órdenes en Rango de Fechas",
+        "method": "GET",
+        "endpoint": "/sucursal/{idSucursal}/rango",
+        "params": {
+          "idSucursal": 1
+        },
+        "queryParams": {
+          "inicio": "2026-06-01T00:00:00",
+          "fin": "2026-06-30T23:59:59"
+        }
+      },
+      {
+        "name": "Obtener Órdenes Abiertas (Monitor Cocina)",
+        "method": "GET",
+        "endpoint": "/sucursal/{idSucursal}/abiertas",
+        "params": {
+          "idSucursal": 1
+        }
+      },
+      {
+        "name": "Obtener Órdenes Activas",
+        "method": "GET",
+        "endpoint": "/sucursal/{idSucursal}/activas",
+        "params": {
+          "idSucursal": 1
+        }
+      },
+      {
+        "name": "Cambiar Estado de Orden",
+        "method": "PUT",
+        "endpoint": "/{id}/estado",
+        "params": {
+          "id": 1
+        },
+        "queryParams": {
+          "estado": "EN_PREPARACION",
+          "idEmpleado": 1
+        }
+      },
+      {
+        "name": "Aplicar Descuento",
+        "method": "PUT",
+        "endpoint": "/{id}/descuento",
+        "params": {
+          "id": 1
+        },
+        "queryParams": {
+          "descuento": 20.00
+        }
+      },
+      {
+        "name": "Aplicar Propina",
+        "method": "PUT",
+        "endpoint": "/{id}/propina",
+        "params": {
+          "id": 1
+        },
+        "queryParams": {
+          "propina": 15.00
+        }
+      },
+      {
+        "name": "Recalcular Totales",
+        "method": "PUT",
+        "endpoint": "/{id}/calcular-totales",
+        "params": {
+          "id": 1
+        }
+      },
+      {
+        "name": "Cerrar Orden (marcar como LISTA)",
+        "method": "PUT",
+        "endpoint": "/{id}/cerrar",
+        "params": {
+          "id": 1
+        }
+      },
+      {
+        "name": "Completar Orden (marcar como ENTREGADA)",
+        "method": "PUT",
+        "endpoint": "/{id}/completar",
+        "params": {
+          "id": 1
+        },
+        "queryParams": {
+          "idEmpleado": 1
+        }
+      },
+      {
+        "name": "Obtener Total de Orden",
+        "method": "GET",
+        "endpoint": "/{id}/total",
+        "params": {
+          "id": 1
+        }
+      }
+    ]
+  },
+  "detallesOrden": {
+    "baseUrl": "/detalles-orden",
+    "requests": [
+      {
+        "name": "Agregar Detalle a Orden",
+        "method": "POST",
+        "endpoint": "/",
+        "body": {
+          "orden": {
+            "id": 1
+          },
+          "producto": {
+            "id": 1
+          },
+          "cantidad": 2,
+          "precioUnitario": 45.00,
+          "observaciones": "Extra caliente"
+        }
+      },
+      {
+        "name": "Actualizar Detalle de Orden",
+        "method": "PUT",
+        "endpoint": "/{id}",
+        "params": {
+          "id": 1
+        },
+        "body": {
+          "cantidad": 3,
+          "precioUnitario": 45.00
+        }
+      },
+      {
+        "name": "Eliminar Detalle de Orden",
+        "method": "DELETE",
+        "endpoint": "/{id}",
+        "params": {
+          "id": 1
+        }
+      },
+      {
+        "name": "Obtener Detalle por ID",
+        "method": "GET",
+        "endpoint": "/{id}",
+        "params": {
+          "id": 1
+        }
+      },
+      {
+        "name": "Obtener Detalles por Orden",
+        "method": "GET",
+        "endpoint": "/orden/{idOrden}",
+        "params": {
+          "idOrden": 1
+        }
+      },
+      {
+        "name": "Obtener Detalles por Producto",
+        "method": "GET",
+        "endpoint": "/producto/{idProducto}",
+        "params": {
+          "idProducto": 1
+        }
+      },
+      {
+        "name": "Actualizar Cantidad",
+        "method": "PUT",
+        "endpoint": "/{id}/cantidad",
+        "params": {
+          "id": 1
+        },
+        "queryParams": {
+          "cantidad": 5
+        }
+      },
+      {
+        "name": "Recalcular Subtotal",
+        "method": "PUT",
+        "endpoint": "/{id}/calcular-subtotal",
+        "params": {
+          "id": 1
+        }
+      },
+      {
+        "name": "Calcular Total Incluyendo Extras",
+        "method": "GET",
+        "endpoint": "/{id}/total",
+        "params": {
+          "id": 1
+        }
+      },
+      {
+        "name": "Agregar Extra a Detalle",
+        "method": "POST",
+        "endpoint": "/{idDetalle}/extras",
+        "params": {
+          "idDetalle": 1
+        },
+        "queryParams": {
+          "idOpcionExtra": 1
+        }
+      },
+      {
+        "name": "Eliminar Extra de Detalle",
+        "method": "DELETE",
+        "endpoint": "/{idDetalle}/extras/{idDetalleOrdenExtra}",
+        "params": {
+          "idDetalle": 1,
+          "idDetalleOrdenExtra": 1
+        }
+      }
+    ]
+  },
+  "ejemploFlujoCompleto": {
+    "name": "Flujo Completo: Crear una Orden con Productos y Extras",
+    "steps": [
+      {
+        "step": 1,
+        "description": "Crear la orden",
+        "method": "POST",
+        "endpoint": "/ordenes",
+        "body": {
+          "tipo": "COMER_AQUI",
+          "numeroPersonas": 2,
+          "nombreCliente": "María López",
+          "sucursal": {
+            "id": 1
+          },
+          "mesa": {
+            "id": 5
+          },
+          "empleado": {
+            "id": 1
+          }
+        },
+        "response": {
+          "id": 1,
+          "folio": "SUC1-20260616-00001"
+        }
+      },
+      {
+        "step": 2,
+        "description": "Agregar producto 1 (Cappuccino)",
+        "method": "POST",
+        "endpoint": "/detalles-orden",
+        "body": {
+          "orden": {
+            "id": 1
+          },
+          "producto": {
+            "id": 1
+          },
+          "cantidad": 2,
+          "precioUnitario": 45.00
+        },
+        "response": {
+          "id": 101
+        }
+      },
+      {
+        "step": 3,
+        "description": "Agregar extra (tamaño grande) al cappuccino",
+        "method": "POST",
+        "endpoint": "/detalles-orden/101/extras",
+        "queryParams": {
+          "idOpcionExtra": 3
+        }
+      },
+      {
+        "step": 4,
+        "description": "Agregar producto 2 (Sandwich)",
+        "method": "POST",
+        "endpoint": "/detalles-orden",
+        "body": {
+          "orden": {
+            "id": 1
+          },
+          "producto": {
+            "id": 5
+          },
+          "cantidad": 1,
+          "precioUnitario": 65.00
+        }
+      },
+      {
+        "step": 5,
+        "description": "Aplicar descuento del 10%",
+        "method": "PUT",
+        "endpoint": "/ordenes/1/descuento",
+        "queryParams": {
+          "descuento": 10.00
+        }
+      },
+      {
+        "step": 6,
+        "description": "Recalcular totales",
+        "method": "PUT",
+        "endpoint": "/ordenes/1/calcular-totales"
+      },
+      {
+        "step": 7,
+        "description": "Cambiar estado a EN_PREPARACION",
+        "method": "PUT",
+        "endpoint": "/ordenes/1/estado",
+        "queryParams": {
+          "estado": "EN_PREPARACION",
+          "idEmpleado": 1
+        }
+      },
+      {
+        "step": 8,
+        "description": "Cerrar orden (marcar como LISTA)",
+        "method": "PUT",
+        "endpoint": "/ordenes/1/cerrar"
+      },
+      {
+        "step": 9,
+        "description": "Completar orden (ENTREGADA)",
+        "method": "PUT",
+        "endpoint": "/ordenes/1/completar",
+        "queryParams": {
+          "idEmpleado": 1
+        }
+      }
+    ]
+  }
+}

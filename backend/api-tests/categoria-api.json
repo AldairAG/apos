@@ -1,0 +1,134 @@
+{
+  "info": {
+    "name": "Categoria API Tests",
+    "description": "Pruebas para endpoints de Categoría",
+    "baseUrl": "http://localhost:8080/api/categorias"
+  },
+  "requests": [
+    {
+      "name": "Crear Categoría",
+      "method": "POST",
+      "endpoint": "/",
+      "body": {
+        "nombre": "Bebidas",
+        "descripcion": "Bebidas frías y calientes",
+        "orden": 1,
+        "activo": true,
+        "usuario": {
+          "id": 1
+        }
+      }
+    },
+    {
+      "name": "Actualizar Categoría",
+      "method": "PUT",
+      "endpoint": "/{id}",
+      "params": {
+        "id": 1
+      },
+      "body": {
+        "nombre": "Bebidas Premium",
+        "descripcion": "Bebidas frías y calientes de alta calidad",
+        "orden": 1,
+        "updatedBy": 1
+      }
+    },
+    {
+      "name": "Obtener Categoría por ID",
+      "method": "GET",
+      "endpoint": "/{id}",
+      "params": {
+        "id": 1
+      }
+    },
+    {
+      "name": "Obtener Categorías por Usuario",
+      "method": "GET",
+      "endpoint": "/usuario/{idUsuario}",
+      "params": {
+        "idUsuario": 1
+      }
+    },
+    {
+      "name": "Obtener Categorías Activas",
+      "method": "GET",
+      "endpoint": "/usuario/{idUsuario}/activas",
+      "params": {
+        "idUsuario": 1
+      }
+    },
+    {
+      "name": "Obtener Categorías Ordenadas",
+      "method": "GET",
+      "endpoint": "/usuario/{idUsuario}/ordenadas",
+      "params": {
+        "idUsuario": 1
+      }
+    },
+    {
+      "name": "Obtener Productos de Categoría",
+      "method": "GET",
+      "endpoint": "/{id}/productos",
+      "params": {
+        "id": 1
+      }
+    },
+    {
+      "name": "Cambiar Estado Activo",
+      "method": "PUT",
+      "endpoint": "/{id}/estado",
+      "params": {
+        "id": 1
+      },
+      "queryParams": {
+        "activo": true
+      }
+    },
+    {
+      "name": "Actualizar Orden",
+      "method": "PUT",
+      "endpoint": "/{id}/orden",
+      "params": {
+        "id": 1
+      },
+      "queryParams": {
+        "nuevoOrden": 2
+      }
+    },
+    {
+      "name": "Eliminar Categoría",
+      "method": "DELETE",
+      "endpoint": "/{id}",
+      "params": {
+        "id": 1
+      }
+    }
+  ],
+  "examples": [
+    {
+      "name": "Más Categorías de Ejemplo",
+      "data": [
+        {
+          "nombre": "Desayunos",
+          "descripcion": "Platillos para desayunar",
+          "orden": 2
+        },
+        {
+          "nombre": "Comidas",
+          "descripcion": "Platillos principales",
+          "orden": 3
+        },
+        {
+          "nombre": "Postres",
+          "descripcion": "Postres y dulces",
+          "orden": 4
+        },
+        {
+          "nombre": "Entradas",
+          "descripcion": "Entradas y aperitivos",
+          "orden": 0
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,492 @@
+@startuml DiagramaSecuencial
+
+title Sistema POS - Diagramas de Secuencia con Endpoints REST
+
+skinparam backgroundColor #F5F5F5
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam maxmessagesize 150
+
+' ==================================================
+' FLUJO 1: CONFIGURACIÓN INICIAL DEL SISTEMA
+' ==================================================
+
+== CONFIGURACIÓN INICIAL ==
+
+actor "Gerente" as Gerente
+participant "CategoriaController\n/api/categorias" as CatAPI
+participant "MaterialController\n/api/materiales" as MatAPI
+participant "RecetaController\n/api/recetas" as RecAPI
+participant "ProductoController\n/api/productos" as ProdAPI
+participant "GrupoExtraController\n/api/grupos-extras" as GrupoAPI
+participant "OpcionExtraController\n/api/opciones-extras" as OpcionAPI
+participant "ProductoGrupoExtraController\n/api/producto-grupo-extra" as ProdGrupoAPI
+database "Base de Datos" as DB
+
+autonumber
+
+Gerente -> CatAPI: POST /api/categorias\n{"nombre": "Bebidas", "activo": true}
+activate CatAPI
+CatAPI -> DB: Guardar Categoría
+DB --> CatAPI: Categoría creada (id: 1)
+CatAPI --> Gerente: 201 Created - Categoría
+deactivate CatAPI
+
+Gerente -> MatAPI: POST /api/materiales\n{"nombre": "Café", "unidadMedida": "kg"}
+activate MatAPI
+MatAPI -> DB: Guardar Material
+DB --> MatAPI: Material creado (id: 1)
+MatAPI --> Gerente: 201 Created - Material
+deactivate MatAPI
+
+Gerente -> RecAPI: POST /api/recetas\n{"nombre": "Café Americano",\n"materiales": [{idMaterial: 1, cantidad: 0.015}]}
+activate RecAPI
+RecAPI -> DB: Guardar Receta
+RecAPI -> RecAPI: Calcular costo total
+DB --> RecAPI: Receta creada (id: 1, costoTotal: 2.50)
+RecAPI --> Gerente: 201 Created - Receta
+deactivate RecAPI
+
+Gerente -> GrupoAPI: POST /api/grupos-extras\n{"nombre": "Tamaño", "activo": true}
+activate GrupoAPI
+GrupoAPI -> DB: Guardar Grupo Extra
+DB --> GrupoAPI: Grupo creado (id: 1)
+GrupoAPI --> Gerente: 201 Created - Grupo Extra
+deactivate GrupoAPI
+
+Gerente -> OpcionAPI: POST /api/opciones-extras\n{"idGrupoExtra": 1, "nombre": "Grande",\n"precio": 5.00}
+activate OpcionAPI
+OpcionAPI -> DB: Guardar Opción Extra
+DB --> OpcionAPI: Opción creada (id: 1)
+OpcionAPI --> Gerente: 201 Created - Opción Extra
+deactivate OpcionAPI
+
+Gerente -> ProdAPI: POST /api/productos\n{"nombre": "Café Americano",\n"idCategoria": 1, "idReceta": 1,\n"precioVenta": 35.00}
+activate ProdAPI
+ProdAPI -> DB: Guardar Producto
+DB --> ProdAPI: Producto creado (id: 1)
+ProdAPI --> Gerente: 201 Created - Producto
+deactivate ProdAPI
+
+Gerente -> ProdGrupoAPI: POST /api/producto-grupo-extra\n{"idProducto": 1, "idGrupoExtra": 1,\n"obligatorio": false, "minimo": 0, "maximo": 1}
+activate ProdGrupoAPI
+ProdGrupoAPI -> DB: Relacionar Producto con Grupo Extra
+DB --> ProdGrupoAPI: Relación creada
+ProdGrupoAPI --> Gerente: 201 Created - Relación
+deactivate ProdGrupoAPI
+
+newpage
+
+' ==================================================
+' FLUJO 2: CREAR ORDEN EN POS (FLUJO COMPLETO)
+' ==================================================
+
+== CREAR ORDEN EN POS ==
+
+actor "Mesero" as Mesero
+participant "ProductoController\n/api/productos" as Prod2
+participant "OrdenController\n/api/ordenes" as OrdAPI
+participant "DetalleOrdenController\n/api/detalles-orden" as DetAPI
+database "Base de Datos" as DB2
+
+autonumber
+
+Mesero -> Prod2: GET /api/productos/sucursal/1?activos=true
+activate Prod2
+Prod2 -> DB2: Consultar productos activos
+DB2 --> Prod2: Lista de productos
+Prod2 --> Mesero: 200 OK - [Productos disponibles]
+deactivate Prod2
+
+Mesero -> Prod2: GET /api/productos/1/grupos-extras
+activate Prod2
+Prod2 -> DB2: Consultar grupos extras del producto
+DB2 --> Prod2: Grupos y opciones
+Prod2 --> Mesero: 200 OK - [Grupos con opciones]
+deactivate Prod2
+
+Mesero -> OrdAPI: POST /api/ordenes\n{"idSucursal": 1, "idEmpleado": 5,\n"idMesa": 3, "tipo": "COMER_AQUI",\n"numeroPersonas": 2}
+activate OrdAPI
+OrdAPI -> DB2: Crear orden
+OrdAPI -> OrdAPI: Generar folio único
+OrdAPI -> OrdAPI: Estado = PENDIENTE
+DB2 --> OrdAPI: Orden creada (id: 100, folio: "ORD-20260616-001")
+OrdAPI --> Mesero: 201 Created - Orden
+deactivate OrdAPI
+
+Mesero -> DetAPI: POST /api/detalles-orden\n{"idOrden": 100, "idProducto": 1,\n"cantidad": 2, "precioUnitario": 35.00}
+activate DetAPI
+DetAPI -> DB2: Crear detalle de orden
+DB2 --> DetAPI: Detalle creado (id: 1)
+DetAPI --> Mesero: 201 Created - Detalle
+deactivate DetAPI
+
+Mesero -> DetAPI: POST /api/detalles-orden/1/extras\n{"idOpcionExtra": 1,\n"cantidad": 1, "precioUnitario": 5.00}
+activate DetAPI
+DetAPI -> DB2: Agregar extra al detalle
+DB2 --> DetAPI: Extra agregado
+DetAPI --> Mesero: 201 Created - Extra
+deactivate DetAPI
+
+Mesero -> OrdAPI: PUT /api/ordenes/100/calcular-totales
+activate OrdAPI
+OrdAPI -> DB2: Recalcular subtotal y total
+OrdAPI -> OrdAPI: Subtotal = 80.00 (2 cafés + extras)
+OrdAPI -> OrdAPI: Total = 80.00
+DB2 --> OrdAPI: Totales actualizados
+OrdAPI --> Mesero: 200 OK - Orden actualizada
+deactivate OrdAPI
+
+Mesero -> OrdAPI: PUT /api/ordenes/100/estado\n{"estado": "EN_PREPARACION",\n"idEmpleado": 5}
+activate OrdAPI
+OrdAPI -> DB2: Cambiar estado orden
+OrdAPI -> DB2: Registrar en historial
+DB2 --> OrdAPI: Estado actualizado
+OrdAPI --> Mesero: 200 OK - Orden enviada a cocina
+deactivate OrdAPI
+
+newpage
+
+' ==================================================
+' FLUJO 3: CONSULTAR ÓRDENES (PANTALLA COCINA)
+' ==================================================
+
+== CONSULTAR ÓRDENES - PANTALLA COCINA ==
+
+actor "Cocinero" as Cocinero
+participant "OrdenController\n/api/ordenes" as Ord2
+participant "RecetaController\n/api/recetas" as Rec2
+database "Base de Datos" as DB3
+
+autonumber
+
+Cocinero -> Ord2: GET /api/ordenes/sucursal/1/estado/EN_PREPARACION
+activate Ord2
+Ord2 -> DB3: Consultar órdenes en preparación
+DB3 --> Ord2: Lista de órdenes pendientes
+Ord2 --> Cocinero: 200 OK - [Órdenes en cocina]
+deactivate Ord2
+
+Cocinero -> Ord2: GET /api/ordenes/100
+activate Ord2
+Ord2 -> DB3: Obtener detalle completo
+DB3 --> Ord2: Orden con productos y extras
+Ord2 --> Cocinero: 200 OK - Detalle de orden
+deactivate Ord2
+
+Cocinero -> Rec2: GET /api/recetas/1
+activate Rec2
+Rec2 -> DB3: Consultar receta
+DB3 --> Rec2: Receta con ingredientes
+Rec2 --> Cocinero: 200 OK - Receta del producto
+deactivate Rec2
+
+Cocinero -> Rec2: GET /api/recetas/1/verificar-disponibilidad
+activate Rec2
+Rec2 -> DB3: Verificar stock de materiales
+DB3 --> Rec2: Disponibilidad de ingredientes
+Rec2 --> Cocinero: 200 OK - {disponible: true}
+deactivate Rec2
+
+Cocinero -> Ord2: PUT /api/ordenes/100/estado\n{"estado": "LISTA", "idEmpleado": 8}
+activate Ord2
+Ord2 -> DB3: Actualizar estado
+Ord2 -> DB3: Registrar en historial
+DB3 --> Ord2: Estado actualizado
+Ord2 --> Cocinero: 200 OK - Orden lista
+deactivate Ord2
+
+newpage
+
+' ==================================================
+' FLUJO 4: BUSCAR Y FILTRAR PRODUCTOS/ÓRDENES
+' ==================================================
+
+== BÚSQUEDA Y FILTROS ==
+
+actor "Usuario" as User
+participant "ProductoController\n/api/productos" as Prod3
+participant "OrdenController\n/api/ordenes" as Ord3
+participant "MaterialController\n/api/materiales" as Mat3
+database "Base de Datos" as DB4
+
+autonumber
+
+User -> Prod3: GET /api/productos/buscar\n?termino=cafe&idSucursal=1
+activate Prod3
+Prod3 -> DB4: Buscar por nombre/código/SKU
+DB4 --> Prod3: Productos coincidentes
+Prod3 --> User: 200 OK - [Productos filtrados]
+deactivate Prod3
+
+User -> Prod3: GET /api/productos/categoria/1
+activate Prod3
+Prod3 -> DB4: Filtrar por categoría
+DB4 --> Prod3: Productos de la categoría
+Prod3 --> User: 200 OK - [Productos de Bebidas]
+deactivate Prod3
+
+User -> Ord3: GET /api/ordenes/folio/ORD-20260616-001
+activate Ord3
+Ord3 -> DB4: Buscar por folio
+DB4 --> Ord3: Orden encontrada
+Ord3 --> User: 200 OK - Orden
+deactivate Ord3
+
+User -> Ord3: GET /api/ordenes/mesa/3
+activate Ord3
+Ord3 -> DB4: Consultar órdenes de la mesa
+DB4 --> Ord3: Órdenes activas en mesa 3
+Ord3 --> User: 200 OK - [Órdenes de la mesa]
+deactivate Ord3
+
+User -> Mat3: GET /api/materiales/buscar\n?termino=cafe&idUsuario=1
+activate Mat3
+Mat3 -> DB4: Buscar materiales
+DB4 --> Mat3: Materiales coincidentes
+Mat3 --> User: 200 OK - [Materiales]
+deactivate Mat3
+
+newpage
+
+' ==================================================
+' FLUJO 5: ACTUALIZAR Y GESTIONAR PRODUCTOS
+' ==================================================
+
+== GESTIÓN DE PRODUCTOS ==
+
+actor "Gerente" as Ger2
+participant "ProductoController\n/api/productos" as Prod4
+participant "RecetaController\n/api/recetas" as Rec3
+database "Base de Datos" as DB5
+
+autonumber
+
+Ger2 -> Prod4: PUT /api/productos/1\n{"nombre": "Café Americano Premium",\n"precioVenta": 40.00}
+activate Prod4
+Prod4 -> DB5: Actualizar producto
+DB5 --> Prod4: Producto actualizado
+Prod4 --> Ger2: 200 OK - Producto actualizado
+deactivate Prod4
+
+Ger2 -> Prod4: PUT /api/productos/1/precio\n{"precio": 42.00}
+activate Prod4
+Prod4 -> DB5: Actualizar solo precio
+DB5 --> Prod4: Precio actualizado
+Prod4 --> Ger2: 200 OK - Precio actualizado
+deactivate Prod4
+
+Ger2 -> Prod4: PUT /api/productos/1/estado\n{"activo": false}
+activate Prod4
+Prod4 -> DB5: Desactivar producto
+DB5 --> Prod4: Producto desactivado
+Prod4 --> Ger2: 200 OK - Producto desactivado
+deactivate Prod4
+
+Ger2 -> Rec3: GET /api/recetas/1/costo
+activate Rec3
+Rec3 -> DB5: Calcular costo actualizado
+DB5 --> Rec3: Costo de materiales
+Rec3 --> Ger2: 200 OK - {costoTotal: 2.80}
+deactivate Rec3
+
+Ger2 -> Rec3: PUT /api/recetas/1/recalcular-costo
+activate Rec3
+Rec3 -> DB5: Recalcular y guardar costo
+Rec3 -> Rec3: Sumar materiales + merma
+DB5 --> Rec3: Costo actualizado
+Rec3 --> Ger2: 200 OK - Receta actualizada
+deactivate Rec3
+
+newpage
+
+' ==================================================
+' FLUJO 6: CERRAR Y COBRAR ORDEN
+' ==================================================
+
+== CERRAR ORDEN Y COBRO ==
+
+actor "Cajero" as Cajero
+participant "OrdenController\n/api/ordenes" as Ord4
+database "Base de Datos" as DB6
+
+autonumber
+
+Cajero -> Ord4: GET /api/ordenes/100
+activate Ord4
+Ord4 -> DB6: Consultar orden
+DB6 --> Ord4: Orden completa
+Ord4 --> Cajero: 200 OK - Orden (total: 80.00)
+deactivate Ord4
+
+Cajero -> Ord4: PUT /api/ordenes/100/descuento\n{"descuento": 8.00}
+activate Ord4
+Ord4 -> DB6: Aplicar descuento 10%
+Ord4 -> Ord4: Recalcular total = 72.00
+DB5 --> Ord4: Descuento aplicado
+Ord4 --> Cajero: 200 OK - Total actualizado
+deactivate Ord4
+
+Cajero -> Ord4: PUT /api/ordenes/100/propina\n{"propina": 10.00}
+activate Ord4
+Ord4 -> DB6: Agregar propina
+Ord4 -> Ord4: Total con propina = 82.00
+DB6 --> Ord4: Propina agregada
+Ord4 --> Cajero: 200 OK - Total con propina
+deactivate Ord4
+
+Cajero -> Ord4: PUT /api/ordenes/100/cerrar
+activate Ord4
+Ord4 -> DB6: Cerrar orden
+Ord4 -> Ord4: Estado = ENTREGADA
+Ord4 -> DB6: Registrar en historial
+Ord4 -> DB6: Crear movimiento de caja
+DB6 --> Ord4: Orden cerrada
+Ord4 --> Cajero: 200 OK - Orden cerrada y cobrada
+deactivate Ord4
+
+newpage
+
+' ==================================================
+' FLUJO 7: CANCELAR ORDEN
+' ==================================================
+
+== CANCELAR ORDEN ==
+
+actor "Gerente" as Ger3
+participant "OrdenController\n/api/ordenes" as Ord5
+database "Base de Datos" as DB7
+
+autonumber
+
+Ger3 -> Ord5: GET /api/ordenes/sucursal/1\n?fecha=2026-06-16
+activate Ord5
+Ord5 -> DB7: Consultar órdenes del día
+DB7 --> Ord5: Lista de órdenes
+Ord5 --> Ger3: 200 OK - [Órdenes del día]
+deactivate Ord5
+
+Ger3 -> Ord5: PATCH /api/ordenes/100/cancelar\n{"motivoCancelacion": "Cliente canceló pedido"}
+activate Ord5
+Ord5 -> DB7: Cancelar orden
+Ord5 -> Ord5: Estado = CANCELADA
+Ord5 -> Ord5: cancelada = true
+Ord5 -> DB7: Registrar motivo en historial
+Ord5 -> DB7: Liberar mesa
+DB7 --> Ord5: Orden cancelada
+Ord5 --> Ger3: 200 OK - Orden cancelada
+deactivate Ord5
+
+newpage
+
+' ==================================================
+' FLUJO 8: GESTIÓN DE MATERIALES E INVENTARIO
+' ==================================================
+
+== GESTIÓN DE INVENTARIO ==
+
+actor "Almacenista" as Almacen
+participant "MaterialController\n/api/materiales" as Mat4
+database "Base de Datos" as DB8
+
+autonumber
+
+Almacen -> Mat4: GET /api/materiales/usuario/1/activos
+activate Mat4
+Mat4 -> DB8: Consultar materiales activos
+DB8 --> Mat4: Lista de materiales
+Mat4 --> Almacen: 200 OK - [Materiales activos]
+deactivate Mat4
+
+Almacen -> Mat4: POST /api/materiales\n{"nombre": "Leche Entera",\n"unidadMedida": "litros",\n"costoUnitario": 25.00}
+activate Mat4
+Mat4 -> DB8: Crear material
+DB8 --> Mat4: Material creado (id: 2)
+Mat4 --> Almacen: 201 Created - Material
+deactivate Mat4
+
+Almacen -> Mat4: PUT /api/materiales/2\n{"costoUnitario": 27.00}
+activate Mat4
+Mat4 -> DB8: Actualizar costo
+DB8 --> Mat4: Material actualizado
+Mat4 --> Almacen: 200 OK - Material actualizado
+deactivate Mat4
+
+Almacen -> Mat4: GET /api/materiales/2
+activate Mat4
+Mat4 -> DB8: Consultar material
+DB8 --> Mat4: Material con existencias
+Mat4 --> Almacen: 200 OK - Material detallado
+deactivate Mat4
+
+newpage
+
+' ==================================================
+' RESUMEN DE ENDPOINTS POR MÓDULO
+' ==================================================
+
+== RESUMEN DE ENDPOINTS ==
+
+note over Mesero, DB2
+**ENDPOINTS PRINCIPALES DEL SISTEMA POS**
+
+**CATEGORÍAS (/api/categorias)**
+• POST /api/categorias - Crear categoría
+• GET /api/categorias/usuario/{id}/activas - Listar activas
+• PUT /api/categorias/{id} - Actualizar
+• DELETE /api/categorias/{id} - Eliminar
+
+**MATERIALES (/api/materiales)**
+• POST /api/materiales - Crear material
+• GET /api/materiales/usuario/{id}/activos - Listar activos
+• GET /api/materiales/buscar - Buscar materiales
+• PUT /api/materiales/{id} - Actualizar
+• PUT /api/materiales/{id}/estado - Cambiar estado
+
+**RECETAS (/api/recetas)**
+• POST /api/recetas - Crear receta
+• GET /api/recetas/usuario/{id}/activas - Listar activas
+• GET /api/recetas/{id}/costo - Calcular costo
+• PUT /api/recetas/{id}/recalcular-costo - Recalcular costo
+• GET /api/recetas/{id}/verificar-disponibilidad - Verificar materiales
+
+**EXTRAS (/api/grupos-extras, /api/opciones-extras)**
+• POST /api/grupos-extras - Crear grupo
+• POST /api/opciones-extras - Crear opción
+• GET /api/opciones-extras/grupo/{id} - Opciones de un grupo
+
+**PRODUCTOS (/api/productos)**
+• POST /api/productos - Crear producto
+• GET /api/productos/sucursal/{id} - Productos de sucursal
+• GET /api/productos/buscar - Buscar productos
+• GET /api/productos/codigo/{codigo} - Por código
+• GET /api/productos/categoria/{id} - Por categoría
+• PUT /api/productos/{id}/precio - Actualizar precio
+• PUT /api/productos/{id}/estado - Cambiar estado
+
+**ÓRDENES (/api/ordenes)**
+• POST /api/ordenes - Crear orden
+• GET /api/ordenes/{id} - Consultar orden
+• GET /api/ordenes/folio/{folio} - Por folio
+• GET /api/ordenes/sucursal/{id} - Órdenes de sucursal
+• GET /api/ordenes/mesa/{id} - Órdenes de mesa
+• PUT /api/ordenes/{id}/estado - Cambiar estado
+• PUT /api/ordenes/{id}/descuento - Aplicar descuento
+• PUT /api/ordenes/{id}/propina - Aplicar propina
+• PUT /api/ordenes/{id}/calcular-totales - Recalcular
+• PUT /api/ordenes/{id}/cerrar - Cerrar orden
+• PATCH /api/ordenes/{id}/cancelar - Cancelar orden
+
+**DETALLES DE ORDEN (/api/detalles-orden)**
+• POST /api/detalles-orden - Agregar producto
+• POST /api/detalles-orden/{id}/extras - Agregar extra
+• GET /api/detalles-orden/orden/{id} - Detalles de orden
+• PUT /api/detalles-orden/{id} - Actualizar detalle
+• DELETE /api/detalles-orden/{id} - Eliminar detalle
+
+**RELACIÓN PRODUCTO-EXTRAS (/api/producto-grupo-extra)**
+• POST /api/producto-grupo-extra - Asignar extras
+• GET /api/producto-grupo-extra/producto/{id} - Extras de producto
+end note
+
+@enduml

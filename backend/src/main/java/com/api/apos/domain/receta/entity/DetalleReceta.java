@@ -1,5 +1,7 @@
 package com.api.apos.domain.receta.entity;
 
+import java.math.BigDecimal;
+
 import com.api.apos.domain.material.Material;
 import com.api.apos.enums.Unidad;
 
@@ -21,12 +23,12 @@ public class DetalleReceta {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Float cantidad;
+    private BigDecimal cantidad;
 
     @Enumerated(EnumType.STRING)
     private Unidad unidadMedida;
 
-    private Float merma;
+    private BigDecimal merma;
 
     @ManyToOne
     @JoinColumn(name = "receta_id")

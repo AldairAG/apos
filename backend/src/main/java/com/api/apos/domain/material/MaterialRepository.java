@@ -8,5 +8,4 @@ public interface MaterialRepository extends JpaRepository<Material, Long> {
     
     List<Material> findByActivoTrue();
     
-    List<Material> findByTipoMaterial(String tipoMaterial);
 }

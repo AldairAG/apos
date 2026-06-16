@@ -1,0 +1,298 @@
+{
+  "info": {
+    "name": "Extras API Tests",
+    "description": "Pruebas para endpoints de Grupos de Extras, Opciones y relaciones con Productos",
+    "baseUrl": "http://localhost:8080/api"
+  },
+  "gruposExtras": {
+    "baseUrl": "/grupos-extras",
+    "requests": [
+      {
+        "name": "Crear Grupo de Extras",
+        "method": "POST",
+        "endpoint": "/",
+        "body": {
+          "nombre": "Tamaño",
+          "descripcion": "Tamaños disponibles para bebidas",
+          "activo": true,
+          "usuario": {
+            "id": 1
+          }
+        }
+      },
+      {
+        "name": "Actualizar Grupo de Extras",
+        "method": "PUT",
+        "endpoint": "/{id}",
+        "params": {
+          "id": 1
+        },
+        "body": {
+          "nombre": "Tamaño de Bebida",
+          "descripcion": "Opciones de tamaño para todas las bebidas",
+          "updatedBy": 1
+        }
+      },
+      {
+        "name": "Obtener Grupo de Extras por ID",
+        "method": "GET",
+        "endpoint": "/{id}",
+        "params": {
+          "id": 1
+        }
+      },
+      {
+        "name": "Obtener Grupos por Usuario",
+        "method": "GET",
+        "endpoint": "/usuario/{idUsuario}",
+        "params": {
+          "idUsuario": 1
+        }
+      },
+      {
+        "name": "Obtener Grupos Activos",
+        "method": "GET",
+        "endpoint": "/usuario/{idUsuario}/activos",
+        "params": {
+          "idUsuario": 1
+        }
+      },
+      {
+        "name": "Obtener Grupos por Producto",
+        "method": "GET",
+        "endpoint": "/producto/{idProducto}",
+        "params": {
+          "idProducto": 1
+        }
+      },
+      {
+        "name": "Cambiar Estado Activo",
+        "method": "PUT",
+        "endpoint": "/{id}/estado",
+        "params": {
+          "id": 1
+        },
+        "queryParams": {
+          "activo": true
+        }
+      },
+      {
+        "name": "Eliminar Grupo",
+        "method": "DELETE",
+        "endpoint": "/{id}",
+        "params": {
+          "id": 1
+        }
+      }
+    ]
+  },
+  "opcionesExtras": {
+    "baseUrl": "/opciones-extras",
+    "requests": [
+      {
+        "name": "Crear Opción de Extra",
+        "method": "POST",
+        "endpoint": "/",
+        "body": {
+          "nombre": "Extra Grande",
+          "precio": 10.00,
+          "activo": true,
+          "grupoExtra": {
+            "id": 1
+          }
+        }
+      },
+      {
+        "name": "Actualizar Opción de Extra",
+        "method": "PUT",
+        "endpoint": "/{id}",
+        "params": {
+          "id": 1
+        },
+        "body": {
+          "nombre": "Extra Grande (20oz)",
+          "precio": 12.00
+        }
+      },
+      {
+        "name": "Obtener Opción por ID",
+        "method": "GET",
+        "endpoint": "/{id}",
+        "params": {
+          "id": 1
+        }
+      },
+      {
+        "name": "Obtener Opciones por Grupo",
+        "method": "GET",
+        "endpoint": "/grupo/{idGrupoExtra}",
+        "params": {
+          "idGrupoExtra": 1
+        }
+      },
+      {
+        "name": "Obtener Opciones Activas por Grupo",
+        "method": "GET",
+        "endpoint": "/grupo/{idGrupoExtra}/activas",
+        "params": {
+          "idGrupoExtra": 1
+        }
+      },
+      {
+        "name": "Cambiar Estado Activo",
+        "method": "PUT",
+        "endpoint": "/{id}/estado",
+        "params": {
+          "id": 1
+        },
+        "queryParams": {
+          "activo": true
+        }
+      },
+      {
+        "name": "Eliminar Opción",
+        "method": "DELETE",
+        "endpoint": "/{id}",
+        "params": {
+          "id": 1
+        }
+      }
+    ]
+  },
+  "productoGrupoExtra": {
+    "baseUrl": "/producto-grupo-extra",
+    "requests": [
+      {
+        "name": "Crear Relación Producto-Grupo Extra",
+        "method": "POST",
+        "endpoint": "/",
+        "body": {
+          "producto": {
+            "id": 1
+          },
+          "grupoExtra": {
+            "id": 1
+          },
+          "minimo": 1,
+          "maximo": 1,
+          "obligatorio": true
+        }
+      },
+      {
+        "name": "Actualizar Relación",
+        "method": "PUT",
+        "endpoint": "/{id}",
+        "params": {
+          "id": 1
+        },
+        "body": {
+          "minimo": 0,
+          "maximo": 3,
+          "obligatorio": false
+        }
+      },
+      {
+        "name": "Obtener Relación por ID",
+        "method": "GET",
+        "endpoint": "/{id}",
+        "params": {
+          "id": 1
+        }
+      },
+      {
+        "name": "Obtener Grupos por Producto",
+        "method": "GET",
+        "endpoint": "/producto/{idProducto}",
+        "params": {
+          "idProducto": 1
+        }
+      },
+      {
+        "name": "Obtener Productos por Grupo",
+        "method": "GET",
+        "endpoint": "/grupo/{idGrupoExtra}",
+        "params": {
+          "idGrupoExtra": 1
+        }
+      },
+      {
+        "name": "Eliminar Relación",
+        "method": "DELETE",
+        "endpoint": "/{id}",
+        "params": {
+          "id": 1
+        }
+      },
+      {
+        "name": "Eliminar Todos los Grupos de un Producto",
+        "method": "DELETE",
+        "endpoint": "/producto/{idProducto}",
+        "params": {
+          "idProducto": 1
+        }
+      }
+    ]
+  },
+  "examples": [
+    {
+      "name": "Ejemplo Completo: Configurar Extras para Café",
+      "steps": [
+        {
+          "step": 1,
+          "description": "Crear grupo 'Tamaño'",
+          "endpoint": "POST /grupos-extras",
+          "body": {
+            "nombre": "Tamaño",
+            "usuario": {
+              "id": 1
+            }
+          }
+        },
+        {
+          "step": 2,
+          "description": "Crear opciones de tamaño",
+          "endpoint": "POST /opciones-extras (repetir 3 veces)",
+          "options": [
+            {
+              "nombre": "Chico (8oz)",
+              "precio": 0,
+              "grupoExtra": {
+                "id": 1
+              }
+            },
+            {
+              "nombre": "Mediano (12oz)",
+              "precio": 5.00,
+              "grupoExtra": {
+                "id": 1
+              }
+            },
+            {
+              "nombre": "Grande (16oz)",
+              "precio": 10.00,
+              "grupoExtra": {
+                "id": 1
+              }
+            }
+          ]
+        },
+        {
+          "step": 3,
+          "description": "Asociar grupo al producto",
+          "endpoint": "POST /producto-grupo-extra",
+          "body": {
+            "producto": {
+              "id": 1
+            },
+            "grupoExtra": {
+              "id": 1
+            },
+            "minimo": 1,
+            "maximo": 1,
+            "obligatorio": true
+          }
+        }
+      ]
+    }
+  ]
+}

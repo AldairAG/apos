@@ -1,0 +1,182 @@
+{
+  "info": {
+    "name": "Producto API Tests",
+    "description": "Pruebas para endpoints de Producto",
+    "baseUrl": "http://localhost:8080/api/productos"
+  },
+  "requests": [
+    {
+      "name": "Crear Producto",
+      "method": "POST",
+      "endpoint": "/",
+      "body": {
+        "nombre": "Cappuccino Grande",
+        "descripcion": "Café cappuccino de 16oz",
+        "codigo": "PROD001",
+        "sku": "CAP-GDE-001",
+        "precioVenta": 45.00,
+        "costo": 18.00,
+        "margen": 60.00,
+        "tiempoPreparacion": 5,
+        "orden": 1,
+        "activo": true,
+        "disponible": true,
+        "destacado": false,
+        "categoria": {
+          "id": 1
+        },
+        "receta": {
+          "id": 1
+        }
+      }
+    },
+    {
+      "name": "Actualizar Producto",
+      "method": "PUT",
+      "endpoint": "/{id}",
+      "params": {
+        "id": 1
+      },
+      "body": {
+        "nombre": "Cappuccino Grande Premium",
+        "descripcion": "Café cappuccino premium de 16oz con leche orgánica",
+        "codigo": "PROD001",
+        "sku": "CAP-GDE-001",
+        "precioVenta": 50.00,
+        "costo": 20.00,
+        "margen": 60.00,
+        "tiempoPreparacion": 6,
+        "orden": 1,
+        "updatedBy": 1
+      }
+    },
+    {
+      "name": "Obtener Producto por ID",
+      "method": "GET",
+      "endpoint": "/{id}",
+      "params": {
+        "id": 1
+      }
+    },
+    {
+      "name": "Obtener Productos por Sucursal",
+      "method": "GET",
+      "endpoint": "/sucursal/{idSucursal}",
+      "params": {
+        "idSucursal": 1
+      }
+    },
+    {
+      "name": "Obtener Productos Activos",
+      "method": "GET",
+      "endpoint": "/sucursal/{idSucursal}/activos",
+      "params": {
+        "idSucursal": 1
+      }
+    },
+    {
+      "name": "Buscar Productos",
+      "method": "GET",
+      "endpoint": "/buscar",
+      "queryParams": {
+        "termino": "cappuccino",
+        "idSucursal": 1
+      }
+    },
+    {
+      "name": "Obtener Producto por Código",
+      "method": "GET",
+      "endpoint": "/codigo/{codigo}",
+      "params": {
+        "codigo": "PROD001"
+      }
+    },
+    {
+      "name": "Obtener Producto por SKU",
+      "method": "GET",
+      "endpoint": "/sku/{sku}",
+      "params": {
+        "sku": "CAP-GDE-001"
+      }
+    },
+    {
+      "name": "Obtener Productos por Categoría",
+      "method": "GET",
+      "endpoint": "/categoria/{idCategoria}",
+      "params": {
+        "idCategoria": 1
+      }
+    },
+    {
+      "name": "Obtener Productos Destacados",
+      "method": "GET",
+      "endpoint": "/sucursal/{idSucursal}/destacados",
+      "params": {
+        "idSucursal": 1
+      }
+    },
+    {
+      "name": "Cambiar Estado Activo",
+      "method": "PUT",
+      "endpoint": "/{id}/estado",
+      "params": {
+        "id": 1
+      },
+      "queryParams": {
+        "activo": true
+      }
+    },
+    {
+      "name": "Cambiar Estado Agotado",
+      "method": "PUT",
+      "endpoint": "/{id}/agotado",
+      "params": {
+        "id": 1
+      },
+      "queryParams": {
+        "agotado": false
+      }
+    },
+    {
+      "name": "Cambiar Estado Destacado",
+      "method": "PUT",
+      "endpoint": "/{id}/destacado",
+      "params": {
+        "id": 1
+      },
+      "queryParams": {
+        "destacado": true
+      }
+    },
+    {
+      "name": "Actualizar Precio",
+      "method": "PUT",
+      "endpoint": "/{id}/precio",
+      "params": {
+        "id": 1
+      },
+      "queryParams": {
+        "precio": 55.00
+      }
+    },
+    {
+      "name": "Actualizar Orden",
+      "method": "PUT",
+      "endpoint": "/{id}/orden",
+      "params": {
+        "id": 1
+      },
+      "queryParams": {
+        "orden": 2
+      }
+    },
+    {
+      "name": "Eliminar Producto",
+      "method": "DELETE",
+      "endpoint": "/{id}",
+      "params": {
+        "id": 1
+      }
+    }
+  ]
+}

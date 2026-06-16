@@ -77,4 +77,56 @@ public interface ProductoService {
      * @return Producto actualizado
      */
     Producto actualizarPrecio(Long id, Float precio);
+    
+    /**
+     * Buscar productos por nombre, código o SKU
+     * @param idSucursal ID de la sucursal
+     * @param termino Término de búsqueda
+     * @return Lista de productos que coinciden
+     */
+    List<Producto> buscarProductos(Long idSucursal, String termino);
+    
+    /**
+     * Obtener productos por categoría
+     * @param idCategoria ID de la categoría
+     * @return Lista de productos de la categoría
+     */
+    List<Producto> obtenerProductosPorCategoria(Long idCategoria);
+    
+    /**
+     * Obtener productos destacados
+     * @param idSucursal ID de la sucursal
+     * @return Lista de productos destacados
+     */
+    List<Producto> obtenerProductosDestacados(Long idSucursal);
+    
+    /**
+     * Marcar producto como destacado
+     * @param id ID del producto
+     * @param destacado Estado destacado
+     * @return Producto actualizado
+     */
+    Producto cambiarEstadoDestacado(Long id, boolean destacado);
+    
+    /**
+     * Actualizar orden de visualización
+     * @param id ID del producto
+     * @param orden Nuevo orden
+     * @return Producto actualizado
+     */
+    Producto actualizarOrden(Long id, Integer orden);
+    
+    /**
+     * Obtener producto por código
+     * @param codigo Código del producto
+     * @return Optional con el producto si existe
+     */
+    Optional<Producto> obtenerProductoPorCodigo(String codigo);
+    
+    /**
+     * Obtener producto por SKU
+     * @param sku SKU del producto
+     * @return Optional con el producto si existe
+     */
+    Optional<Producto> obtenerProductoPorSku(String sku);
 }

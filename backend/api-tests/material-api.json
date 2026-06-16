@@ -1,0 +1,123 @@
+{
+  "info": {
+    "name": "Material API Tests",
+    "description": "Pruebas para endpoints de Material",
+    "baseUrl": "http://localhost:8080/api/materiales"
+  },
+  "requests": [
+    {
+      "name": "Crear Material",
+      "method": "POST",
+      "endpoint": "/",
+      "body": {
+        "nombre": "Harina de Trigo",
+        "descripcion": "Harina de trigo para preparación de pan",
+        "codigo": "MAT001",
+        "unidadMedida": "Kilogramo",
+        "costoUnitario": 25.50,
+        "stockMinimo": 10.0,
+        "stockActual": 50.0,
+        "proveedor": "Distribuidora La Espiga",
+        "activo": true,
+        "usuario": {
+          "id": 1
+        }
+      }
+    },
+    {
+      "name": "Actualizar Material",
+      "method": "PUT",
+      "endpoint": "/{id}",
+      "params": {
+        "id": 1
+      },
+      "body": {
+        "nombre": "Harina de Trigo Integral",
+        "descripcion": "Harina de trigo integral para preparación de pan",
+        "codigo": "MAT001",
+        "unidadMedida": "Kilogramo",
+        "costoUnitario": 28.00,
+        "stockMinimo": 10.0,
+        "stockActual": 45.0,
+        "proveedor": "Distribuidora La Espiga",
+        "activo": true,
+        "updatedBy": 1
+      }
+    },
+    {
+      "name": "Obtener Material por ID",
+      "method": "GET",
+      "endpoint": "/{id}",
+      "params": {
+        "id": 1
+      }
+    },
+    {
+      "name": "Obtener Materiales Activos por Usuario",
+      "method": "GET",
+      "endpoint": "/usuario/{idUsuario}/activos",
+      "params": {
+        "idUsuario": 1
+      }
+    },
+    {
+      "name": "Buscar Materiales",
+      "method": "GET",
+      "endpoint": "/buscar",
+      "queryParams": {
+        "termino": "harina",
+        "idUsuario": 1
+      }
+    },
+    {
+      "name": "Cambiar Estado Activo",
+      "method": "PUT",
+      "endpoint": "/{id}/estado",
+      "params": {
+        "id": 1
+      },
+      "queryParams": {
+        "activo": false
+      }
+    },
+    {
+      "name": "Eliminar Material",
+      "method": "DELETE",
+      "endpoint": "/{id}",
+      "params": {
+        "id": 1
+      }
+    }
+  ],
+  "examples": [
+    {
+      "name": "Más Materiales de Ejemplo",
+      "data": [
+        {
+          "nombre": "Azúcar Refinada",
+          "codigo": "MAT002",
+          "unidadMedida": "Kilogramo",
+          "costoUnitario": 18.00,
+          "stockMinimo": 15.0,
+          "stockActual": 60.0
+        },
+        {
+          "nombre": "Mantequilla",
+          "codigo": "MAT003",
+          "unidadMedida": "Kilogramo",
+          "costoUnitario": 85.00,
+          "stockMinimo": 5.0,
+          "stockActual": 20.0
+        },
+        {
+          "nombre": "Leche Entera",
+          "codigo": "MAT004",
+          "unidadMedida": "Litro",
+          "costoUnitario": 22.00,
+          "stockMinimo": 10.0,
+          "stockActual": 30.0
+        }
+      ]
+    }
+  ]
+}

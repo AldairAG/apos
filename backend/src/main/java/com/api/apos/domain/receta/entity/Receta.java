@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.api.apos.domain.produccion.entity.Produccion;
 import com.api.apos.domain.producto.Producto;
 import com.api.apos.domain.usuario.Usuario;
 import com.api.apos.enums.Unidad;
@@ -41,7 +42,7 @@ public class Receta {
 
     private BigDecimal costoTotal;
     private Integer tiempoPreparacion;
-    private Boolean activo;
+    private Boolean activa;
     
     private LocalDateTime fechaCreacion;
     private LocalDateTime createdAt;
@@ -60,5 +61,5 @@ public class Receta {
     private List<Producto> productos;
     
     @OneToMany(mappedBy = "receta", cascade = CascadeType.ALL)
-    private List<com.api.apos.domain.produccion.entity.Produccion> producciones;
+    private List<Produccion> producciones;
 }

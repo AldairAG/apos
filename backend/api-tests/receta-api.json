@@ -1,0 +1,116 @@
+{
+  "info": {
+    "name": "Receta API Tests",
+    "description": "Pruebas para endpoints de Receta",
+    "baseUrl": "http://localhost:8080/api/recetas"
+  },
+  "requests": [
+    {
+      "name": "Crear Receta",
+      "method": "POST",
+      "endpoint": "/",
+      "body": {
+        "nombre": "Pan Francés",
+        "descripcion": "Receta tradicional de pan francés",
+        "codigo": "REC001",
+        "porciones": 10,
+        "tiempoPreparacion": 60,
+        "costoTotal": 0,
+        "activo": true,
+        "usuario": {
+          "id": 1
+        },
+        "detalles": [
+          {
+            "material": {
+              "id": 1
+            },
+            "cantidad": 1.0,
+            "costoUnitario": 25.50
+          },
+          {
+            "material": {
+              "id": 2
+            },
+            "cantidad": 0.1,
+            "costoUnitario": 18.00
+          }
+        ]
+      }
+    },
+    {
+      "name": "Actualizar Receta",
+      "method": "PUT",
+      "endpoint": "/{id}",
+      "params": {
+        "id": 1
+      },
+      "body": {
+        "nombre": "Pan Francés Premium",
+        "descripcion": "Receta mejorada de pan francés con ingredientes premium",
+        "codigo": "REC001",
+        "porciones": 12,
+        "tiempoPreparacion": 75,
+        "activo": true,
+        "updatedBy": 1
+      }
+    },
+    {
+      "name": "Obtener Receta por ID",
+      "method": "GET",
+      "endpoint": "/{id}",
+      "params": {
+        "id": 1
+      }
+    },
+    {
+      "name": "Obtener Recetas Activas por Usuario",
+      "method": "GET",
+      "endpoint": "/usuario/{idUsuario}/activas",
+      "params": {
+        "idUsuario": 1
+      }
+    },
+    {
+      "name": "Buscar Recetas",
+      "method": "GET",
+      "endpoint": "/buscar",
+      "queryParams": {
+        "termino": "pan",
+        "idUsuario": 1
+      }
+    },
+    {
+      "name": "Calcular Costo de Receta",
+      "method": "GET",
+      "endpoint": "/{id}/costo",
+      "params": {
+        "id": 1
+      }
+    },
+    {
+      "name": "Recalcular Costo Total",
+      "method": "PUT",
+      "endpoint": "/{id}/recalcular-costo",
+      "params": {
+        "id": 1
+      }
+    },
+    {
+      "name": "Verificar Disponibilidad de Materiales",
+      "method": "GET",
+      "endpoint": "/{id}/verificar-disponibilidad",
+      "params": {
+        "id": 1
+      }
+    },
+    {
+      "name": "Eliminar Receta",
+      "method": "DELETE",
+      "endpoint": "/{id}",
+      "params": {
+        "id": 1
+      }
+    }
+  ]
+}
