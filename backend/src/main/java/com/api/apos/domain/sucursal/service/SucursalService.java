@@ -8,5 +8,5 @@ public interface SucursalService {
     Sucursal crearSucursal(Sucursal sucursal);
     List<Sucursal> obtenerSucursalesPorIdUsuario(Long idUsuario);
     Sucursal actualizarSucursal(Sucursal sucursal);
-    void eliminarSucursal(Long idUsuario);
+    void eliminarSucursal(Long idSucursal);
 }
