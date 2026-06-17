@@ -1,8 +1,8 @@
-import type { ApiResponse } from "../../../src/api/apiTypes";
+import type { ApiResponse } from "../../../api/apiTypes";
 import type { LoginRequestDTO, RegistroRequestDTO } from "../../usuario/auth/auth.types"
-import { apiBase } from "../../../src/api/apiBase";
+import { apiBase } from "../../../api/apiBase";
 import type { JwtResponse } from "./auth.types";
-import { api } from "../../../src/api/apiBase"
+import { api } from "../../../api/apiBase"
 
 const BASE_PATH = '/usuarios';
 

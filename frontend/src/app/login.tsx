@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
@@ -11,11 +11,34 @@ import {
     Text,
     TextInput,
     View,
+    Alert,
 } from 'react-native';
+import { useAuth } from '@/features/usuario/auth/useAuth';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  
+  const { loading, error, login } = useAuth();
+
+  const handleLogin = async () => {
+    // Validaciones básicas
+    if (!username.trim() || !password.trim()) {
+      Alert.alert('Error', 'Todos los campos son requeridos');
+      return;
+    }
+
+    const result = await login({
+      username: username.trim(),
+      password,
+    });
+
+    if (result.success) {
+      router.replace('/');
+    } else {
+      Alert.alert('Error', result.error || 'No se pudo iniciar sesión');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.root}>
@@ -35,18 +58,18 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Correo</Text>
+            <Text style={styles.label}>Usuario</Text>
             <TextInput
-              value={email}
-              onChangeText={setEmail}
+              value={username}
+              onChangeText={setUsername}
               autoCapitalize="none"
-              keyboardType="email-address"
-              placeholder="tu@negocio.com"
+              placeholder="tu_usuario"
               placeholderTextColor="#a6aaa8"
               style={styles.input}
+              editable={!loading}
             />
 
-            <Text style={styles.label}>Contrasena</Text>
+            <Text style={styles.label}>Contraseña</Text>
             <TextInput
               value={password}
               onChangeText={setPassword}
@@ -54,10 +77,27 @@ export default function LoginScreen() {
               placeholder="********"
               placeholderTextColor="#a6aaa8"
               style={styles.input}
+              editable={!loading}
             />
 
-            <Pressable style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
-              <Text style={styles.primaryButtonText}>Entrar</Text>
+            {error && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            <Pressable 
+              style={({ pressed }) => [
+                styles.primaryButton, 
+                pressed && styles.pressed,
+                loading && styles.buttonDisabled
+              ]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              <Text style={styles.primaryButtonText}>
+                {loading ? 'Entrando...' : 'Entrar'}
+              </Text>
             </Pressable>
 
             <View style={styles.switchRow}>
@@ -147,6 +187,21 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.85,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  errorContainer: {
+    backgroundColor: '#ffe5e5',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ffcccc',
+  },
+  errorText: {
+    color: '#cc0000',
+    fontSize: 13,
+    textAlign: 'center',
   },
   switchRow: {
     marginTop: 8,

@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
@@ -11,12 +11,46 @@ import {
     Text,
     TextInput,
     View,
+    Alert,
 } from 'react-native';
+import { useAuth } from '@/features/usuario/auth/useAuth';
 
 export default function RegisterScreen() {
-  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [telefono, setTelefono] = useState('');
+  
+  const { loading, error, registro } = useAuth();
+
+  const handleRegistro = async () => {
+    // Validaciones básicas
+    if (!username.trim() || !email.trim() || !password.trim() || !telefono.trim()) {
+      Alert.alert('Error', 'Todos los campos son requeridos');
+      return;
+    }
+
+    if (password.length < 8) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+
+    const result = await registro({
+      username: username.trim(),
+      email: email.trim(),
+      password,
+      telefono: telefono.trim(),
+      referenciado: '', // Campo opcional
+    });
+
+    if (result.success) {
+      Alert.alert('Éxito', '¡Cuenta creada exitosamente!', [
+        { text: 'OK', onPress: () => router.replace('/') }
+      ]);
+    } else {
+      Alert.alert('Error', result.error || 'No se pudo crear la cuenta');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.root}>
@@ -36,13 +70,14 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Nombre del negocio</Text>
+            <Text style={styles.label}>Nombre de usuario</Text>
             <TextInput
-              value={name}
-              onChangeText={setName}
+              value={username}
+              onChangeText={setUsername}
               placeholder="Taqueria El Buen Sabor"
               placeholderTextColor="#a6aaa8"
               style={styles.input}
+              editable={!loading}
             />
 
             <Text style={styles.label}>Correo</Text>
@@ -54,9 +89,21 @@ export default function RegisterScreen() {
               placeholder="tu@negocio.com"
               placeholderTextColor="#a6aaa8"
               style={styles.input}
+              editable={!loading}
             />
 
-            <Text style={styles.label}>Contrasena</Text>
+            <Text style={styles.label}>Teléfono</Text>
+            <TextInput
+              value={telefono}
+              onChangeText={setTelefono}
+              keyboardType="phone-pad"
+              placeholder="5551234567"
+              placeholderTextColor="#a6aaa8"
+              style={styles.input}
+              editable={!loading}
+            />
+
+            <Text style={styles.label}>Contraseña</Text>
             <TextInput
               value={password}
               onChangeText={setPassword}
@@ -64,10 +111,27 @@ export default function RegisterScreen() {
               placeholder="minimo 8 caracteres"
               placeholderTextColor="#a6aaa8"
               style={styles.input}
+              editable={!loading}
             />
 
-            <Pressable style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
-              <Text style={styles.primaryButtonText}>Crear cuenta</Text>
+            {error && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            <Pressable 
+              style={({ pressed }) => [
+                styles.primaryButton, 
+                pressed && styles.pressed,
+                loading && styles.buttonDisabled
+              ]}
+              onPress={handleRegistro}
+              disabled={loading}
+            >
+              <Text style={styles.primaryButtonText}>
+                {loading ? 'Creando cuenta...' : 'Crear cuenta'}
+              </Text>
             </Pressable>
 
             <View style={styles.switchRow}>
@@ -127,6 +191,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#f4d8c2',
     gap: 12,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  errorContainer: {
+    backgroundColor: '#ffe5e5',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ffcccc',
+  },
+  errorText: {
+    color: '#cc0000',
+    fontSize: 13,
+    textAlign: 'center',
   },
   label: {
     fontSize: 13,
