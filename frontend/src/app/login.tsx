@@ -29,11 +29,11 @@ export default function LoginScreen() {
     }
 
     const result = await login({
-      username: username.trim(),
+      email: username.trim(),
       password,
     });
 
-    if (result.success) {
+    if (result.success) { 
       router.replace('/');
     } else {
       Alert.alert('Error', result.error || 'No se pudo iniciar sesión');

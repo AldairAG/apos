@@ -207,7 +207,7 @@ class ApiBase {
             // 3. Dispatch logout en Redux (si el store fue inyectado)
             if (this.store) {
                 try {
-                    const module = await import('../store/slice/authSlice');
+                    const module = await import('../features/usuario/auth/auth.slice');
                     const logout = module.logout;
                     this.store.dispatch(logout());
                 } catch (error) {

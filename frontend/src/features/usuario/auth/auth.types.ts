@@ -1,3 +1,5 @@
+import { Usuario } from "../usuario/usuario.types";
+
 export interface RegistroRequestDTO {
     username: string;
     password: string;
@@ -6,8 +8,8 @@ export interface RegistroRequestDTO {
     telefono: string;
 }
 
-export interface LoginRequestDTO {
-    username: string;
+export interface AuthRequest {
+    email: string;
     password: string;
 }
 
@@ -21,4 +23,11 @@ export interface JwtResponse {
     roles: string[];
     user: Usuario;
     usuarioEnRed: number;
+}
+
+export interface JwtPayload {
+    sub: string;
+    rol?: string;
+    exp: number;
+    iat: number;
 }

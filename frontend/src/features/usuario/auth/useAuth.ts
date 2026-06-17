@@ -3,18 +3,20 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import { login, registro } from './auth.thunk';
 import { logout as logoutAction } from './auth.slice';
-import type { LoginRequestDTO, RegistroRequestDTO } from './auth.types';
+
+import type { AuthRequest, JwtPayload, RegistroRequestDTO } from './auth.types';
+import { obtenerRutaSegunRol } from './auth.helpers';
 
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
-  
+
   // Seleccionar estado con tipado correcto
   const auth = useSelector((state: RootState) => state.auth);
   const { token, loading, error, isAuthenticated } = auth;
 
   // Login
   const handleLogin = useCallback(
-    async (credentials: LoginRequestDTO) => {
+    async (credentials: AuthRequest) => {
       const result = await dispatch(login(credentials));
       if (login.fulfilled.match(result)) {
         return { success: true, data: result.payload };
@@ -29,12 +31,14 @@ export const useAuth = () => {
     async (data: RegistroRequestDTO) => {
       const result = await dispatch(registro(data));
       if (registro.fulfilled.match(result)) {
+        obtenerRutaSegunRol(result.payload.data.token);
         return { success: true, data: result.payload };
       }
       return { success: false, error: result.payload as string };
     },
     [dispatch]
   );
+
 
   // Logout
   const handleLogout = useCallback(() => {

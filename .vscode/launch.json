@@ -19,6 +19,47 @@
       "request": "launch",
       "url": "http://localhost:5173", 
       "webRoot": "${workspaceFolder}/frontend"
+    },
+    {
+      // 📱 Expo Web
+      "name": "Debug Expo Web",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:8081",
+      "webRoot": "${workspaceFolder}/frontend",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///./~/*": "${workspaceFolder}/frontend/node_modules/*",
+        "webpack:///./*": "${workspaceFolder}/frontend/*",
+        "webpack:///*": "*"
+      }
+    },
+    {
+      // 🤖 Expo Android
+      "name": "Debug Expo Android",
+      "type": "reactnative",
+      "request": "launch",
+      "platform": "android",
+      "cwd": "${workspaceFolder}/frontend",
+      "sourceMaps": true,
+      "enableDebug": true
+    },
+    {
+      // 🍎 Expo iOS (opcional)
+      "name": "Debug Expo iOS",
+      "type": "reactnative",
+      "request": "launch",
+      "platform": "ios",
+      "cwd": "${workspaceFolder}/frontend",
+      "sourceMaps": true,
+      "enableDebug": true
+    },
+    {
+      // 📱 Attach to Expo (para conectar a una app ya corriendo)
+      "name": "Attach to Expo",
+      "type": "reactnative",
+      "request": "attach",
+      "cwd": "${workspaceFolder}/frontend"
     }
   ]
 }
