@@ -1,12 +1,16 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { apiBase } from '../api/apiBase';
+import materialesReducer from '../features/inventario/materiales/materiales.slice';
 import sucursalReducer from '../features/sucursal/sucursal.slice';
 import authReducer from '../features/usuario/auth/auth.slice';
+import recetaReducer from '../features/producto/receta/receta.slice';
 
 export const store = configureStore({
     reducer: {
         auth: authReducer,
         sucursal: sucursalReducer,
+        materiales: materialesReducer,
+        recetas: recetaReducer,
     },
 }); 
 // Inicializar el token de apiBase desde sessionStorage al cargar la aplicación

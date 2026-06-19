@@ -7,18 +7,18 @@ import { ROUTES, Rol } from '@/routes/routes';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
-// Reportes principales
-interface Reporte {
+// Módulos principales
+interface Modulo {
   titulo: string;
   subtitulo: string;
   icono: string;
@@ -26,7 +26,33 @@ interface Reporte {
   color: string;
 }
 
-const REPORTES: Reporte[] = [
+// Módulos de productos e inventario
+const MODULOS_PRINCIPALES: Modulo[] = [
+  {
+    titulo: 'Materiales',
+    subtitulo: 'Gestión de materiales',
+    icono: '📦',
+    ruta: ROUTES.INVENTARIO.MATERIALES,
+    color: '#2196F3',
+  },
+  {
+    titulo: 'Recetas',
+    subtitulo: 'Administrar recetas',
+    icono: '📝',
+    ruta: ROUTES.PRODUCTOS.RECETAS,
+    color: '#FF9800',
+  },
+  {
+    titulo: 'Productos',
+    subtitulo: 'Catálogo de productos',
+    icono: '🍽️',
+    ruta: ROUTES.PRODUCTOS.PRODUCTOS,
+    color: '#4CAF50',
+  },
+];
+
+// Reportes principales
+const REPORTES: Modulo[] = [
   {
     titulo: 'Ventas',
     subtitulo: 'Reporte de ventas',
@@ -37,7 +63,7 @@ const REPORTES: Reporte[] = [
   {
     titulo: 'Inventario',
     subtitulo: 'Control de stock',
-    icono: '📦',
+    icono: '📊',
     ruta: ROUTES.REPORTES.INVENTARIO,
     color: '#2196F3',
   },
@@ -53,7 +79,7 @@ const REPORTES: Reporte[] = [
     subtitulo: 'Cortes de caja',
     icono: '🧮',
     ruta: ROUTES.REPORTES.CORTES,
-    color: '#FF9800',
+    color: '#9C27B0',
   },
 ];
 
@@ -104,17 +130,17 @@ export default function DashboardScreen() {
     }
   };
 
-  const renderReporteCard = (reporte: Reporte) => {
+  const renderModuloCard = (modulo: Modulo) => {
     return (
       <TouchableOpacity
-        key={reporte.ruta}
-        style={[styles.reporteCard, { backgroundColor: reporte.color }]}
-        onPress={() => verificarYNavegar(reporte.ruta)}
+        key={modulo.ruta}
+        style={[styles.moduloCard, { backgroundColor: modulo.color }]}
+        onPress={() => verificarYNavegar(modulo.ruta)}
         activeOpacity={0.8}
       >
-        <Text style={styles.reporteIcon}>{reporte.icono}</Text>
-        <Text style={styles.reporteTitulo}>{reporte.titulo}</Text>
-        <Text style={styles.reporteSubtitulo}>{reporte.subtitulo}</Text>
+        <Text style={styles.moduloIcon}>{modulo.icono}</Text>
+        <Text style={styles.moduloTitulo}>{modulo.titulo}</Text>
+        <Text style={styles.moduloSubtitulo}>{modulo.subtitulo}</Text>
       </TouchableOpacity>
     );
   };
@@ -150,7 +176,7 @@ export default function DashboardScreen() {
         >
           {/* Selector de Sucursal Card */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>SUCURSAL</Text>
+            <Text style={styles.sectionTitle}>SUCURSAL ACTUAL</Text>
             <TouchableOpacity
               style={[
                 styles.sucursalCard,
@@ -191,11 +217,19 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Módulos Principales */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>GESTIÓN</Text>
+            <View style={styles.modulosGrid}>
+              {MODULOS_PRINCIPALES.map(renderModuloCard)}
+            </View>
+          </View>
+
           {/* Reportes */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>REPORTES</Text>
             <View style={styles.reportesGrid}>
-              {REPORTES.map(renderReporteCard)}
+              {REPORTES.map(renderModuloCard)}
             </View>
           </View>
         </ScrollView>
@@ -356,6 +390,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#F44336',
+  },
+  // Módulos Grid (Productos, Materiales, Recetas)
+  modulosGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 15,
+  },
+  moduloCard: {
+    width: (width - 55) / 2,
+    aspectRatio: 1,
+    borderRadius: 16,
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  moduloIcon: {
+    fontSize: 48,
+  },
+  moduloTitulo: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  moduloSubtitulo: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: 4,
+    textAlign: 'center',
   },
   // Reportes Grid
   reportesGrid: {

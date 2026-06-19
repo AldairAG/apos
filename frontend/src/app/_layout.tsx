@@ -1,10 +1,25 @@
+import { useAuth } from '@/features/usuario/auth/useAuth';
 import { store } from '@/store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { Provider } from 'react-redux';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+
+  const isLoggedIn = async ()=>{
+    const usuario = await AsyncStorage.getItem('usuario');
+    if(usuario){
+      console.log('Usuario encontrado en AsyncStorage:', JSON.parse(usuario));
+    }
+  }
+
+  useEffect(() => {
+    isLoggedIn();
+  }, []);
+  
   return (
     <Provider store={store}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

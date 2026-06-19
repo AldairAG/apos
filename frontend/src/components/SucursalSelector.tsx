@@ -33,10 +33,6 @@ export const SucursalSelector: React.FC<SucursalSelectorProps> = ({
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [nuevaSucursal, setNuevaSucursal] = useState({
     nombre: '',
-    direccion: '',
-    codigo: '',
-    telefono: '',
-    email: '',
     horarioApertura: '08:00',
     horarioCierre: '22:00',
     timezone: 'America/Mexico_City',
@@ -50,7 +46,7 @@ export const SucursalSelector: React.FC<SucursalSelectorProps> = ({
   };
 
   const handleCrearSucursal = async () => {
-    if (!nuevaSucursal.nombre || !nuevaSucursal.direccion || !nuevaSucursal.codigo) {
+    if (!nuevaSucursal.nombre.trim()) {
       Alert.alert('Error', 'Por favor completa los campos obligatorios');
       return;
     }
@@ -61,10 +57,6 @@ export const SucursalSelector: React.FC<SucursalSelectorProps> = ({
       setMostrarFormulario(false);
       setNuevaSucursal({
         nombre: '',
-        direccion: '',
-        codigo: '',
-        telefono: '',
-        email: '',
         horarioApertura: '08:00',
         horarioCierre: '22:00',
         timezone: 'America/Mexico_City',
@@ -115,48 +107,6 @@ export const SucursalSelector: React.FC<SucursalSelectorProps> = ({
                   setNuevaSucursal({ ...nuevaSucursal, nombre: text })
                 }
                 placeholder="Nombre de la sucursal"
-              />
-
-              <Text style={styles.label}>Código *</Text>
-              <TextInput
-                style={styles.input}
-                value={nuevaSucursal.codigo}
-                onChangeText={(text) =>
-                  setNuevaSucursal({ ...nuevaSucursal, codigo: text })
-                }
-                placeholder="Código único"
-              />
-
-              <Text style={styles.label}>Dirección *</Text>
-              <TextInput
-                style={styles.input}
-                value={nuevaSucursal.direccion}
-                onChangeText={(text) =>
-                  setNuevaSucursal({ ...nuevaSucursal, direccion: text })
-                }
-                placeholder="Dirección completa"
-              />
-
-              <Text style={styles.label}>Teléfono</Text>
-              <TextInput
-                style={styles.input}
-                value={nuevaSucursal.telefono}
-                onChangeText={(text) =>
-                  setNuevaSucursal({ ...nuevaSucursal, telefono: text })
-                }
-                placeholder="Teléfono"
-                keyboardType="phone-pad"
-              />
-
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                value={nuevaSucursal.email}
-                onChangeText={(text) =>
-                  setNuevaSucursal({ ...nuevaSucursal, email: text })
-                }
-                placeholder="correo@ejemplo.com"
-                keyboardType="email-address"
               />
 
               <View style={styles.buttonContainer}>

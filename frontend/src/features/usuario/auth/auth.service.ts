@@ -1,8 +1,9 @@
 import type { ApiResponse } from "../../../api/apiTypes";
-import type { LoginRequestDTO, RegistroRequestDTO } from "../../usuario/auth/auth.types"
+import type { AuthRequest, RegistroRequestDTO } from "../../usuario/auth/auth.types"
 import { apiBase } from "../../../api/apiBase";
 import type { JwtResponse } from "./auth.types";
 import { api } from "../../../api/apiBase"
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_PATH = '/usuarios';
 
@@ -13,12 +14,13 @@ const registrar = async (registroRequest: RegistroRequestDTO): Promise<ApiRespon
 
 // Login de usuario
 // POST /api/usuarios/login
-const login = async (loginRequest: LoginRequestDTO): Promise<ApiResponse<JwtResponse>> => {
+const login = async (loginRequest: AuthRequest): Promise<ApiResponse<JwtResponse>> => {
     const response = await api.post<JwtResponse>(`${BASE_PATH}/login`, loginRequest);
     
     // Guardar token automáticamente
     if (response.success && response.data.token) {
         await apiBase.setAuthToken(response.data.token);
+        await AsyncStorage.setItem('usuario', JSON.stringify(response.data.user));
     }
     
     return response;

@@ -2,7 +2,10 @@ package com.api.apos.domain.material;
 
 import java.util.List;
 
+import com.api.apos.domain.compra.entity.CompraDetalle;
+import com.api.apos.domain.extra.entity.OpcionExtra;
 import com.api.apos.domain.inventario.entity.ExistenciaMaterial;
+import com.api.apos.domain.produccion.entity.Produccion;
 import com.api.apos.domain.receta.entity.DetalleReceta;
 import com.api.apos.domain.usuario.Usuario;
 import com.api.apos.enums.Unidad;
@@ -62,13 +65,13 @@ public class Material {
     private List<DetalleReceta> detallesReceta;
     
     @OneToMany(mappedBy = "material", cascade = CascadeType.ALL)
-    private List<com.api.apos.domain.extra.entity.OpcionExtra> opcionesExtra;
+    private List<OpcionExtra> opcionesExtra;
     
     @OneToMany(mappedBy = "material", cascade = CascadeType.ALL)
-    private List<com.api.apos.domain.compra.entity.CompraDetalle> compraDetalles;
+    private List<CompraDetalle> compraDetalles;
     
     @OneToMany(mappedBy = "materialProducido", cascade = CascadeType.ALL)
-    private List<com.api.apos.domain.produccion.entity.Produccion> producciones;
+    private List<Produccion> producciones;
 
 
 }

@@ -24,10 +24,6 @@ export interface SucursalState {
 
 export interface CreateSucursalDTO {
   nombre: string;
-  direccion: string;
-  codigo: string;
-  telefono: string;
-  email: string;
   horarioApertura: string;
   horarioCierre: string;
   timezone: string;
