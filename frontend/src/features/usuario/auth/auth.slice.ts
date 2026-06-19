@@ -4,6 +4,7 @@ import { login, registro } from './auth.thunk';
 
 interface AuthState {
     token: string | null;
+    id: number | null | string;
     loading: boolean;
     error: string | null;
     isAuthenticated: boolean;
@@ -12,10 +13,12 @@ interface AuthState {
 // Cargar estado inicial desde sessionStorage
 const loadInitialState = (): AuthState => {
     const savedUser = loadFromSessionStorage('auth_user');
+    const savedId = loadFromSessionStorage('auth_id');
     const savedToken = loadFromSessionStorage('auth_token');
 
     return {
         token: savedToken,
+        id: savedId,
         loading: false,
         error: null,
         isAuthenticated: !!(savedUser && savedToken),
@@ -35,6 +38,7 @@ const authSlice = createSlice({
             // Limpiar sessionStorage
             removeFromSessionStorage('auth_user');
             removeFromSessionStorage('auth_token');
+            removeFromSessionStorage('auth_id');
         },
         setToken(state, action: PayloadAction<string>) {
             state.token = action.payload;
@@ -56,6 +60,7 @@ const authSlice = createSlice({
                 // Guardar token y usuario en sessionStorage
                 saveToSessionStorage('auth_token', action.payload.data.token);
                 saveToSessionStorage('auth_user', action.payload.data.user);
+                saveToSessionStorage('auth_id', action.payload.data.user.id);
             })
             .addCase(registro.rejected, (state, action) => {
                 state.loading = false;
@@ -73,6 +78,7 @@ const authSlice = createSlice({
                 // Guardar token y usuario en sessionStorage
                 saveToSessionStorage('auth_token', action.payload.data.token);
                 saveToSessionStorage('auth_user', action.payload.data.user);
+                saveToSessionStorage('auth_id', action.payload.data.id);
             })
             .addCase(login.rejected, (state, action) => {
                 state.loading = false;

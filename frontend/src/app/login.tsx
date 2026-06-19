@@ -16,8 +16,8 @@ import {
 import { useAuth } from '@/features/usuario/auth/useAuth';
 
 export default function LoginScreen() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('pp1@gmail.com');
+  const [password, setPassword] = useState('12345678');
   
   const { loading, error, login } = useAuth();
 

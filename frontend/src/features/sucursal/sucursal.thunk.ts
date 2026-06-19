@@ -4,11 +4,11 @@ import { CreateSucursalDTO, Sucursal } from './sucursal.types';
 
 export const fetchSucursales = createAsyncThunk<
   Sucursal[],
-  void,
+  number,
   { rejectValue: string }
->('sucursal/fetchSucursales', async (_, { rejectWithValue }) => {
+>('sucursal/fetchSucursales', async (id, { rejectWithValue }) => {
   try {
-    const sucursales = await sucursalService.getAll();
+    const sucursales = await sucursalService.getAll(id);
     return sucursales;
   } catch (error: any) {
     return rejectWithValue(

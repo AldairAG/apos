@@ -7,21 +7,30 @@ import org.springframework.stereotype.Service;
 
 import com.api.apos.domain.sucursal.Sucursal;
 import com.api.apos.domain.sucursal.SucursalRepository;
+import com.api.apos.domain.usuario.Usuario;
+import com.api.apos.domain.usuario.UsuarioRepository;
 
 @Service
 public class SucursalServiceImpl implements SucursalService {
 
     private final SucursalRepository sucursalRepository;
 
-    public SucursalServiceImpl(SucursalRepository sucursalRepository) {
+    private final UsuarioRepository usuarioRepository;
+
+    public SucursalServiceImpl(SucursalRepository sucursalRepository, UsuarioRepository usuarioRepository) {
         this.sucursalRepository = sucursalRepository;
+        this.usuarioRepository = usuarioRepository;
     }
 
     @Override
-    public Sucursal crearSucursal(Sucursal sucursal) {
+    public Sucursal crearSucursal(Sucursal sucursal, Long idUsuario) {
+
         if (sucursal == null) {
             throw new IllegalArgumentException("La sucursal es requerida");
         }
+
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         if (sucursal.getActiva() == null) {
             sucursal.setActiva(true);
@@ -33,6 +42,7 @@ public class SucursalServiceImpl implements SucursalService {
         }
         sucursal.setUpdatedAt(now);
 
+        sucursal.setUsuario(usuario);
         return sucursalRepository.save(sucursal);
     }
 

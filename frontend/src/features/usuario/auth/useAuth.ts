@@ -3,9 +3,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import { login, registro } from './auth.thunk';
 import { logout as logoutAction } from './auth.slice';
+import { Platform } from 'react-native';
 
 import type { AuthRequest, JwtPayload, RegistroRequestDTO } from './auth.types';
-import { obtenerRutaSegunRol } from './auth.helpers';
+import { loadFromSessionStorage, obtenerRutaSegunRol } from './auth.helpers';
+import { router } from 'expo-router';
+import { ROUTES } from '@/routes/routes';
 
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -39,6 +42,21 @@ export const useAuth = () => {
     [dispatch]
   );
 
+  const verificarInicioSesion = useCallback(() => {
+    if (Platform.OS === 'web') {
+      //loadFromSessionStorage('auth_user');
+      const token = loadFromSessionStorage('auth_token');
+      if (token) {
+        return true;
+      }
+    } else {
+      // Android e iOS
+      //return sessionStorage.getItem('token');
+    }
+
+    return false;
+  }, []);
+
 
   // Logout
   const handleLogout = useCallback(() => {
@@ -55,5 +73,6 @@ export const useAuth = () => {
     login: handleLogin,
     registro: handleRegistro,
     logout: handleLogout,
+    verificarInicioSesion,
   };
 };

@@ -11,9 +11,13 @@ export const useSucursal = () => {
     (state: RootState) => state.sucursal
   );
 
+  const idUsuario = useSelector((state: RootState) => state.auth.id);
+
   // Cargar sucursales al montar
   useEffect(() => {
-    dispatch(fetchSucursales());
+    if (idUsuario) {
+      dispatch(fetchSucursales(Number(idUsuario)));
+    }
   }, [dispatch]);
 
   // Seleccionar sucursal
@@ -43,8 +47,10 @@ export const useSucursal = () => {
 
   // Recargar sucursales
   const recargarSucursales = useCallback(() => {
-    dispatch(fetchSucursales());
-  }, [dispatch]);
+    if (idUsuario) {
+      dispatch(fetchSucursales(Number(idUsuario)));
+    }
+  }, [dispatch, idUsuario]);
 
   // Limpiar error
   const limpiarError = useCallback(() => {

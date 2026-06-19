@@ -7,8 +7,8 @@ export const sucursalService = {
   /**
    * Obtiene todas las sucursales
    */
-  getAll: async (): Promise<Sucursal[]> => {
-    const response = await apiBase.get<Sucursal[]>(SUCURSAL_BASE_URL);
+  getAll: async (id: number): Promise<Sucursal[]> => {
+    const response = await apiBase.get<Sucursal[]>(`${SUCURSAL_BASE_URL}/usuario/${id}`);
     return response.data;
   },
 

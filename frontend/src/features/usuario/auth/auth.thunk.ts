@@ -1,5 +1,5 @@
 import { ApiResponse } from "@/api/apiTypes";
-import { JwtResponse, LoginRequestDTO, RegistroRequestDTO } from "./auth.types";
+import { JwtResponse, AuthRequest, RegistroRequestDTO } from "./auth.types";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { authService } from "./auth.service";
 
@@ -25,7 +25,7 @@ export const registro = createAsyncThunk<
 
 export const login = createAsyncThunk<
     ApiResponse<JwtResponse>,
-    LoginRequestDTO,
+    AuthRequest,
     { rejectValue: string }
 >(
     'auth/login',

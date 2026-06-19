@@ -3,6 +3,8 @@ package com.api.apos.domain.sucursal;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.api.apos.domain.sucursal.service.SucursalService;
+import com.api.apos.domain.usuario.Usuario;
 import com.api.apos.helpers.ApiResponseWrapper;
 
 @RestController
@@ -28,7 +31,11 @@ public class SucursalController {
 	@PostMapping
 	public ResponseEntity<ApiResponseWrapper<Sucursal>> crearSucursal(@RequestBody Sucursal sucursal) {
 		try {
-			Sucursal creada = sucursalService.crearSucursal(sucursal);
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+			Long idUsuario = ((Usuario) authentication.getPrincipal()).getId();
+
+			Sucursal creada = sucursalService.crearSucursal(sucursal, idUsuario);
 			return ResponseEntity.ok(new ApiResponseWrapper<>(true, creada, null));
 		} catch (IllegalArgumentException e) {
 			return ResponseEntity.badRequest().body(new ApiResponseWrapper<>(false, null, e.getMessage()));
@@ -38,7 +45,8 @@ public class SucursalController {
 	}
 
 	@GetMapping("/usuario/{idUsuario}")
-	public ResponseEntity<ApiResponseWrapper<List<Sucursal>>> obtenerSucursalesPorUsuario(@PathVariable Long idUsuario) {
+	public ResponseEntity<ApiResponseWrapper<List<Sucursal>>> obtenerSucursalesPorUsuario(
+			@PathVariable Long idUsuario) {
 		try {
 			List<Sucursal> sucursales = sucursalService.obtenerSucursalesPorIdUsuario(idUsuario);
 			return ResponseEntity.ok(new ApiResponseWrapper<>(true, sucursales, null));

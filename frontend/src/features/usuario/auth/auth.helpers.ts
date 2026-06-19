@@ -16,7 +16,7 @@ export const loadFromSessionStorage = (key: string) => {
 	try {
 		if (typeof window !== 'undefined' && window.sessionStorage) {
 			const item = sessionStorage.getItem(key);
-			return item ? JSON.parse(item) : null;
+			return item || null;
 		}
 		return null;
 	} catch (error) {

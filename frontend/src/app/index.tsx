@@ -1,17 +1,16 @@
-import { obtenerRutaSegunRol } from '@/features/usuario/auth/auth.helpers';
 import { useAuth } from '@/features/usuario/auth/useAuth';
 import { ROUTES } from '@/routes/routes';
 import { Redirect } from 'expo-router';
+import { useEffect } from 'react';
 
 export default function IndexScreen() {
-  const { isAuthenticated, token } = useAuth();
+  const { verificarInicioSesion } = useAuth();
 
-  if (isAuthenticated && token) {
+  if (verificarInicioSesion()) {
+    console.log('Usuario autenticado, redirigiendo a dashboard...');
     // Si está autenticado, redirigir según su rol
-    const rutaInicial = obtenerRutaSegunRol(token);
-    return <Redirect href={rutaInicial} />;
+    return <Redirect href={ROUTES.DASHBOARD} />;
   }
-
   // Si no está autenticado, ir al login
   return <Redirect href={ROUTES.LOGIN} />;
 }
