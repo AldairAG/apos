@@ -12,6 +12,9 @@ export const ROUTES = {
   // Dashboard Principal
   DASHBOARD: '/dashboard',
 
+  // Panel de Sucursal
+  SUCURSAL_PANEL: '/sucursal-panel',
+
   // Perfil de Usuario
   PERFIL: '/perfil',
 
@@ -90,6 +93,7 @@ export const PERMISOS_POR_ROL: Record<string, string[]> = {
   // ADMINISTRADOR: Acceso total a todas las funcionalidades
   [Rol.ADMINISTRADOR]: [
     ROUTES.DASHBOARD,
+    ROUTES.SUCURSAL_PANEL,
     ROUTES.PERFIL,
     // Administración
     ROUTES.ADMIN.USUARIOS,
@@ -131,6 +135,7 @@ export const PERMISOS_POR_ROL: Record<string, string[]> = {
   // GERENTE: Configuración, productos, inventario y reportes (no administración de usuarios)
   [Rol.GERENTE]: [
     ROUTES.DASHBOARD,
+    ROUTES.SUCURSAL_PANEL,
     ROUTES.PERFIL,
     // Configuración
     ROUTES.CONFIG.MESAS,
@@ -166,6 +171,7 @@ export const PERMISOS_POR_ROL: Record<string, string[]> = {
   // MESERO: Órdenes, mesas y caja (operaciones de punto de venta)
   [Rol.MESERO]: [
     ROUTES.DASHBOARD,
+    ROUTES.SUCURSAL_PANEL,
     ROUTES.PERFIL,
     // POS
     ROUTES.POS.VISTA_MESAS,
@@ -179,6 +185,7 @@ export const PERMISOS_POR_ROL: Record<string, string[]> = {
   // COCINA: Pantalla de cocina y producción
   [Rol.COCINA]: [
     ROUTES.DASHBOARD,
+    ROUTES.SUCURSAL_PANEL,
     ROUTES.PERFIL,
     // POS (solo cocina)
     ROUTES.POS.COCINA,

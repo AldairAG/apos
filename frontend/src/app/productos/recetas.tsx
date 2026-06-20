@@ -1,4 +1,5 @@
 import { Material, useMateriales } from '@/features/inventario/materiales';
+import { setRecetaSeleccionada } from '@/features/producto/receta/receta.slice';
 import { DetalleReceta, Receta } from '@/features/producto/receta/receta.types';
 import { useRecetas } from '@/features/producto/receta/useReceta';
 import { Unidad } from '@/types/globalTypes';
@@ -17,12 +18,21 @@ import {
 export default function RecetasScreen() {
   const [busqueda, setBusqueda] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const [recetaSeleccionada, setRecetaSeleccionada] = useState<Receta | null>(null);
   const [modalMaterialVisible, setModalMaterialVisible] = useState(false);
   const [materialesReceta, setMaterialesReceta] = useState<DetalleReceta[]>([]);
   const [mostrarUnidades, setMostrarUnidades] = useState(false);
 
-  const { cargarRecetas, seleccionarReceta, crearReceta, limpiarRecetas, limpiarError, loading, recetas } = useRecetas();
+  const [formData, setFormData] = useState({
+    nombre: '',
+    descripcion: '',
+    rendimiento: 0,
+    unidadRendimiento: Unidad.PZ,
+    tiempoPreparacion: 0,
+    instrucciones: '',
+
+  });
+
+  const { cargarRecetas, seleccionarReceta, crearReceta, limpiarRecetas, limpiarError, loading, recetas, recetaSeleccionada } = useRecetas();
   const { materiales } = useMateriales();
 
   useEffect(() => {
@@ -36,15 +46,15 @@ export default function RecetasScreen() {
   const handleCrearReceta = () => {
     const nuevaReceta: Receta = {
       id: 0,
-      nombre: recetaSeleccionada?.nombre || '',
+      nombre: formData.nombre,
       codigo: `REC-${Date.now()}`,
-      descripcion: recetaSeleccionada?.descripcion || '',
-      instrucciones: recetaSeleccionada?.instrucciones || '',
+      descripcion: formData.descripcion,
+      instrucciones: formData.instrucciones || '',
       imagen: '',
-      rendimiento: recetaSeleccionada?.rendimiento || 0,
-      unidadRendimiento: recetaSeleccionada?.unidadRendimiento || Unidad.PZ,
-      costoTotal: recetaSeleccionada?.costoTotal || 0,
-      tiempoPreparacion: recetaSeleccionada?.tiempoPreparacion || 0,
+      rendimiento: formData.rendimiento || 0,
+      unidadRendimiento: formData.unidadRendimiento || Unidad.PZ,
+      costoTotal: 0,
+      tiempoPreparacion: formData.tiempoPreparacion || 0,
       activa: true,
       fechaCreacion: new Date(),
       createdBy: 1,
@@ -59,13 +69,13 @@ export default function RecetasScreen() {
   }
 
   const handleEditar = (receta: Receta) => {
-    setRecetaSeleccionada(receta);
+    seleccionarReceta(receta);
     setMaterialesReceta(receta.detalles);
     setModalVisible(true);
   };
 
   const handleNuevo = () => {
-    setRecetaSeleccionada(null);
+    seleccionarReceta(null);
     setMaterialesReceta([]);
     setModalVisible(true);
   };
@@ -159,6 +169,11 @@ export default function RecetasScreen() {
               placeholder="0"
               keyboardType="decimal-pad"
               defaultValue={material.cantidad.toString()}
+              onChangeText={(text) => {
+                const nuevosM = [...materialesReceta];
+                nuevosM[index].cantidad = Number(text);
+                setMaterialesReceta(nuevosM);
+              }}
             />
             <Text style={styles.materialRecetaUnidad}>{material.unidadMedida}</Text>
           </View>
@@ -247,12 +262,12 @@ export default function RecetasScreen() {
               <View style={styles.formGroup}>
                 <Text style={styles.formLabel}>Nombre de la Receta *</Text>
                 <TextInput
-                  onChangeText={(text) => setRecetaSeleccionada(prev => prev ? { ...prev, nombre: text } : null)}
+                  onChangeText={(text) => setFormData(prev => ({ ...prev, nombre: text }))}
                   style={styles.formInput}
                   placeholder="Ej: Pan francés"
                   placeholderTextColor="#999"
-                  defaultValue={recetaSeleccionada?.nombre}
-                  value={recetaSeleccionada?.nombre}
+                  defaultValue={formData.nombre}
+                  value={formData.nombre}
                 />
               </View>
 
@@ -260,13 +275,13 @@ export default function RecetasScreen() {
                 <Text style={styles.formLabel}>Descripción</Text>
                 <TextInput
                   style={[styles.formInput, styles.formInputMultiline]}
-                  onChangeText={(text) => setRecetaSeleccionada(prev => prev ? { ...prev, descripcion: text } : null)}
+                  onChangeText={(text) => setFormData(prev => ({ ...prev, descripcion: text }))}
                   placeholder="Descripción de la receta"
                   placeholderTextColor="#999"
                   multiline
                   numberOfLines={3}
-                  defaultValue={recetaSeleccionada?.descripcion}
-                  value={recetaSeleccionada?.descripcion}
+                  defaultValue={formData.descripcion}
+                  value={formData.descripcion}
                 />
               </View>
 
@@ -276,11 +291,11 @@ export default function RecetasScreen() {
                   <TextInput
                     style={styles.formInput}
                     placeholder="0"
-                    onChangeText={(text) => setRecetaSeleccionada(prev => prev ? { ...prev, rendimiento: Number(text) } : null)}
+                    onChangeText={(text) => setFormData(prev => ({ ...prev, rendimiento: Number(text) }))}
                     placeholderTextColor="#999"
                     keyboardType="numeric"
-                    defaultValue={recetaSeleccionada?.rendimiento.toString()}
-                    value={recetaSeleccionada?.rendimiento.toString()}
+                    defaultValue={formData.rendimiento.toString()}
+                    value={formData.rendimiento.toString()}
                   />
                 </View>
 
@@ -304,7 +319,7 @@ export default function RecetasScreen() {
                             key={unidad}
                             style={styles.dropdownItem}
                             onPress={() => {
-                              setRecetaSeleccionada(prev => prev ? { ...prev, unidadRendimiento: unidad, } : null);
+                              setFormData(prev => ({ ...prev, unidadRendimiento: unidad }));
                               setMostrarUnidades(false);
                             }}
                           >

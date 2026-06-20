@@ -65,7 +65,7 @@ public class RecetaServiceImpl implements RecetaService {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .activa(true)
-                .costoTotal(recalcularCostoTotal(recetaNueva.getDetalles())) // Inicialmente calcular costo total
+                .costoTotal(recalcularCostoTotal(detalles)) // Inicialmente calcular costo total
                 .rendimiento(recetaNueva.getRendimiento())
                 .unidadRendimiento(recetaNueva.getUnidadRendimiento())
                 .nombre(recetaNueva.getNombre())

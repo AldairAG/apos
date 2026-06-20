@@ -108,6 +108,16 @@ export default function DashboardScreen() {
     router.push(ruta as any);
   };
 
+  const handleSucursalCardClick = () => {
+    // Si hay sucursal seleccionada, navegar al panel
+    if (sucursalActual) {
+      router.push(ROUTES.SUCURSAL_PANEL as any);
+    } else {
+      // Si no hay sucursal, abrir selector
+      setMostrarSelectorSucursal(true);
+    }
+  };
+
   const handleSucursalSeleccionada = () => {
     if (moduloDestino) {
       router.push(moduloDestino as any);
@@ -182,7 +192,7 @@ export default function DashboardScreen() {
                 styles.sucursalCard,
                 sucursalActual ? styles.sucursalCardActive : styles.sucursalCardInactive
               ]}
-              onPress={() => setMostrarSelectorSucursal(true)}
+              onPress={handleSucursalCardClick}
               activeOpacity={0.7}
             >
               <View style={styles.sucursalCardContent}>
@@ -201,6 +211,9 @@ export default function DashboardScreen() {
                       </Text>
                       <Text style={styles.sucursalCodigo}>
                         {sucursalActual.codigo}
+                      </Text>
+                      <Text style={styles.sucursalAction}>
+                        Toca para entrar al panel
                       </Text>
                     </>
                   ) : (
@@ -385,6 +398,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9E9E9E',
     marginTop: 2,
+  },
+  sucursalAction: {
+    fontSize: 11,
+    color: '#4CAF50',
+    marginTop: 6,
+    fontWeight: '600',
   },
   sucursalNombreInactive: {
     fontSize: 16,
