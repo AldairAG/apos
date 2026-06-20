@@ -1,7 +1,8 @@
-import { useMateriales } from '@/features/inventario/materiales';
+import { Material, useMateriales } from '@/features/inventario/materiales';
 import { DetalleReceta, Receta } from '@/features/producto/receta/receta.types';
 import { useRecetas } from '@/features/producto/receta/useReceta';
-import { useState } from 'react';
+import { Unidad } from '@/types/globalTypes';
+import { use, useEffect, useState } from 'react';
 import {
   FlatList,
   Modal,
@@ -13,33 +14,49 @@ import {
   View,
 } from 'react-native';
 
-// Interfaces
-interface Material {
-  id: string;
-  nombre: string;
-  unidadMedida: string;
-}
-
-interface MaterialReceta {
-  materialId: string;
-  nombreMaterial: string;
-  cantidad: number;
-  unidadMedida: string;
-}
-
 export default function RecetasScreen() {
   const [busqueda, setBusqueda] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [recetaSeleccionada, setRecetaSeleccionada] = useState<Receta | null>(null);
   const [modalMaterialVisible, setModalMaterialVisible] = useState(false);
   const [materialesReceta, setMaterialesReceta] = useState<DetalleReceta[]>([]);
-  
-  const {cargarRecetas, seleccionarReceta, crearReceta, limpiarRecetas, limpiarError, loading,recetas} = useRecetas();
-  const {materiales}= useMateriales();
+  const [mostrarUnidades, setMostrarUnidades] = useState(false);
+
+  const { cargarRecetas, seleccionarReceta, crearReceta, limpiarRecetas, limpiarError, loading, recetas } = useRecetas();
+  const { materiales } = useMateriales();
+
+  useEffect(() => {
+    cargarRecetas();
+  }, [cargarRecetas]);
 
   const recetasFiltradas = recetas.filter((receta) =>
     receta.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
+
+  const handleCrearReceta = () => {
+    const nuevaReceta: Receta = {
+      id: 0,
+      nombre: recetaSeleccionada?.nombre || '',
+      codigo: `REC-${Date.now()}`,
+      descripcion: recetaSeleccionada?.descripcion || '',
+      instrucciones: recetaSeleccionada?.instrucciones || '',
+      imagen: '',
+      rendimiento: recetaSeleccionada?.rendimiento || 0,
+      unidadRendimiento: recetaSeleccionada?.unidadRendimiento || Unidad.PZ,
+      costoTotal: recetaSeleccionada?.costoTotal || 0,
+      tiempoPreparacion: recetaSeleccionada?.tiempoPreparacion || 0,
+      activa: true,
+      fechaCreacion: new Date(),
+      createdBy: 1,
+      updatedBy: 1,
+      detalles: materialesReceta,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    crearReceta(nuevaReceta);
+    //setModalVisible(false);
+    //setMaterialesReceta([]);
+  }
 
   const handleEditar = (receta: Receta) => {
     setRecetaSeleccionada(receta);
@@ -63,12 +80,13 @@ export default function RecetasScreen() {
     setMaterialesReceta([]);
   };
 
-  const handleAgregarMaterial = (materiales: Material) => {
+  const handleAgregarMaterial = (material: Material) => {
     const nuevoMaterial: DetalleReceta = {
-      id: materiales.id,
-      nombreMaterial: materiales.nombre,
+      id: material.id,
       cantidad: 0,
-      unidadMedida: materiales.unidadMedida,
+      unidadMedida: material.unidadMedida,
+      merma: 0,
+      material: null,
     };
     setMaterialesReceta([...materialesReceta, nuevoMaterial]);
     setModalMaterialVisible(false);
@@ -95,17 +113,17 @@ export default function RecetasScreen() {
 
           <View style={styles.materialesPreview}>
             <Text style={styles.materialesPreviewTitulo}>
-              📋 Materiales ({item.materiales.length})
+              📋 Materiales ({item.detalles.length})
             </Text>
             <View style={styles.materialesPreviewLista}>
-              {item.materiales.slice(0, 3).map((mat, idx) => (
+              {item.detalles.slice(0, 3).map((mat, idx) => (
                 <Text key={idx} style={styles.materialPreviewItem}>
-                  • {mat.nombreMaterial}
+                  • {mat?.material?.nombre}
                 </Text>
               ))}
-              {item.materiales.length > 3 && (
+              {item.detalles.length > 3 && (
                 <Text style={styles.materialPreviewMas}>
-                  +{item.materiales.length - 3} más...
+                  +{item.detalles.length - 3} más...
                 </Text>
               )}
             </View>
@@ -130,11 +148,11 @@ export default function RecetasScreen() {
     );
   };
 
-  const renderMaterialRecetaItem = (material: MaterialReceta, index: number) => {
+  const renderMaterialRecetaItem = (material: DetalleReceta, index: number) => {
     return (
       <View key={index} style={styles.materialRecetaItem}>
         <View style={styles.materialRecetaInfo}>
-          <Text style={styles.materialRecetaNombre}>{material.nombreMaterial}</Text>
+          <Text style={styles.materialRecetaNombre}>{material?.material?.nombre}</Text>
           <View style={styles.materialRecetaCantidadContainer}>
             <TextInput
               style={styles.materialRecetaCantidadInput}
@@ -186,7 +204,7 @@ export default function RecetasScreen() {
       <FlatList
         data={recetasFiltradas}
         renderItem={renderRecetaItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
@@ -229,10 +247,12 @@ export default function RecetasScreen() {
               <View style={styles.formGroup}>
                 <Text style={styles.formLabel}>Nombre de la Receta *</Text>
                 <TextInput
+                  onChangeText={(text) => setRecetaSeleccionada(prev => prev ? { ...prev, nombre: text } : null)}
                   style={styles.formInput}
                   placeholder="Ej: Pan francés"
                   placeholderTextColor="#999"
                   defaultValue={recetaSeleccionada?.nombre}
+                  value={recetaSeleccionada?.nombre}
                 />
               </View>
 
@@ -240,11 +260,13 @@ export default function RecetasScreen() {
                 <Text style={styles.formLabel}>Descripción</Text>
                 <TextInput
                   style={[styles.formInput, styles.formInputMultiline]}
+                  onChangeText={(text) => setRecetaSeleccionada(prev => prev ? { ...prev, descripcion: text } : null)}
                   placeholder="Descripción de la receta"
                   placeholderTextColor="#999"
                   multiline
                   numberOfLines={3}
                   defaultValue={recetaSeleccionada?.descripcion}
+                  value={recetaSeleccionada?.descripcion}
                 />
               </View>
 
@@ -254,53 +276,77 @@ export default function RecetasScreen() {
                   <TextInput
                     style={styles.formInput}
                     placeholder="0"
+                    onChangeText={(text) => setRecetaSeleccionada(prev => prev ? { ...prev, rendimiento: Number(text) } : null)}
                     placeholderTextColor="#999"
                     keyboardType="numeric"
                     defaultValue={recetaSeleccionada?.rendimiento.toString()}
+                    value={recetaSeleccionada?.rendimiento.toString()}
                   />
                 </View>
 
-                <View style={[styles.formGroup, styles.formGroupHalf]}>
-                  <Text style={styles.formLabel}>Unidad *</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    placeholder="Ej: piezas, porciones"
-                    placeholderTextColor="#999"
-                    defaultValue={recetaSeleccionada?.unidadRendimiento}
-                  />
-                </View>
-              </View>
-
-              {/* Sección de Materiales */}
-              <View style={styles.materialesSeccion}>
-                <View style={styles.materialesSeccionHeader}>
-                  <Text style={styles.materialesSeccionTitulo}>
-                    📦 Materiales ({materialesReceta.length})
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.botonAgregarMaterial}
-                    onPress={() => setModalMaterialVisible(true)}
+                <View style={[styles.formRow, { zIndex: mostrarUnidades ? 1000 : 1 }]}>
+                  <View style={[styles.formGroup, styles.formGroupHalf,
+                  { zIndex: mostrarUnidades ? 1001 : 1, elevation: mostrarUnidades ? 1001 : 1, }]}
                   >
-                    <Text style={styles.botonAgregarMaterialTexto}>+ Agregar</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {materialesReceta.length === 0 ? (
-                  <View style={styles.materialesVacio}>
-                    <Text style={styles.materialesVacioTexto}>
-                      No hay materiales agregados
-                    </Text>
-                    <Text style={styles.materialesVacioSubtexto}>
-                      Toca "Agregar" para añadir materiales
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={styles.materialesLista}>
-                    {materialesReceta.map((material, index) =>
-                      renderMaterialRecetaItem(material, index)
+                    <Text style={styles.formLabel}>Unidad de Medida *</Text>
+                    <TouchableOpacity
+                      style={styles.formInput}
+                      onPress={() => setMostrarUnidades(!mostrarUnidades)}
+                    >
+                      <Text style={{ fontSize: 16, color: '#212121' }}>
+                        {recetaSeleccionada?.unidadRendimiento || Unidad.PZ}
+                      </Text>
+                    </TouchableOpacity>
+                    {mostrarUnidades && (
+                      <View style={styles.dropdownContainer}>
+                        {Object.values(Unidad).map((unidad) => (
+                          <TouchableOpacity
+                            key={unidad}
+                            style={styles.dropdownItem}
+                            onPress={() => {
+                              setRecetaSeleccionada(prev => prev ? { ...prev, unidadRendimiento: unidad, } : null);
+                              setMostrarUnidades(false);
+                            }}
+                          >
+                            <Text style={styles.dropdownItemText}>{unidad}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
                     )}
                   </View>
-                )}
+                </View>
+
+                {/* Sección de Materiales */}
+                <View style={styles.materialesSeccion}>
+                  <View style={styles.materialesSeccionHeader}>
+                    <Text style={styles.materialesSeccionTitulo}>
+                      📦 Materiales ({materialesReceta.length})
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.botonAgregarMaterial}
+                      onPress={() => setModalMaterialVisible(true)}
+                    >
+                      <Text style={styles.botonAgregarMaterialTexto}>+ Agregar</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {materialesReceta.length === 0 ? (
+                    <View style={styles.materialesVacio}>
+                      <Text style={styles.materialesVacioTexto}>
+                        No hay materiales agregados
+                      </Text>
+                      <Text style={styles.materialesVacioSubtexto}>
+                        Toca "Agregar" para añadir materiales
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={styles.materialesLista}>
+                      {materialesReceta.map((material, index) =>
+                        renderMaterialRecetaItem(material, index)
+                      )}
+                    </View>
+                  )}
+                </View>
               </View>
             </ScrollView>
 
@@ -314,7 +360,7 @@ export default function RecetasScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.botonModal, styles.botonGuardar]}
-                onPress={handleCerrarModal}
+                onPress={handleCrearReceta}
               >
                 <Text style={styles.botonGuardarTexto}>
                   {recetaSeleccionada ? 'Actualizar' : 'Crear'}
@@ -801,5 +847,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#fff',
+  },
+  // Dropdown
+  dropdownContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    marginTop: 4,
+    maxHeight: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 1002,
+    zIndex: 1002,
+  },
+  dropdownItem: {
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
+    elevation: 1000,
+    zIndex: 2000,
+
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: '#212121',
   },
 });

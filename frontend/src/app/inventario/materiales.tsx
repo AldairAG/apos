@@ -48,7 +48,7 @@ export default function MaterialesScreen() {
 
   // Cargar materiales al montar el componente
   useEffect(() => {
-      cargarMateriales();
+    cargarMateriales();
   }, [sucursalActual]);
 
   // Mostrar errores
@@ -353,8 +353,10 @@ export default function MaterialesScreen() {
                 />
               </View>
 
-              <View style={styles.formRow}>
-                <View style={[styles.formGroup, styles.formGroupHalf]}>
+              <View style={[styles.formRow, { zIndex: mostrarUnidades ? 1000 : 1 }]}>
+                <View style={[styles.formGroup, styles.formGroupHalf,
+                { zIndex: mostrarUnidades ? 1001 : 1, elevation: mostrarUnidades ? 1001 : 1, }]}
+                >
                   <Text style={styles.formLabel}>Unidad de Medida *</Text>
                   <TouchableOpacity
                     style={styles.formInput}
@@ -699,6 +701,7 @@ const styles = StyleSheet.create({
   // Formulario
   formGroup: {
     marginBottom: 20,
+    position: 'relative',
   },
   formGroupHalf: {
     flex: 1,
@@ -758,18 +761,21 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
     marginTop: 4,
     maxHeight: 200,
-    zIndex: 1000,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 1002,
+    zIndex: 1002,
   },
   dropdownItem: {
     paddingHorizontal: 15,
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F5F5F5',
+    elevation: 1000,
+    zIndex: 2000,
+
   },
   dropdownItemText: {
     fontSize: 16,

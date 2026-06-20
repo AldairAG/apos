@@ -11,7 +11,7 @@ export const recetaService = {
        * Obtiene todas las recetas
        */
     getAll: async (): Promise<Receta[]> => {
-        const response = await apiBase.get<Receta[]>(RECETA_BASE_URL);
+        const response = await apiBase.get<Receta[]>(`${RECETA_BASE_URL}/usuario`);
         return response.data;
     },
 

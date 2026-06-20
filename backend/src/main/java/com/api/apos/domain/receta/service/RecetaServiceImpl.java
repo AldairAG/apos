@@ -8,8 +8,13 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.api.apos.domain.material.Material;
+import com.api.apos.domain.material.service.MaterialService;
+import com.api.apos.domain.receta.entity.DetalleReceta;
 import com.api.apos.domain.receta.entity.Receta;
 import com.api.apos.domain.receta.repository.RecetaRepository;
+import com.api.apos.domain.usuario.Usuario;
+import com.api.apos.domain.usuario.service.UsuarioService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,19 +29,55 @@ public class RecetaServiceImpl implements RecetaService {
     
     private final RecetaRepository recetaRepository;
 
+    private final UsuarioService usuarioService;
+
+    private final MaterialService materialService;
+
     /**
      * Crear una nueva receta
      * @param receta Receta a crear
      * @return Receta creada con timestamp
      */
     @Override
-    public Receta crearReceta(Receta receta) {
-        receta.setCreatedAt(LocalDateTime.now());
-        receta.setUpdatedAt(LocalDateTime.now());
-        receta.setFechaCreacion(LocalDateTime.now());
-        if (receta.getActiva() == null) {
-            receta.setActiva(true);
-        }
+    public Receta crearReceta(Receta recetaNueva) {
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+
+        List<DetalleReceta> detalles = recetaNueva.getDetalles().stream()
+                .map(detalle -> {
+
+                    Material material = materialService.obtenerMaterialPorId(detalle.getId())
+                            .orElseThrow(() -> new RuntimeException("Material no encontrado con ID: " + detalle.getMaterial().getId()));
+
+                    DetalleReceta nuevoDetalle = DetalleReceta.builder()
+                            .id(null)
+                            .material(material)
+                            .cantidad(detalle.getCantidad())
+                            .unidadMedida(detalle.getUnidadMedida())
+                            .merma(detalle.getMerma())
+                            .build();
+                    nuevoDetalle.setReceta(null); // Se asignará la receta después de crearla
+                    return nuevoDetalle;
+                })
+                .toList();
+
+        Receta receta = Receta.builder()
+                .usuario(usuario)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .activa(true)
+                .costoTotal(recalcularCostoTotal(recetaNueva.getDetalles())) // Inicialmente calcular costo total
+                .rendimiento(recetaNueva.getRendimiento())
+                .unidadRendimiento(recetaNueva.getUnidadRendimiento())
+                .nombre(recetaNueva.getNombre())
+                .codigo(recetaNueva.getCodigo())
+                .descripcion(recetaNueva.getDescripcion())
+                .instrucciones(recetaNueva.getInstrucciones())
+                .imagen(recetaNueva.getImagen())
+                .tiempoPreparacion(recetaNueva.getTiempoPreparacion())
+                .detalles(detalles)
+                .build();
+
+        
         return recetaRepository.save(receta);
     }
 
@@ -221,5 +262,24 @@ public class RecetaServiceImpl implements RecetaService {
                            (r.getCodigo() != null && r.getCodigo().toLowerCase().contains(termino.toLowerCase())) ||
                            (r.getDescripcion() != null && r.getDescripcion().toLowerCase().contains(termino.toLowerCase())))
                 .toList();
+    }
+
+    @Override
+    public BigDecimal recalcularCostoTotal(List<DetalleReceta> detallesReceta) {
+        if (detallesReceta == null || detallesReceta.isEmpty()) {
+            throw new IllegalArgumentException("Lista de detalles de receta inválida para recalcular costo");
+        }
+        BigDecimal nuevoCosto = detallesReceta.stream()
+                .filter(detalle -> detalle.getMaterial() != null && detalle.getMaterial().getCostoUnitario() != null && detalle.getCantidad() != null)
+                .map(detalle -> detalle.getMaterial().getCostoUnitario().multiply(detalle.getCantidad()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        return nuevoCosto;
+    }
+
+    @Override
+    public List<Receta> obtenerRecetasByUsuarioAutenticado() {
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+        return recetaRepository.findByUsuario_Id(usuario.getId());
     }
 }

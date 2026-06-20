@@ -10,4 +10,6 @@ public interface RecetaRepository extends JpaRepository<Receta, Long> {
     
     List<Receta> findByActivaTrue();
 
+    List<Receta> findByUsuario_Id(Long idUsuario);
+
 }

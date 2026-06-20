@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -86,5 +87,14 @@ public class UsuarioServiceImpl implements UsuarioService {
                 String token = jwtHelper.generateToken(usuario);
 
                 return new JwtResponse(token, usuario.getId(), usuario.getEmail());
+        }
+
+        @Override
+        public Usuario obtenerUsuarioAutenticado() {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication == null || !authentication.isAuthenticated()) {
+                        throw new RuntimeException("No hay un usuario autenticado");
+                }
+                return (Usuario) authentication.getPrincipal();
         }
 }

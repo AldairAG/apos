@@ -1,4 +1,5 @@
 import { Material } from "@/features/inventario/materiales";
+import { Unidad } from "@/types/globalTypes";
 
 export interface Receta {
     id: number;
@@ -24,7 +25,7 @@ export interface Receta {
 export interface DetalleReceta {
     id: number;
     cantidad: number;
-    unidadMedida: string;
+    unidadMedida: Unidad;
     merma: number;
-    material: Material;
+    material: Material | null;
 }

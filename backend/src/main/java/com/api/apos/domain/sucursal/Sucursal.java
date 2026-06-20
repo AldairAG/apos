@@ -2,8 +2,15 @@ package com.api.apos.domain.sucursal;
 
 import java.util.List;
 
+import com.api.apos.domain.caja.entity.Caja;
+import com.api.apos.domain.compra.entity.CompraInventario;
+import com.api.apos.domain.empleado.entity.Empleado;
+import com.api.apos.domain.gasto.entity.Gasto;
 import com.api.apos.domain.inventario.entity.ExistenciaMaterial;
+import com.api.apos.domain.mesa.entity.Mesa;
+import com.api.apos.domain.orden.entity.Orden;
 import com.api.apos.domain.usuario.Usuario;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -41,27 +48,35 @@ public class Sucursal {
     private Long createdBy;
     private Long updatedBy;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ExistenciaMaterial> existencias;
     
+    @JsonIgnore
     @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL)
-    private List<com.api.apos.domain.empleado.entity.Empleado> empleados;
+    private List<Empleado> empleados;
     
+    @JsonIgnore
     @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL)
-    private List<com.api.apos.domain.mesa.entity.Mesa> mesas;
+    private List<Mesa> mesas;
     
+    @JsonIgnore
     @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL)
-    private List<com.api.apos.domain.orden.entity.Orden> ordenes;
+    private List<Orden> ordenes;
     
+    @JsonIgnore
     @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL)
-    private List<com.api.apos.domain.caja.entity.Caja> cajas;
+    private List<Caja> cajas;
     
+    @JsonIgnore
     @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL)
-    private List<com.api.apos.domain.gasto.entity.Gasto> gastos;
+    private List<Gasto> gastos;
     
+    @JsonIgnore
     @OneToMany(mappedBy = "sucursal", cascade = CascadeType.ALL)
-    private List<com.api.apos.domain.compra.entity.CompraInventario> compras;
+    private List<CompraInventario> compras;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;

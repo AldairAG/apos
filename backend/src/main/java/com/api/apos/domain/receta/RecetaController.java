@@ -96,10 +96,25 @@ public class RecetaController {
      * Obtener recetas activas de un usuario
      * GET /api/recetas/usuario/{idUsuario}/activas
      */
-    @GetMapping("/usuario/{idUsuario}/activas")
+    @GetMapping("/usuario/activo/{idUsuario}")
     public ResponseEntity<ApiResponseWrapper<List<Receta>>> obtenerRecetasActivas(@PathVariable Long idUsuario) {
         try {
             List<Receta> recetas = recetaService.obtenerRecetasActivas(idUsuario);
+            return ResponseEntity.ok(new ApiResponseWrapper<>(true, recetas, null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponseWrapper<>(false, null, e.getMessage()));
+        }
+    }
+
+    /**
+     * Obtener recetas de un usuario autenticado
+     * GET /api/recetas/usuario/
+     */
+    @GetMapping("/usuario")
+    public ResponseEntity<ApiResponseWrapper<List<Receta>>> obtenerRecetasByUsuarioAutenticado() {
+        try {
+            List<Receta> recetas = recetaService.obtenerRecetasByUsuarioAutenticado();
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, recetas, null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()

@@ -9,6 +9,7 @@ import com.api.apos.domain.produccion.entity.Produccion;
 import com.api.apos.domain.receta.entity.DetalleReceta;
 import com.api.apos.domain.usuario.Usuario;
 import com.api.apos.enums.Unidad;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -54,22 +55,28 @@ public class Material {
     private Long updatedBy;
 
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "material", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ExistenciaMaterial> existencias;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "material", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleReceta> detallesReceta;
     
+    @JsonIgnore
     @OneToMany(mappedBy = "material", cascade = CascadeType.ALL)
     private List<OpcionExtra> opcionesExtra;
     
+    @JsonIgnore
     @OneToMany(mappedBy = "material", cascade = CascadeType.ALL)
     private List<CompraDetalle> compraDetalles;
     
+    @JsonIgnore
     @OneToMany(mappedBy = "materialProducido", cascade = CascadeType.ALL)
     private List<Produccion> producciones;
 
