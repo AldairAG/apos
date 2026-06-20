@@ -8,7 +8,7 @@ export const materialesService = {
    * Obtiene todos los materiales
    */
   getAll: async (): Promise<Material[]> => {
-    const response = await apiBase.get<Material[]>(MATERIAL_BASE_URL);
+    const response = await apiBase.get<Material[]>(`${MATERIAL_BASE_URL}/usuario`);
     return response.data;
   },
 

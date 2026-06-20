@@ -23,7 +23,6 @@ export default function MaterialesScreen() {
     loading,
     error,
     cargarMateriales,
-    cargarMaterialesBySucursal,
     crearMaterial,
     actualizarMaterial,
     eliminarMaterial,
@@ -49,11 +48,7 @@ export default function MaterialesScreen() {
 
   // Cargar materiales al montar el componente
   useEffect(() => {
-    if (sucursalActual) {
-      cargarMaterialesBySucursal(sucursalActual.id);
-    } else {
       cargarMateriales();
-    }
   }, [sucursalActual]);
 
   // Mostrar errores

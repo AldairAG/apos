@@ -22,14 +22,6 @@ export const useMateriales = () => {
     dispatch(fetchMateriales());
   }, [dispatch]);
 
-  // Cargar materiales por sucursal
-  const cargarMaterialesBySucursal = useCallback(
-    (sucursalId: number) => {
-      dispatch(fetchMaterialesBySucursal(sucursalId));
-    },
-    [dispatch]
-  );
-
   // Seleccionar material
   const seleccionarMaterial = useCallback(
     (material: Material | null) => {
@@ -90,7 +82,6 @@ export const useMateriales = () => {
     loading,
     error,
     cargarMateriales,
-    cargarMaterialesBySucursal,
     seleccionarMaterial,
     crearMaterial,
     actualizarMaterial,

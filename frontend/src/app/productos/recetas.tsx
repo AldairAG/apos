@@ -1,3 +1,5 @@
+import { useMateriales } from '@/features/inventario/materiales';
+import { DetalleReceta, Receta } from '@/features/producto/receta/receta.types';
 import { useRecetas } from '@/features/producto/receta/useReceta';
 import { useState } from 'react';
 import {
@@ -25,87 +27,23 @@ interface MaterialReceta {
   unidadMedida: string;
 }
 
-interface Receta {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  rendimiento: number;
-  unidadRendimiento: string;
-  materiales: MaterialReceta[];
-}
-
-// Materiales disponibles (simulados)
-const MATERIALES_DISPONIBLES: Material[] = [
-  { id: '1', nombre: 'Harina de Trigo', unidadMedida: 'kg' },
-  { id: '2', nombre: 'Azúcar Blanca', unidadMedida: 'kg' },
-  { id: '3', nombre: 'Mantequilla', unidadMedida: 'kg' },
-  { id: '4', nombre: 'Leche Entera', unidadMedida: 'L' },
-  { id: '5', nombre: 'Huevos', unidadMedida: 'pza' },
-  { id: '6', nombre: 'Sal', unidadMedida: 'kg' },
-  { id: '7', nombre: 'Levadura', unidadMedida: 'kg' },
-  { id: '8', nombre: 'Vainilla', unidadMedida: 'ml' },
-];
-
-// Recetas de ejemplo
-const RECETAS_EJEMPLO: Receta[] = [
-  {
-    id: '1',
-    nombre: 'Pan Francés',
-    descripcion: 'Pan tradicional estilo francés',
-    rendimiento: 10,
-    unidadRendimiento: 'piezas',
-    materiales: [
-      { materialId: '1', nombreMaterial: 'Harina de Trigo', cantidad: 1, unidadMedida: 'kg' },
-      { materialId: '4', nombreMaterial: 'Leche Entera', cantidad: 0.5, unidadMedida: 'L' },
-      { materialId: '7', nombreMaterial: 'Levadura', cantidad: 0.02, unidadMedida: 'kg' },
-      { materialId: '6', nombreMaterial: 'Sal', cantidad: 0.015, unidadMedida: 'kg' },
-    ],
-  },
-  {
-    id: '2',
-    nombre: 'Pastel de Vainilla',
-    descripcion: 'Pastel suave y esponjoso',
-    rendimiento: 8,
-    unidadRendimiento: 'rebanadas',
-    materiales: [
-      { materialId: '1', nombreMaterial: 'Harina de Trigo', cantidad: 0.5, unidadMedida: 'kg' },
-      { materialId: '2', nombreMaterial: 'Azúcar Blanca', cantidad: 0.3, unidadMedida: 'kg' },
-      { materialId: '5', nombreMaterial: 'Huevos', cantidad: 4, unidadMedida: 'pza' },
-      { materialId: '3', nombreMaterial: 'Mantequilla', cantidad: 0.2, unidadMedida: 'kg' },
-      { materialId: '8', nombreMaterial: 'Vainilla', cantidad: 10, unidadMedida: 'ml' },
-    ],
-  },
-  {
-    id: '3',
-    nombre: 'Galletas de Mantequilla',
-    descripcion: 'Galletas crujientes clásicas',
-    rendimiento: 24,
-    unidadRendimiento: 'piezas',
-    materiales: [
-      { materialId: '1', nombreMaterial: 'Harina de Trigo', cantidad: 0.4, unidadMedida: 'kg' },
-      { materialId: '3', nombreMaterial: 'Mantequilla', cantidad: 0.25, unidadMedida: 'kg' },
-      { materialId: '2', nombreMaterial: 'Azúcar Blanca', cantidad: 0.2, unidadMedida: 'kg' },
-      { materialId: '5', nombreMaterial: 'Huevos', cantidad: 2, unidadMedida: 'pza' },
-    ],
-  },
-];
-
 export default function RecetasScreen() {
   const [busqueda, setBusqueda] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [recetaSeleccionada, setRecetaSeleccionada] = useState<Receta | null>(null);
   const [modalMaterialVisible, setModalMaterialVisible] = useState(false);
-  const [materialesReceta, setMaterialesReceta] = useState<MaterialReceta[]>([]);
+  const [materialesReceta, setMaterialesReceta] = useState<DetalleReceta[]>([]);
   
-  const {cargarRecetas, seleccionarReceta, crearReceta, limpiarRecetas, limpiarError, loading} = useRecetas();
+  const {cargarRecetas, seleccionarReceta, crearReceta, limpiarRecetas, limpiarError, loading,recetas} = useRecetas();
+  const {materiales}= useMateriales();
 
-  const recetasFiltradas = RECETAS_EJEMPLO.filter((receta) =>
+  const recetasFiltradas = recetas.filter((receta) =>
     receta.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   const handleEditar = (receta: Receta) => {
     setRecetaSeleccionada(receta);
-    setMaterialesReceta(receta.materiales);
+    setMaterialesReceta(receta.detalles);
     setModalVisible(true);
   };
 
@@ -125,12 +63,12 @@ export default function RecetasScreen() {
     setMaterialesReceta([]);
   };
 
-  const handleAgregarMaterial = (material: Material) => {
-    const nuevoMaterial: MaterialReceta = {
-      materialId: material.id,
-      nombreMaterial: material.nombre,
+  const handleAgregarMaterial = (materiales: Material) => {
+    const nuevoMaterial: DetalleReceta = {
+      id: materiales.id,
+      nombreMaterial: materiales.nombre,
       cantidad: 0,
-      unidadMedida: material.unidadMedida,
+      unidadMedida: materiales.unidadMedida,
     };
     setMaterialesReceta([...materialesReceta, nuevoMaterial]);
     setModalMaterialVisible(false);
@@ -404,9 +342,9 @@ export default function RecetasScreen() {
             </View>
 
             <ScrollView style={styles.materialesDisponiblesLista}>
-              {MATERIALES_DISPONIBLES.map((material) => {
+              {materiales.map((material) => {
                 const yaAgregado = materialesReceta.some(
-                  (m) => m.materialId === material.id
+                  (m) => m.id === material.id
                 );
                 return (
                   <TouchableOpacity

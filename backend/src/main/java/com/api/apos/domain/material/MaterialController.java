@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.api.apos.domain.material.service.MaterialService;
+import com.api.apos.domain.usuario.Usuario;
 import com.api.apos.helpers.ApiResponseWrapper;
 
 import lombok.RequiredArgsConstructor;
@@ -56,7 +59,8 @@ public class MaterialController {
             @RequestBody Material material) {
         try {
             Material materialActualizado = materialService.actualizarMaterial(id, material);
-            return ResponseEntity.ok(new ApiResponseWrapper<>(true, materialActualizado, "Material actualizado exitosamente"));
+            return ResponseEntity
+                    .ok(new ApiResponseWrapper<>(true, materialActualizado, "Material actualizado exitosamente"));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ApiResponseWrapper<>(false, null, e.getMessage()));
@@ -97,6 +101,26 @@ public class MaterialController {
     @GetMapping("/usuario/{idUsuario}/activos")
     public ResponseEntity<ApiResponseWrapper<List<Material>>> obtenerMaterialesActivos(@PathVariable Long idUsuario) {
         try {
+            List<Material> materiales = materialService.getMaterialesActivos(idUsuario);
+            return ResponseEntity.ok(new ApiResponseWrapper<>(true, materiales, null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponseWrapper<>(false, null, e.getMessage()));
+        }
+    }
+
+    /**
+     * Obtener materiales activos de un usuario
+     * GET /api/materiales/usuario/{idUsuario}/activos
+     */
+    @GetMapping("/usuario")
+    public ResponseEntity<ApiResponseWrapper<List<Material>>> obtenerMaterialesPorUsuario() {
+        try {
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            Long idUsuario = ((Usuario) authentication.getPrincipal()).getId();
+
             List<Material> materiales = materialService.getMaterialesActivos(idUsuario);
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, materiales, null));
         } catch (Exception e) {
