@@ -1,9 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { apiBase } from '../api/apiBase';
 import materialesReducer from '../features/inventario/materiales/materiales.slice';
+import categoriaReducer from '../features/producto/categoria/categoria.slice';
+import grupoExtraReducer from '../features/producto/grupoExtra/grupoExtra.slice';
+import productoReducer from '../features/producto/producto/producto.slice';
+import recetaReducer from '../features/producto/receta/receta.slice';
 import sucursalReducer from '../features/sucursal/sucursal.slice';
 import authReducer from '../features/usuario/auth/auth.slice';
-import recetaReducer from '../features/producto/receta/receta.slice';
 import usuarioReducer from '../features/usuario/usuario/usuario.slice';
 
 export const store = configureStore({
@@ -13,6 +16,9 @@ export const store = configureStore({
         materiales: materialesReducer,
         recetas: recetaReducer,
         usuario: usuarioReducer,
+        productos: productoReducer,
+        categorias: categoriaReducer,
+        gruposExtra: grupoExtraReducer,
     },
 }); 
 // Inicializar el token de apiBase desde sessionStorage al cargar la aplicación

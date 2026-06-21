@@ -2,6 +2,9 @@ package com.api.apos.domain.producto;
 
 import java.util.List;
 
+import com.api.apos.domain.categoria.entity.Categoria;
+import com.api.apos.domain.extra.entity.ProductoGrupoExtra;
+import com.api.apos.domain.orden.entity.DetalleOrden;
 import com.api.apos.domain.receta.entity.Receta;
 
 import jakarta.persistence.CascadeType;
@@ -49,11 +52,11 @@ public class Producto {
     
     @ManyToOne
     @JoinColumn(name = "categoria_id")
-    private com.api.apos.domain.categoria.entity.Categoria categoria;
+    private Categoria categoria;
     
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL)
-    private List<com.api.apos.domain.orden.entity.DetalleOrden> detallesOrden;
+    private List<DetalleOrden> detallesOrden;
     
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL)
-    private List<com.api.apos.domain.extra.entity.ProductoGrupoExtra> gruposExtra;
+    private List<ProductoGrupoExtra> gruposExtra;
 }

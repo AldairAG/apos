@@ -96,10 +96,10 @@ public class CategoriaController {
      * Obtener categorías de un usuario
      * GET /api/categorias/usuario/{idUsuario}
      */
-    @GetMapping("/usuario/{idUsuario}")
-    public ResponseEntity<ApiResponseWrapper<List<Categoria>>> obtenerCategoriasPorUsuario(@PathVariable Long idUsuario) {
+    @GetMapping("/usuario")
+    public ResponseEntity<ApiResponseWrapper<List<Categoria>>> obtenerCategoriasPorUsuario() {
         try {
-            List<Categoria> categorias = categoriaService.obtenerCategoriasPorUsuario(idUsuario);
+            List<Categoria> categorias = categoriaService.obtenerCategoriasPorUsuario();
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, categorias, null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -115,21 +115,6 @@ public class CategoriaController {
     public ResponseEntity<ApiResponseWrapper<List<Categoria>>> obtenerCategoriasActivas(@PathVariable Long idUsuario) {
         try {
             List<Categoria> categorias = categoriaService.obtenerCategoriasActivas(idUsuario);
-            return ResponseEntity.ok(new ApiResponseWrapper<>(true, categorias, null));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponseWrapper<>(false, null, e.getMessage()));
-        }
-    }
-
-    /**
-     * Obtener categorías ordenadas para mostrar en menú
-     * GET /api/categorias/usuario/{idUsuario}/ordenadas
-     */
-    @GetMapping("/usuario/{idUsuario}/ordenadas")
-    public ResponseEntity<ApiResponseWrapper<List<Categoria>>> obtenerCategoriasOrdenadas(@PathVariable Long idUsuario) {
-        try {
-            List<Categoria> categorias = categoriaService.obtenerCategoriasOrdenadas(idUsuario);
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, categorias, null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -169,20 +154,4 @@ public class CategoriaController {
         }
     }
 
-    /**
-     * Actualizar orden de visualización
-     * PUT /api/categorias/{id}/orden?nuevoOrden=1
-     */
-    @PutMapping("/{id}/orden")
-    public ResponseEntity<ApiResponseWrapper<Categoria>> actualizarOrden(
-            @PathVariable Long id,
-            @RequestParam Integer nuevoOrden) {
-        try {
-            Categoria categoria = categoriaService.actualizarOrden(id, nuevoOrden);
-            return ResponseEntity.ok(new ApiResponseWrapper<>(true, categoria, "Orden actualizado exitosamente"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiResponseWrapper<>(false, null, e.getMessage()));
-        }
-    }
 }

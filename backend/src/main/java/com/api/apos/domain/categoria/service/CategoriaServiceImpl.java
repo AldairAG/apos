@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.api.apos.domain.categoria.entity.Categoria;
 import com.api.apos.domain.categoria.repository.CategoriaRepository;
 import com.api.apos.domain.producto.Producto;
+import com.api.apos.domain.usuario.Usuario;
+import com.api.apos.domain.usuario.service.UsuarioService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +26,8 @@ public class CategoriaServiceImpl implements CategoriaService {
     
     private final CategoriaRepository categoriaRepository;
 
+    private final UsuarioService usuarioService;
+
     /**
      * Crear una nueva categoría
      * @param categoria Categoría a crear
@@ -31,13 +35,14 @@ public class CategoriaServiceImpl implements CategoriaService {
      */
     @Override
     public Categoria crearCategoria(Categoria categoria) {
+
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+
+        categoria.setUsuario(usuario);
         categoria.setCreatedAt(LocalDateTime.now());
         categoria.setUpdatedAt(LocalDateTime.now());
         if (categoria.getActivo() == null) {
             categoria.setActivo(true);
-        }
-        if (categoria.getOrden() == null) {
-            categoria.setOrden(0);
         }
         return categoriaRepository.save(categoria);
     }
@@ -55,8 +60,6 @@ public class CategoriaServiceImpl implements CategoriaService {
                 .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + id));
         
         categoriaExistente.setNombre(categoria.getNombre());
-        categoriaExistente.setDescripcion(categoria.getDescripcion());
-        categoriaExistente.setOrden(categoria.getOrden());
         categoriaExistente.setUpdatedAt(LocalDateTime.now());
         categoriaExistente.setUpdatedBy(categoria.getUpdatedBy());
         
@@ -89,17 +92,6 @@ public class CategoriaServiceImpl implements CategoriaService {
     }
 
     /**
-     * Obtener todas las categorías de un usuario
-     * @param idUsuario ID del usuario
-     * @return Lista de categorías del usuario
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public List<Categoria> obtenerCategoriasPorUsuario(Long idUsuario) {
-        return categoriaRepository.findByUsuario_IdOrderByOrdenAsc(idUsuario);
-    }
-
-    /**
      * Obtener solo categorías activas de un usuario
      * @param idUsuario ID del usuario
      * @return Lista de categorías activas
@@ -108,18 +100,6 @@ public class CategoriaServiceImpl implements CategoriaService {
     @Transactional(readOnly = true)
     public List<Categoria> obtenerCategoriasActivas(Long idUsuario) {
         return categoriaRepository.findByUsuario_IdAndActivoTrue(idUsuario);
-    }
-
-    /**
-     * Obtener categorías ordenadas por campo orden
-     * Útil para mostrar menús en el POS
-     * @param idUsuario ID del usuario
-     * @return Lista de categorías ordenadas
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public List<Categoria> obtenerCategoriasOrdenadas(Long idUsuario) {
-        return categoriaRepository.findByUsuario_IdAndActivoTrueOrderByOrdenAsc(idUsuario);
     }
 
     /**
@@ -152,19 +132,12 @@ public class CategoriaServiceImpl implements CategoriaService {
         return categoriaRepository.save(categoria);
     }
 
-    /**
-     * Actualizar el orden de visualización de una categoría
-     * @param id ID de la categoría
-     * @param nuevoOrden Nuevo número de orden
-     * @return Categoría actualizada
-     * @throws RuntimeException si la categoría no existe
-     */
     @Override
-    public Categoria actualizarOrden(Long id, Integer nuevoOrden) {
-        Categoria categoria = categoriaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + id));
-        categoria.setOrden(nuevoOrden);
-        categoria.setUpdatedAt(LocalDateTime.now());
-        return categoriaRepository.save(categoria);
+    public List<Categoria> obtenerCategoriasPorUsuario() {
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+
+        List<Categoria> categorias = categoriaRepository.findByUsuario_IdAndActivoTrue(usuario.getId());
+        return categorias;
     }
+
 }

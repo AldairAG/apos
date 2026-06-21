@@ -8,9 +8,6 @@ import com.api.apos.domain.categoria.entity.Categoria;
 
 public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
     
-    List<Categoria> findByUsuario_IdOrderByOrdenAsc(Long idUsuario);
-    
     List<Categoria> findByUsuario_IdAndActivoTrue(Long idUsuario);
     
-    List<Categoria> findByUsuario_IdAndActivoTrueOrderByOrdenAsc(Long idUsuario);
 }

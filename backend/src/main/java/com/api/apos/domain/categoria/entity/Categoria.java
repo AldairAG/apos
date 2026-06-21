@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.api.apos.domain.producto.Producto;
 import com.api.apos.domain.usuario.Usuario;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -33,8 +34,6 @@ public class Categoria {
     private Long id;
     
     private String nombre;
-    private String descripcion;
-    private Integer orden;
     private Boolean activo;
     
     private LocalDateTime createdAt;
@@ -42,10 +41,12 @@ public class Categoria {
     private Long createdBy;
     private Long updatedBy;
     
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
     
+    @JsonIgnore
     @OneToMany(mappedBy = "categoria", cascade = CascadeType.ALL)
     private List<Producto> productos;
 }

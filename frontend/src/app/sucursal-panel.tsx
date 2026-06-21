@@ -51,6 +51,13 @@ const MENU_OPTIONS: MenuOption[] = [
     color: '#FF9800',
   },
   {
+    id: 'mesas',
+    titulo: 'Configuración de Mesas',
+    icono: '🍽️',
+    ruta: ROUTES.CONFIG.MESAS,
+    color: '#27037a',
+  },
+  {
     id: 'corte',
     titulo: 'Corte de Caja',
     icono: '🧮',

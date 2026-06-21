@@ -11,10 +11,8 @@ public interface CategoriaService {
     Categoria actualizarCategoria(Long id, Categoria categoria);
     void eliminarCategoria(Long id);
     Optional<Categoria> obtenerCategoriaPorId(Long id);
-    List<Categoria> obtenerCategoriasPorUsuario(Long idUsuario);
+    List<Categoria> obtenerCategoriasPorUsuario();
     List<Categoria> obtenerCategoriasActivas(Long idUsuario);
-    List<Categoria> obtenerCategoriasOrdenadas(Long idUsuario);
     List<Producto> obtenerProductosPorCategoria(Long idCategoria);
     Categoria cambiarEstadoActivo(Long id, boolean activo);
-    Categoria actualizarOrden(Long id, Integer nuevoOrden);
 }
