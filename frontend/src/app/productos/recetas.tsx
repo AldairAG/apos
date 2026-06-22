@@ -1,6 +1,6 @@
 import { Material, useMateriales } from '@/features/inventario/materiales';
 import { setRecetaSeleccionada } from '@/features/producto/receta/receta.slice';
-import { DetalleReceta, Receta } from '@/features/producto/receta/receta.types';
+import { CrearRecetaDTO, DetalleReceta, Receta } from '@/features/producto/receta/receta.types';
 import { useRecetas } from '@/features/producto/receta/useReceta';
 import { Unidad } from '@/types/globalTypes';
 import { use, useEffect, useState } from 'react';
@@ -14,6 +14,18 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
+
+/**
+ * Errores y carencias de la interface actual
+ * no carga los materiales al intentar crear o editar un receta resolver con useEffect para cargar los materiales al seleccionar una receta o al abrir el modal de creación
+ * no se muestra el costo total del material en la receta, resolver calculando el costo total al agregar materiales a la receta o al cargar una receta existente
+ * no muestra el costo total de la receta en la lista de recetas, resolver mostrando el costo total en la tarjeta de cada receta
+ * falta a;adir el campo de tiempo de preparaciopnn en el formulario de creación y edición, resolver añadiendo un nuevo campo en el formulario y guardando ese dato al crear o editar la receta
+ * falta agrgar el campo de instrucciones en el formulario de creación y edición, resolver añadiendo un nuevo campo en el formulario y guardando ese dato al crear o editar la receta
+ * agregar una visualizacion de un resumen del costo total de la receta en el formalario de creacion
+ * agregar funcionalidad para eliminar y editar receta ,resolver usando el useReceta
+ */
 
 export default function RecetasScreen() {
   const [busqueda, setBusqueda] = useState('');
@@ -44,24 +56,16 @@ export default function RecetasScreen() {
   );
 
   const handleCrearReceta = () => {
-    const nuevaReceta: Receta = {
-      id: 0,
+    const nuevaReceta: CrearRecetaDTO = {
       nombre: formData.nombre,
-      codigo: `REC-${Date.now()}`,
       descripcion: formData.descripcion,
       instrucciones: formData.instrucciones || '',
-      imagen: '',
       rendimiento: formData.rendimiento || 0,
       unidadRendimiento: formData.unidadRendimiento || Unidad.PZ,
       costoTotal: 0,
       tiempoPreparacion: formData.tiempoPreparacion || 0,
       activa: true,
-      fechaCreacion: new Date(),
-      createdBy: 1,
-      updatedBy: 1,
       detalles: materialesReceta,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     };
     crearReceta(nuevaReceta);
     //setModalVisible(false);

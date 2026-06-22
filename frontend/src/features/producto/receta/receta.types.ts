@@ -29,3 +29,16 @@ export interface DetalleReceta {
     merma: number;
     material: Material | null;
 }
+
+
+export interface CrearRecetaDTO {
+    nombre: string;
+    descripcion: string;
+    instrucciones: string;
+    rendimiento: number;
+    unidadRendimiento: string;
+    costoTotal: number;
+    tiempoPreparacion: number;
+    activa: boolean;
+    detalles: DetalleReceta[];
+}

@@ -1,5 +1,6 @@
 package com.api.apos.domain.material;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.api.apos.domain.compra.entity.CompraDetalle;
@@ -49,8 +50,8 @@ public class Material {
     private Boolean perecedero;
     private Integer diasVencimiento;
     
-    private java.time.LocalDateTime createdAt;
-    private java.time.LocalDateTime updatedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private Long createdBy;
     private Long updatedBy;
 

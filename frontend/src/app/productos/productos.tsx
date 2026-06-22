@@ -1,7 +1,6 @@
 import { createProductoDTO, Producto } from '@/features/producto/producto/producto.types';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   ActivityIndicator,
   Alert,

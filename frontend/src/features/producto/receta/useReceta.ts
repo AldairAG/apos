@@ -9,7 +9,7 @@ import {
     fetchRecetasBySucursal,
     updateReceta,
 } from './receta.thunks';
-import { Receta } from './receta.types';
+import { CrearRecetaDTO, Receta } from './receta.types';
 
 export const useRecetas = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -33,7 +33,7 @@ export const useRecetas = () => {
     }, [dispatch]);
 
     // Crear nueva receta
-    const crearReceta = useCallback(async (data: Receta) => {
+    const crearReceta = useCallback(async (data: CrearRecetaDTO) => {
         const result = await dispatch(createReceta(data));
         if (createReceta.fulfilled.match(result)) {
             return { success: true, data: result.payload };

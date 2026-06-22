@@ -4,11 +4,12 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import com.api.apos.domain.receta.dto.CrearRecetaDTO;
 import com.api.apos.domain.receta.entity.DetalleReceta;
 import com.api.apos.domain.receta.entity.Receta;
 
 public interface RecetaService {
-    Receta crearReceta(Receta receta);
+    Receta crearReceta(CrearRecetaDTO receta);
     Receta actualizarReceta(Long id, Receta receta);
     void eliminarReceta(Long id);
     Optional<Receta> obtenerRecetaPorId(Long id);

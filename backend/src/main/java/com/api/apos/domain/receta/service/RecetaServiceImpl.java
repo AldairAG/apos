@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.api.apos.domain.material.Material;
 import com.api.apos.domain.material.service.MaterialService;
+import com.api.apos.domain.receta.dto.CrearRecetaDTO;
 import com.api.apos.domain.receta.entity.DetalleReceta;
 import com.api.apos.domain.receta.entity.Receta;
 import com.api.apos.domain.receta.repository.RecetaRepository;
@@ -39,21 +40,20 @@ public class RecetaServiceImpl implements RecetaService {
      * @return Receta creada con timestamp
      */
     @Override
-    public Receta crearReceta(Receta recetaNueva) {
+    public Receta crearReceta(CrearRecetaDTO recetaNueva) {
         Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
 
         List<DetalleReceta> detalles = recetaNueva.getDetalles().stream()
                 .map(detalle -> {
 
                     Material material = materialService.obtenerMaterialPorId(detalle.getId())
-                            .orElseThrow(() -> new RuntimeException("Material no encontrado con ID: " + detalle.getMaterial().getId()));
+                            .orElseThrow(() -> new RuntimeException("Material no encontrado con ID: " + detalle.getId()));
 
                     DetalleReceta nuevoDetalle = DetalleReceta.builder()
                             .id(null)
                             .material(material)
                             .cantidad(detalle.getCantidad())
                             .unidadMedida(detalle.getUnidadMedida())
-                            .merma(detalle.getMerma())
                             .build();
                     nuevoDetalle.setReceta(null); // Se asignará la receta después de crearla
                     return nuevoDetalle;
@@ -69,13 +69,14 @@ public class RecetaServiceImpl implements RecetaService {
                 .rendimiento(recetaNueva.getRendimiento())
                 .unidadRendimiento(recetaNueva.getUnidadRendimiento())
                 .nombre(recetaNueva.getNombre())
-                .codigo(recetaNueva.getCodigo())
                 .descripcion(recetaNueva.getDescripcion())
                 .instrucciones(recetaNueva.getInstrucciones())
-                .imagen(recetaNueva.getImagen())
                 .tiempoPreparacion(recetaNueva.getTiempoPreparacion())
-                .detalles(detalles)
                 .build();
+        
+        detalles.forEach(detalle -> detalle.setReceta(receta)); // Asignar la receta a cada detalle
+
+        receta.setDetalles(detalles); // Asignar la lista de detalles a la receta
 
         
         return recetaRepository.save(receta);

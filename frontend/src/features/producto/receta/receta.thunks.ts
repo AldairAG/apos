@@ -1,6 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { recetaService } from './receta.service';
-import { Receta } from './receta.types';
+import { CrearRecetaDTO, Receta } from './receta.types';
 
 
 export const fetchRecetas = createAsyncThunk<
@@ -36,7 +36,7 @@ export const fetchRecetasBySucursal = createAsyncThunk<
 
 export const createReceta = createAsyncThunk<
     Receta,
-    Receta,
+    CrearRecetaDTO,
     { rejectValue: string }
 >('recetas/createReceta', async (data, { rejectWithValue }) => {
     try {

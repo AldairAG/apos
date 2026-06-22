@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.api.apos.domain.receta.dto.CrearRecetaDTO;
 import com.api.apos.domain.receta.entity.Receta;
 import com.api.apos.domain.receta.service.RecetaService;
 import com.api.apos.helpers.ApiResponseWrapper;
@@ -37,7 +38,7 @@ public class RecetaController {
      * POST /api/recetas
      */
     @PostMapping
-    public ResponseEntity<ApiResponseWrapper<Receta>> crearReceta(@RequestBody Receta receta) {
+    public ResponseEntity<ApiResponseWrapper<Receta>> crearReceta(@RequestBody CrearRecetaDTO receta) {
         try {
             Receta nuevaReceta = recetaService.crearReceta(receta);
             return ResponseEntity.status(HttpStatus.CREATED)

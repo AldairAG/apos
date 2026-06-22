@@ -5,7 +5,7 @@ import { useAuth } from '@/features/usuario/auth/useAuth';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { ROUTES, Rol } from '@/routes/routes';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dimensions,
   ScrollView,
@@ -87,9 +87,13 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { logout } = useAuth();
   const { menu, rol } = useRoleBasedNavigation();
-  const { sucursalActual } = useSucursal();
+  const { sucursalActual,recargarSucursales } = useSucursal();
   const [mostrarSelectorSucursal, setMostrarSelectorSucursal] = useState(false);
   const [moduloDestino, setModuloDestino] = useState<string | null>(null);
+
+  useEffect(() => {
+    recargarSucursales();
+  }, []);
 
   const handleLogout = () => {
     logout();

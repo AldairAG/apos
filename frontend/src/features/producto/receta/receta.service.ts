@@ -1,5 +1,5 @@
 import { apiBase } from '@/api/apiBase';
-import { Receta } from './receta.types';
+import { CrearRecetaDTO, Receta } from './receta.types';
 import { CreateMaterialDTO, Material } from '@/features/inventario/materiales/materiales.types';
 
 
@@ -34,7 +34,7 @@ export const recetaService = {
     /**
      * Crea una nueva receta
      */
-    create: async (data: Receta): Promise<Receta> => {
+    create: async (data: CrearRecetaDTO): Promise<Receta> => {
         const response = await apiBase.post<Receta>(RECETA_BASE_URL, data);
         return response.data;
     },
