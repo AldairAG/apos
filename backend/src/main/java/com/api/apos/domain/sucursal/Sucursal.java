@@ -7,7 +7,7 @@ import com.api.apos.domain.compra.entity.CompraInventario;
 import com.api.apos.domain.empleado.entity.Empleado;
 import com.api.apos.domain.gasto.entity.Gasto;
 import com.api.apos.domain.inventario.entity.ExistenciaMaterial;
-import com.api.apos.domain.mesa.entity.Mesa;
+import com.api.apos.domain.mesa.Mesa;
 import com.api.apos.domain.orden.entity.Orden;
 import com.api.apos.domain.usuario.Usuario;
 import com.fasterxml.jackson.annotation.JsonIgnore;

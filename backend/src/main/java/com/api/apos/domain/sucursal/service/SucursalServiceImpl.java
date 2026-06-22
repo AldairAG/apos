@@ -97,4 +97,14 @@ public class SucursalServiceImpl implements SucursalService {
         sucursalRepository.delete(sucursal);
     }
 
+    @Override
+    public Sucursal obtenerSucursalPorId(Long idSucursal) {
+        if (idSucursal == null) {
+            throw new IllegalArgumentException("El id de la sucursal es requerido");
+        }
+
+        return sucursalRepository.findById(idSucursal)
+                .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
+    }
+
 }

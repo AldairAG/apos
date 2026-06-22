@@ -1,4 +1,4 @@
-package com.api.apos.domain.mesa.entity;
+package com.api.apos.domain.mesa;
 
 import java.time.LocalDateTime;
 
@@ -34,8 +34,6 @@ public class Mesa {
     private String nombre;
     private String codigo;
     private String ubicacion;
-    
-    private Integer capacidad;
     
     @Enumerated(EnumType.STRING)
     private EstadoMesa estado;
