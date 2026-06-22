@@ -1,19 +1,7 @@
 import { apiBase } from '@/api/apiBase';
-import { Producto } from './producto.types';
+import { createProductoDTO, Producto } from './producto.types';
 
 const PRODUCTO_BASE_URL = '/productos';
-
-export interface CreateProductoDTO {
-  nombre: string;
-  descripcion: string;
-  precioVenta: number;
-  costo: number;
-  tiempoPreparacion: number;
-  destacado: boolean;
-  categoriaId: number;
-  recetaId: number;
-  gruposExtraIds?: number[];
-}
 
 export interface UpdateProductoDTO {
   nombre?: string;
@@ -58,7 +46,7 @@ export const productoService = {
   /**
    * Crea un nuevo producto desde una receta
    */
-  create: async (data: CreateProductoDTO): Promise<Producto> => {
+  create: async (data: createProductoDTO): Promise<Producto> => {
     const response = await apiBase.post<Producto>(PRODUCTO_BASE_URL, data);
     return response.data;
   },

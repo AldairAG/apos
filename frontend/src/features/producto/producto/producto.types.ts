@@ -69,3 +69,17 @@ export interface ProductoState {
     error: string | null;
     searchQuery: string;
 }
+
+export interface createProductoDTO {
+    nombre: string;
+    descripcion?: string;
+    precioVenta: number;
+    costo: number;
+    margen: number;
+    tiempoPreparacion: number;
+    activo: boolean;
+    destacado: boolean;
+    categoriaId: number;
+    recetaId?: number;
+    gruposExtra?: ProductoGrupoExtra[];
+}

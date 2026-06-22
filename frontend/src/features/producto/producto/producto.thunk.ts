@@ -1,6 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { CreateProductoDTO, productoService, UpdateProductoDTO } from './producto.service';
-import { Producto } from './producto.types';
+import { productoService, UpdateProductoDTO } from './producto.service';
+import { createProductoDTO, Producto } from './producto.types';
 
 export const fetchProductosBySucursal = createAsyncThunk<
   Producto[],
@@ -49,7 +49,7 @@ export const fetchProductoById = createAsyncThunk<
 
 export const createProducto = createAsyncThunk<
   Producto,
-  CreateProductoDTO,
+  createProductoDTO,
   { rejectValue: string }
 >('producto/create', async (data, { rejectWithValue }) => {
   try {

@@ -1,16 +1,7 @@
-import { z } from 'zod';
-import {
-  createProducto,
-  deleteProducto,
-  fetchProductosBySucursal,
-  searchProductos,
-  toggleProductoDisponibilidad,
-  updateProducto,
-} from '@/features/producto/producto/producto.thunk';
-import { Producto } from '@/features/producto/producto/producto.types';
-import { fetchRecetasBySucursal } from '@/features/producto/receta/receta.thunks';
+import { createProductoDTO, Producto } from '@/features/producto/producto/producto.types';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   ActivityIndicator,
   Alert,
@@ -23,73 +14,65 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useCategoria } from '@/features/producto/categoria/useCategoria';
+import { useRecetas } from '@/features/producto/receta/useReceta';
+import { useProducto } from '@/features/producto/producto/useProducto';
+import { useSucursal } from '@/features/sucursal/useSucursal';
+
 
 export default function ProductosScreen() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
+  const {sucursalActual}= useSucursal()
+  const {categorias,cargarCategorias}=useCategoria()
+  const {recetas,cargarRecetas}=useRecetas()
+  const {selectedProducto, productos, loading, error, saveProducto, cargarProductos}=useProducto()
+
 
   // Form fields
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<createProductoDTO>({
     nombre: '',
     descripcion: '',
-    precioVenta: '',
-    costo: '',
-    tiempoPreparacion: '',
+    precioVenta: 0,
+    costo: 0,
+    margen: 0,
+    tiempoPreparacion: 0,
+    activo: false,
     destacado: false,
-    categoriaId: null as number | null,
-    recetaId: null as number | null,
+    categoriaId: 0,
+    recetaId: 0,
+    gruposExtra: [],
   });
 
-  useEffect(() => {
-
-  }, []);
 
   const handleSearch = () => {
-    if (sucursalActual && searchQuery.trim()) {
-      dispatch(searchProductos({ sucursalId: sucursalActual.id, query: searchQuery }));
-    } else if (sucursalActual) {
-      dispatch(fetchProductosBySucursal(sucursalActual.id));
-    }
+
   };
 
   const openModal = (producto?: Producto) => {
     if (producto) {
       setEditingProducto(producto);
-      setNombre(producto.nombre);
-      setDescripcion(producto.descripcion);
-      setPrecioVenta(producto.precioVenta.toString());
-      setCosto(producto.costo.toString());
-      setTiempoPreparacion(producto.tiempoPreparacion.toString());
-      setDestacado(producto.destacado);
-      setCategoriaId(producto.categoria.id);
-      setRecetaId(null); // No se puede cambiar la receta
     } else {
-      resetForm();
     }
     setModalVisible(true);
-  };
-
-  const resetForm = () => {
-    setEditingProducto(null);
-    setNombre('');
-    setDescripcion('');
-    setPrecioVenta('');
-    setCosto('');
-    setTiempoPreparacion('');
-    setDestacado(false);
-    setCategoriaId(null);
-    setRecetaId(null);
-  };
-
-  const handleSubmit = async () => {
-
   };
 
   const handleDelete = (producto: Producto) => {
 
   };
+
+  const handleSubmit = () => {
+    if (!formData.nombre || !formData.precioVenta || !formData.categoriaId) {
+      Alert.alert('Error', 'Por favor complete los campos obligatorios');
+      return;
+    }
+    saveProducto(formData);
+    setModalVisible(false);
+    /* resetForm(); */
+  };
+
 
   const handleToggleDisponibilidad = async (producto: Producto) => {
 
@@ -205,32 +188,32 @@ export default function ProductosScreen() {
               <Text style={styles.modalTitle}>{editingProducto ? 'Editar Producto' : 'Nuevo Producto'}</Text>
 
               <Text style={styles.label}>Nombre *</Text>
-              <TextInput style={styles.input} value={nombre} onChangeText={setNombre} />
+              <TextInput style={styles.input} value={formData.nombre} onChangeText={(text) => setFormData({ ...formData, nombre: text })} />
 
               <Text style={styles.label}>Descripción</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                value={descripcion}
-                onChangeText={setDescripcion}
+                value={formData.descripcion}
+                onChangeText={(text) => setFormData({ ...formData, descripcion: text })}
                 multiline
               />
 
               <Text style={styles.label}>Precio de Venta *</Text>
               <TextInput
                 style={styles.input}
-                value={precioVenta}
-                onChangeText={setPrecioVenta}
+                value={formData.precioVenta.toString()}
+                onChangeText={(text) => setFormData({ ...formData, precioVenta: Number(text) })}
                 keyboardType="numeric"
               />
 
               <Text style={styles.label}>Costo</Text>
-              <TextInput style={styles.input} value={costo} onChangeText={setCosto} keyboardType="numeric" />
+              <TextInput style={styles.input} value={formData.costo.toString()  } onChangeText={(text) => setFormData({ ...formData, costo: Number(text) })} keyboardType="numeric" />
 
               <Text style={styles.label}>Tiempo de Preparación (min)</Text>
               <TextInput
                 style={styles.input}
-                value={tiempoPreparacion}
-                onChangeText={setTiempoPreparacion}
+                value={formData.tiempoPreparacion.toString()}
+                onChangeText={(text) => setFormData({ ...formData, tiempoPreparacion: Number(text) })}
                 keyboardType="numeric"
               />
 
@@ -239,8 +222,8 @@ export default function ProductosScreen() {
                 {categorias.map((cat) => (
                   <TouchableOpacity
                     key={cat.id}
-                    style={[styles.chip, categoriaId === cat.id && styles.chipSelected]}
-                    onPress={() => setCategoriaId(cat.id)}
+                    style={[styles.chip, formData.categoriaId === cat.id && styles.chipSelected]}
+                    onPress={() => setFormData({ ...formData, categoriaId: cat.id })}
                   >
                     <Text style={styles.chipText}>{cat.nombre}</Text>
                   </TouchableOpacity>
@@ -254,8 +237,8 @@ export default function ProductosScreen() {
                     {recetas.map((receta) => (
                       <TouchableOpacity
                         key={receta.id}
-                        style={[styles.chip, recetaId === receta.id && styles.chipSelected]}
-                        onPress={() => setRecetaId(receta.id)}
+                        style={[styles.chip, formData.recetaId === receta.id && styles.chipSelected]}
+                        onPress={() => setFormData({ ...formData, recetaId: receta.id })}
                       >
                         <Text style={styles.chipText}>{receta.nombre}</Text>
                       </TouchableOpacity>
@@ -266,9 +249,9 @@ export default function ProductosScreen() {
 
               <TouchableOpacity
                 style={styles.checkboxContainer}
-                onPress={() => setDestacado(!destacado)}
+                onPress={() => setFormData({ ...formData, destacado: !formData.destacado })}
               >
-                <View style={[styles.checkbox, destacado && styles.checkboxChecked]} />
+                <View style={[styles.checkbox, formData.destacado && styles.checkboxChecked]} />
                 <Text style={styles.checkboxLabel}>Producto Destacado</Text>
               </TouchableOpacity>
 
@@ -277,12 +260,12 @@ export default function ProductosScreen() {
                   style={[styles.btnModal, styles.btnSecondary]}
                   onPress={() => {
                     setModalVisible(false);
-                    resetForm();
+                    /* resetForm(); */
                   }}
                 >
                   <Text style={styles.btnText}>Cancelar</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.btnModal, styles.btnPrimary]} onPress={handleSubmit}>
+                <TouchableOpacity style={[styles.btnModal, styles.btnPrimary]} onPress={handleSubmit} >
                   <Text style={styles.btnText}>Guardar</Text>
                 </TouchableOpacity>
               </View>
