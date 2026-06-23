@@ -47,6 +47,7 @@ export default function TabLayout() {
           <Stack.Screen name="pos/ordenes" />
           <Stack.Screen name="pos/detalle-orden" />
           <Stack.Screen name="pos/cocina" />
+          <Stack.Screen name="pos/home" />
 
           {/* Gestión de Caja */}
           <Stack.Screen name="caja/apertura" />

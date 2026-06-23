@@ -8,6 +8,7 @@ import recetaReducer from '../features/producto/receta/receta.slice';
 import sucursalReducer from '../features/sucursal/sucursal.slice';
 import authReducer from '../features/usuario/auth/auth.slice';
 import usuarioReducer from '../features/usuario/usuario/usuario.slice';
+import mesaReducer from '../features/mesas/mesa.slice';
 
 export const store = configureStore({
     reducer: {
@@ -19,6 +20,7 @@ export const store = configureStore({
         productos: productoReducer,
         categorias: categoriaReducer,
         gruposExtra: grupoExtraReducer,
+        mesas: mesaReducer,
     },
 }); 
 // Inicializar el token de apiBase desde sessionStorage al cargar la aplicación
