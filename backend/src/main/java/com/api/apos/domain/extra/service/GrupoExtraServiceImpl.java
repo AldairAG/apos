@@ -7,8 +7,12 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.api.apos.domain.extra.dto.CreateGrupoExtraDTO;
 import com.api.apos.domain.extra.entity.GrupoExtra;
+import com.api.apos.domain.extra.entity.OpcionExtra;
 import com.api.apos.domain.extra.repository.GrupoExtraRepository;
+import com.api.apos.domain.usuario.Usuario;
+import com.api.apos.domain.usuario.service.UsuarioService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,18 +27,40 @@ public class GrupoExtraServiceImpl implements GrupoExtraService {
     
     private final GrupoExtraRepository grupoExtraRepository;
 
+    private final UsuarioService usuarioService;
+
     /**
      * Crear un nuevo grupo de extras
      * @param grupoExtra Grupo de extras a crear
      * @return Grupo de extras creado con timestamp
      */
     @Override
-    public GrupoExtra crearGrupoExtra(GrupoExtra grupoExtra) {
-        grupoExtra.setCreatedAt(LocalDateTime.now());
-        grupoExtra.setUpdatedAt(LocalDateTime.now());
-        if (grupoExtra.getActivo() == null) {
-            grupoExtra.setActivo(true);
-        }
+    public GrupoExtra crearGrupoExtra(CreateGrupoExtraDTO grupoExtraDTO) {
+
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+
+        GrupoExtra grupoExtra = GrupoExtra.builder()
+        .nombre(grupoExtraDTO.getNombre())
+        .descripcion(grupoExtraDTO.getDescripcion())
+        .usuario(usuario)
+        .build();
+
+        List<OpcionExtra> opciones = grupoExtraDTO.getOpciones().stream()
+            .map(opcionDTO -> {
+                OpcionExtra opcion = OpcionExtra.builder()
+                .grupoExtra(grupoExtra)
+                .nombre(opcionDTO.getNombre())
+                .precio(opcionDTO.getPrecio())
+                .activo(true)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+                return opcion;
+            })
+            .toList();
+        grupoExtra.setOpciones(opciones);
+
+
         return grupoExtraRepository.save(grupoExtra);
     }
 

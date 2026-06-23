@@ -24,6 +24,7 @@ export interface OpcionExtra {
 export interface CreateGrupoExtraDTO {
   nombre: string;
   descripcion: string;
+  opciones: CreateOpcionExtraDTO[];
 }
 
 export interface UpdateGrupoExtraDTO {
@@ -35,7 +36,6 @@ export interface UpdateGrupoExtraDTO {
 export interface CreateOpcionExtraDTO {
   nombre: string;
   precio: number;
-  grupoExtraId: number;
   materialId: number;
 }
 

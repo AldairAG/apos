@@ -1,35 +1,26 @@
-import { setSelectedGrupo } from '@/features/producto/grupoExtra/grupoExtra.slice';
-import {
-    createGrupoExtra,
-    createOpcionExtra,
-    deleteGrupoExtra,
-    deleteOpcionExtra,
-    updateGrupoExtra,
-    updateOpcionExtra
-} from '@/features/producto/grupoExtra/grupoExtra.thunk';
-import { GrupoExtra, OpcionExtra } from '@/features/producto/grupoExtra/grupoExtra.types';
-import { AppDispatch, RootState } from '@/store';
+import { useMateriales } from '@/features/inventario/materiales';
+import { CreateGrupoExtraDTO, GrupoExtra, OpcionExtra } from '@/features/producto/grupoExtra/grupoExtra.types';
+import { useExtra } from '@/features/producto/grupoExtra/useExtra';
+import { useSucursal } from '@/features/sucursal/useSucursal';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
 
 export default function ExtrasScreen() {
-  const dispatch = useDispatch<AppDispatch>();
-  const { grupos, selectedGrupo, loading, error } = useSelector((state: RootState) => state.gruposExtra);
-  const { materiales } = useSelector((state: RootState) => state.materiales);
-  const { sucursalActual } = useSelector((state: RootState) => state.sucursal);
+  const { grupos, selectedGrupo, loading, error, cargarGrupos, saveGrupo } = useExtra();
+  const { materiales } = useMateriales();
+  const { sucursalActual } = useSucursal();
 
   const [modalGrupoVisible, setModalGrupoVisible] = useState(false);
   const [modalOpcionVisible, setModalOpcionVisible] = useState(false);
@@ -37,8 +28,11 @@ export default function ExtrasScreen() {
   const [editingOpcion, setEditingOpcion] = useState<OpcionExtra | null>(null);
 
   // Form fields for Grupo
-  const [nombreGrupo, setNombreGrupo] = useState('');
-  const [descripcionGrupo, setDescripcionGrupo] = useState('');
+  const [formData, setFormData] = useState<CreateGrupoExtraDTO>({
+    nombre: '',
+    descripcion: '',
+    opciones: []
+  })
 
   // Form fields for Opcion
   const [nombreOpcion, setNombreOpcion] = useState('');
@@ -50,8 +44,7 @@ export default function ExtrasScreen() {
   const openGrupoModal = (grupo?: GrupoExtra) => {
     if (grupo) {
       setEditingGrupo(grupo);
-      setNombreGrupo(grupo.nombre);
-      setDescripcionGrupo(grupo.descripcion);
+      setFormData ({ nombre: grupo.nombre, descripcion: grupo.descripcion, opciones: grupo.opciones });
     } else {
       resetGrupoForm();
     }
@@ -60,29 +53,20 @@ export default function ExtrasScreen() {
 
   const resetGrupoForm = () => {
     setEditingGrupo(null);
-    setNombreGrupo('');
-    setDescripcionGrupo('');
+    setFormData({ nombre: '', descripcion: '', opciones: [] });
   };
 
   const handleGrupoSubmit = async () => {
-    if (!nombreGrupo.trim()) {
+    if (!formData.nombre.trim()) {
       Alert.alert('Error', 'El nombre es obligatorio');
       return;
     }
 
     try {
       if (editingGrupo) {
-        await dispatch(
-          updateGrupoExtra({
-            id: editingGrupo.id,
-            data: { nombre: nombreGrupo, descripcion: descripcionGrupo },
-          })
-        ).unwrap();
-        Alert.alert('Éxito', 'Grupo actualizado');
+        
       } else {
-        await dispatch(
-          createGrupoExtra({ nombre: nombreGrupo, descripcion: descripcionGrupo })
-        ).unwrap();
+        saveGrupo(formData)
         Alert.alert('Éxito', 'Grupo creado');
       }
       setModalGrupoVisible(false);
@@ -103,10 +87,10 @@ export default function ExtrasScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await dispatch(deleteGrupoExtra(grupo.id)).unwrap();
+              
               Alert.alert('Éxito', 'Grupo eliminado');
               if (selectedGrupo?.id === grupo.id) {
-                dispatch(setSelectedGrupo(null));
+
               }
             } catch (err: any) {
               Alert.alert('Error', err || 'Error al eliminar');
@@ -150,26 +134,10 @@ export default function ExtrasScreen() {
 
     try {
       if (editingOpcion) {
-        await dispatch(
-          updateOpcionExtra({
-            id: editingOpcion.id,
-            data: {
-              nombre: nombreOpcion,
-              precio: parseFloat(precioOpcion) || 0,
-              materialId: materialIdOpcion,
-            },
-          })
-        ).unwrap();
+        
         Alert.alert('Éxito', 'Opción actualizada');
       } else {
-        await dispatch(
-          createOpcionExtra({
-            nombre: nombreOpcion,
-            precio: parseFloat(precioOpcion) || 0,
-            grupoExtraId: selectedGrupo.id,
-            materialId: materialIdOpcion,
-          })
-        ).unwrap();
+        
         Alert.alert('Éxito', 'Opción creada');
       }
       setModalOpcionVisible(false);
@@ -190,7 +158,7 @@ export default function ExtrasScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await dispatch(deleteOpcionExtra(opcion.id)).unwrap();
+              
               Alert.alert('Éxito', 'Opción eliminada');
             } catch (err: any) {
               Alert.alert('Error', err || 'Error al eliminar');
@@ -207,7 +175,7 @@ export default function ExtrasScreen() {
     return (
       <TouchableOpacity
         style={[styles.card, isSelected && styles.cardSelected]}
-        onPress={() => dispatch(setSelectedGrupo(item))}
+
       >
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{item.nombre}</Text>
@@ -252,13 +220,13 @@ export default function ExtrasScreen() {
 
       {/* Navigation Tabs */}
       <View style={styles.navigationTabs}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.tab}
           onPress={() => router.push('/productos/productos')}
         >
           <Text style={styles.tabText}>Productos</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.tab}
           onPress={() => router.push('/config/categorias')}
         >
@@ -323,13 +291,13 @@ export default function ExtrasScreen() {
             <Text style={styles.modalTitle}>{editingGrupo ? 'Editar Grupo' : 'Nuevo Grupo'}</Text>
 
             <Text style={styles.label}>Nombre *</Text>
-            <TextInput style={styles.input} value={nombreGrupo} onChangeText={setNombreGrupo} />
+            <TextInput style={styles.input} value={formData.nombre} onChangeText={(text) => setFormData({ ...formData, nombre: text })} />
 
             <Text style={styles.label}>Descripción</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              value={descripcionGrupo}
-              onChangeText={setDescripcionGrupo}
+              value={formData.descripcion}
+              onChangeText={(text) => setFormData({ ...formData, descripcion: text })}
               multiline
             />
 
