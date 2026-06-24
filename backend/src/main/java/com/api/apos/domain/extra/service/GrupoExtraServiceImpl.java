@@ -10,9 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.api.apos.domain.extra.dto.CreateGrupoExtraDTO;
 import com.api.apos.domain.extra.entity.GrupoExtra;
 import com.api.apos.domain.extra.entity.OpcionExtra;
-import com.api.apos.domain.extra.entity.ProductoGrupoExtra;
 import com.api.apos.domain.extra.repository.GrupoExtraRepository;
-import com.api.apos.domain.producto.ProductoService;
 import com.api.apos.domain.usuario.Usuario;
 import com.api.apos.domain.usuario.service.UsuarioService;
 
@@ -20,21 +18,23 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Implementación del servicio de gestión de grupos de extras
- * Los grupos de extras son conjuntos de opciones adicionales que se pueden agregar a productos
+ * Los grupos de extras son conjuntos de opciones adicionales que se pueden
+ * agregar a productos
  */
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class GrupoExtraServiceImpl implements GrupoExtraService {
-    
+
     private final GrupoExtraRepository grupoExtraRepository;
 
     private final UsuarioService usuarioService;
 
-    private final ProductoService productoService;
+    private final ProductoGrupoExtraService grupoExtraService;
 
     /**
      * Crear un nuevo grupo de extras
+     * 
      * @param grupoExtra Grupo de extras a crear
      * @return Grupo de extras creado con timestamp
      */
@@ -44,40 +44,37 @@ public class GrupoExtraServiceImpl implements GrupoExtraService {
         Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
 
         GrupoExtra grupoExtra = GrupoExtra.builder()
-        .nombre(grupoExtraDTO.getNombre())
-        .descripcion(grupoExtraDTO.getDescripcion())
-        .usuario(usuario)
-        .build();
-
-        productoService.asociarGrupoExtraAProductos(grupoExtraDTO.getProductosIds(), grupoExtra);
-
-        ProductoGrupoExtra productoGrupoExtra =  ProductoGrupoExtra.builder()
-        .grupoExtra(grupoExtra)
-        .productosIds(grupoExtraDTO.getProductosIds())
-        .build();
+                .nombre(grupoExtraDTO.getNombre())
+                .descripcion(grupoExtraDTO.getDescripcion())
+                .usuario(usuario)
+                .build();
 
         List<OpcionExtra> opciones = grupoExtraDTO.getOpciones().stream()
-            .map(opcionDTO -> {
-                OpcionExtra opcion = OpcionExtra.builder()
-                .grupoExtra(grupoExtra)
-                .nombre(opcionDTO.getNombre())
-                .precio(opcionDTO.getPrecio())
-                .activo(true)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
-                return opcion;
-            })
-            .toList();
+                .map(opcionDTO -> {
+                    OpcionExtra opcion = OpcionExtra.builder()
+                            .grupoExtra(grupoExtra)
+                            .nombre(opcionDTO.getNombre())
+                            .precio(opcionDTO.getPrecio())
+                            .activo(true)
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+                    return opcion;
+                })
+                .toList();
         grupoExtra.setOpciones(opciones);
 
+        grupoExtraRepository.save(grupoExtra);
 
-        return grupoExtraRepository.save(grupoExtra);
+        grupoExtraService.asociarGrupoExtraAProductos(grupoExtraDTO.getProductosIds(), grupoExtra);
+
+        return grupoExtra;
     }
 
     /**
      * Actualizar un grupo de extras existente
-     * @param id ID del grupo de extras
+     * 
+     * @param id         ID del grupo de extras
      * @param grupoExtra Datos actualizados
      * @return Grupo de extras actualizado
      * @throws RuntimeException si el grupo de extras no existe
@@ -86,17 +83,18 @@ public class GrupoExtraServiceImpl implements GrupoExtraService {
     public GrupoExtra actualizarGrupoExtra(Long id, GrupoExtra grupoExtra) {
         GrupoExtra grupoExistente = grupoExtraRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Grupo de extras no encontrado con ID: " + id));
-        
+
         grupoExistente.setNombre(grupoExtra.getNombre());
         grupoExistente.setDescripcion(grupoExtra.getDescripcion());
         grupoExistente.setUpdatedAt(LocalDateTime.now());
         grupoExistente.setUpdatedBy(grupoExtra.getUpdatedBy());
-        
+
         return grupoExtraRepository.save(grupoExistente);
     }
 
     /**
      * Eliminar un grupo de extras (borrado lógico)
+     * 
      * @param id ID del grupo de extras a eliminar
      * @throws RuntimeException si el grupo de extras no existe
      */
@@ -111,6 +109,7 @@ public class GrupoExtraServiceImpl implements GrupoExtraService {
 
     /**
      * Obtener un grupo de extras por su ID
+     * 
      * @param id ID del grupo de extras
      * @return Optional con el grupo de extras si existe
      */
@@ -122,6 +121,7 @@ public class GrupoExtraServiceImpl implements GrupoExtraService {
 
     /**
      * Obtener todos los grupos de extras de un usuario
+     * 
      * @param idUsuario ID del usuario
      * @return Lista de grupos de extras del usuario
      */
@@ -133,6 +133,7 @@ public class GrupoExtraServiceImpl implements GrupoExtraService {
 
     /**
      * Obtener solo grupos de extras activos de un usuario
+     * 
      * @param idUsuario ID del usuario
      * @return Lista de grupos de extras activos
      */
@@ -144,6 +145,7 @@ public class GrupoExtraServiceImpl implements GrupoExtraService {
 
     /**
      * Obtener grupos de extras asociados a un producto específico
+     * 
      * @param idProducto ID del producto
      * @return Lista de grupos de extras del producto
      */
@@ -155,7 +157,8 @@ public class GrupoExtraServiceImpl implements GrupoExtraService {
 
     /**
      * Cambiar el estado activo de un grupo de extras
-     * @param id ID del grupo de extras
+     * 
+     * @param id     ID del grupo de extras
      * @param activo Nuevo estado
      * @return Grupo de extras actualizado
      * @throws RuntimeException si el grupo de extras no existe

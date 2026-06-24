@@ -13,7 +13,7 @@ public class CreateGrupoExtraDTO {
     List<Long> productosIds;
 
     @Data
-    public class CreateOpcionExtraDTO {
+    public static class CreateOpcionExtraDTO {
         String nombre;
         BigDecimal precio;
         Long materialId;

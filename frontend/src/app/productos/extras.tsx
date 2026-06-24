@@ -144,7 +144,8 @@ export default function ExtrasScreen() {
       return;
     }
 
-    /**const opcionesValidas = opciones.filter((op) => op.nombre.trim() && op.materialId);
+    //const opcionesValidas = opciones.filter((op) => op.nombre.trim() && op.materialId);
+    const opcionesValidas = opciones;
     
     if (opcionesValidas.length === 0) {
       Alert.alert('Error', 'Debe agregar al menos una opción válida');
@@ -155,12 +156,12 @@ export default function ExtrasScreen() {
       nombre: op.nombre,
       precio: parseFloat(op.precio) || 0,
       materialId: op.materialId!,
-    }));**/
+    }));
 
     const grupoDTO: CreateGrupoExtraDTO = {
       nombre: formData.nombre,
       descripcion: formData.descripcion,
-      /**opciones: opcionesDTO,**/
+      opciones: opcionesDTO,
       productosIds: productosSeleccionados,
     };
 

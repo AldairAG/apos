@@ -8,7 +8,6 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.api.apos.domain.extra.entity.GrupoExtra;
 
 import lombok.RequiredArgsConstructor;
 
@@ -277,16 +276,5 @@ public class ProductoServiceImpl implements ProductoService {
     @Transactional(readOnly = true)
     public Optional<Producto> obtenerProductoPorSku(String sku) {
         return productoRepository.findBySku(sku);
-    }
-
-    @Override
-    public void asociarGrupoExtraAProductos(List<Long> productosIds, GrupoExtra grupoExtra) {
-        List<Producto> productos = productoRepository.findAllById(productosIds);
-        for (Producto producto : productos) {
-            producto.getGruposExtra().add(grupoExtra);
-            producto.setUpdatedAt(LocalDateTime.now());
-            productoRepository.save(producto);
-        }
-    
     }
 }
