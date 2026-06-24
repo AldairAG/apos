@@ -10,7 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.api.apos.domain.extra.dto.CreateGrupoExtraDTO;
 import com.api.apos.domain.extra.entity.GrupoExtra;
 import com.api.apos.domain.extra.entity.OpcionExtra;
+import com.api.apos.domain.extra.entity.ProductoGrupoExtra;
 import com.api.apos.domain.extra.repository.GrupoExtraRepository;
+import com.api.apos.domain.producto.ProductoService;
 import com.api.apos.domain.usuario.Usuario;
 import com.api.apos.domain.usuario.service.UsuarioService;
 
@@ -29,6 +31,8 @@ public class GrupoExtraServiceImpl implements GrupoExtraService {
 
     private final UsuarioService usuarioService;
 
+    private final ProductoService productoService;
+
     /**
      * Crear un nuevo grupo de extras
      * @param grupoExtra Grupo de extras a crear
@@ -43,6 +47,13 @@ public class GrupoExtraServiceImpl implements GrupoExtraService {
         .nombre(grupoExtraDTO.getNombre())
         .descripcion(grupoExtraDTO.getDescripcion())
         .usuario(usuario)
+        .build();
+
+        productoService.asociarGrupoExtraAProductos(grupoExtraDTO.getProductosIds(), grupoExtra);
+
+        ProductoGrupoExtra productoGrupoExtra =  ProductoGrupoExtra.builder()
+        .grupoExtra(grupoExtra)
+        .productosIds(grupoExtraDTO.getProductosIds())
         .build();
 
         List<OpcionExtra> opciones = grupoExtraDTO.getOpciones().stream()

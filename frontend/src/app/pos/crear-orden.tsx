@@ -15,7 +15,15 @@ export default function CrearOrdenScreen() {
     cargarProductos();
   }, []);
 
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number>(1);
+  const categorias = obtenerCategoriasDeProductos();
+
+  useEffect(() => {
+    if (categorias.length > 0) {
+      setCategoriaSeleccionada(categorias[0].id);
+    }
+  }, [categorias]);
+
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number>(categorias.length > 0 ? categorias[0].id : 0);
   const [itemsOrden, setItemsOrden] = useState<ItemOrden[]>([]);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [modalProductoVisible, setModalProductoVisible] = useState(false);
@@ -190,7 +198,7 @@ export default function CrearOrdenScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categorias}
           >
-            {obtenerCategoriasDeProductos().map(renderCategoriaChip)}
+            {categorias.map(renderCategoriaChip)}
           </ScrollView>
         </View>
 

@@ -24,7 +24,8 @@ export interface OpcionExtra {
 export interface CreateGrupoExtraDTO {
   nombre: string;
   descripcion: string;
-  opciones: CreateOpcionExtraDTO[];
+  opciones?: CreateOpcionExtraDTO[];
+  productosIds?: number[];
 }
 
 export interface UpdateGrupoExtraDTO {

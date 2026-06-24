@@ -3,6 +3,8 @@ package com.api.apos.domain.producto;
 import java.util.List;
 import java.util.Optional;
 
+import com.api.apos.domain.extra.entity.GrupoExtra;
+
 public interface ProductoService {
     
     /**
@@ -129,4 +131,12 @@ public interface ProductoService {
      * @return Optional con el producto si existe
      */
     Optional<Producto> obtenerProductoPorSku(String sku);
+
+
+    /**
+     * Asociar un grupo de extras a productos
+     * @param productosIds Lista de IDs de productos
+     * @param grupoExtra Grupo de extras a asociar
+     */
+    void asociarGrupoExtraAProductos(List<Long> productosIds, GrupoExtra grupoExtra);
 }

@@ -10,6 +10,7 @@ public class CreateGrupoExtraDTO {
     String nombre;
     String descripcion;
     List<CreateOpcionExtraDTO> opciones;
+    List<Long> productosIds;
 
     @Data
     public class CreateOpcionExtraDTO {

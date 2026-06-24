@@ -2,21 +2,10 @@ import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
 import { useMateriales } from '@/features/inventario/materiales';
 import { CreateGrupoExtraDTO, CreateOpcionExtraDTO, GrupoExtra } from '@/features/producto/grupoExtra/grupoExtra.types';
 import { useExtra } from '@/features/producto/grupoExtra/useExtra';
+import { useProducto } from '@/features/producto/producto/useProducto';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, FlatList, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
-
-// Mock de productos para asociación
-const MOCK_PRODUCTOS = [
-  { id: 1, nombre: 'Hamburguesa Clásica', categoria: 'Hamburguesas', activo: true },
-  { id: 2, nombre: 'Pizza Margarita', categoria: 'Pizzas', activo: true },
-  { id: 3, nombre: 'Hot Dog Tradicional', categoria: 'Hot Dogs', activo: true },
-  { id: 4, nombre: 'Ensalada César', categoria: 'Ensaladas', activo: true },
-  { id: 5, nombre: 'Tacos al Pastor', categoria: 'Tacos', activo: true },
-  { id: 6, nombre: 'Burrito de Pollo', categoria: 'Burritos', activo: true },
-  { id: 7, nombre: 'Quesadilla Especial', categoria: 'Quesadillas', activo: true },
-  { id: 8, nombre: 'Club Sandwich', categoria: 'Sandwiches', activo: true },
-];
 
 interface OpcionForm {
   tempId: string;
@@ -29,6 +18,7 @@ interface OpcionForm {
 export default function ExtrasScreen() {
   const { grupos, loading, cargarGrupos, saveGrupo } = useExtra();
   const { materiales, cargarMateriales } = useMateriales();
+  const {productos, loading: loadingProductos,cargarProductos} = useProducto(); // Hook para obtener productos desde el store
 
   const [busqueda, setBusqueda] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
@@ -50,6 +40,7 @@ export default function ExtrasScreen() {
   useEffect(() => {
     cargarGrupos();
     cargarMateriales();
+    cargarProductos();
   }, []);
 
   useEffect(() => {
@@ -80,7 +71,7 @@ export default function ExtrasScreen() {
     grupo.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const productosFiltrados = MOCK_PRODUCTOS.filter((prod) =>
+  const productosFiltrados = productos.filter((prod) =>
     prod.nombre.toLowerCase().includes(busquedaProducto.toLowerCase())
   );
 
@@ -153,7 +144,7 @@ export default function ExtrasScreen() {
       return;
     }
 
-    const opcionesValidas = opciones.filter((op) => op.nombre.trim() && op.materialId);
+    /**const opcionesValidas = opciones.filter((op) => op.nombre.trim() && op.materialId);
     
     if (opcionesValidas.length === 0) {
       Alert.alert('Error', 'Debe agregar al menos una opción válida');
@@ -164,12 +155,13 @@ export default function ExtrasScreen() {
       nombre: op.nombre,
       precio: parseFloat(op.precio) || 0,
       materialId: op.materialId!,
-    }));
+    }));**/
 
     const grupoDTO: CreateGrupoExtraDTO = {
       nombre: formData.nombre,
       descripcion: formData.descripcion,
-      opciones: opcionesDTO,
+      /**opciones: opcionesDTO,**/
+      productosIds: productosSeleccionados,
     };
 
     saveGrupo(grupoDTO);
@@ -513,7 +505,7 @@ export default function ExtrasScreen() {
                 {productosSeleccionados.length > 0 && (
                   <View style={styles.productosSeleccionadosLista}>
                     {productosSeleccionados.map((prodId) => {
-                      const producto = MOCK_PRODUCTOS.find((p) => p.id === prodId);
+                      const producto = grupos.find((p) => p.id === prodId);
                       return producto ? (
                         <View key={prodId} style={styles.chipProducto}>
                           <Text style={styles.chipProductoTexto}>{producto.nombre}</Text>
@@ -633,7 +625,7 @@ export default function ExtrasScreen() {
                   >
                     <View style={styles.productoItemInfo}>
                       <Text style={styles.productoItemNombre}>{producto.nombre}</Text>
-                      <Text style={styles.productoItemCategoria}>{producto.categoria}</Text>
+                      <Text style={styles.productoItemCategoria}>{producto.categoria.descripcion}</Text>
                     </View>
                     {isSeleccionado ? (
                       <POSIcon name="checkmark-circle" size={28} color={COLORS.success} />
