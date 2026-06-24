@@ -1,109 +1,145 @@
-import { Material, useMateriales } from '@/features/inventario/materiales';
-import { setRecetaSeleccionada } from '@/features/producto/receta/receta.slice';
+import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
+import { useMateriales } from '@/features/inventario/materiales';
+import { Material } from '@/features/inventario/materiales/materiales.types';
 import { CrearRecetaDTO, DetalleReceta, Receta } from '@/features/producto/receta/receta.types';
 import { useRecetas } from '@/features/producto/receta/useReceta';
 import { Unidad } from '@/types/globalTypes';
-import { use, useEffect, useState } from 'react';
-import {
-  FlatList,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-
-
-/**
- * Errores y carencias de la interface actual
- * no carga los materiales al intentar crear o editar un receta resolver con useEffect para cargar los materiales al seleccionar una receta o al abrir el modal de creación
- * no se muestra el costo total del material en la receta, resolver calculando el costo total al agregar materiales a la receta o al cargar una receta existente
- * no muestra el costo total de la receta en la lista de recetas, resolver mostrando el costo total en la tarjeta de cada receta
- * falta a;adir el campo de tiempo de preparaciopnn en el formulario de creación y edición, resolver añadiendo un nuevo campo en el formulario y guardando ese dato al crear o editar la receta
- * falta agrgar el campo de instrucciones en el formulario de creación y edición, resolver añadiendo un nuevo campo en el formulario y guardando ese dato al crear o editar la receta
- * agregar una visualizacion de un resumen del costo total de la receta en el formalario de creacion
- * agregar funcionalidad para eliminar y editar receta ,resolver usando el useReceta
- */
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function RecetasScreen() {
   const [busqueda, setBusqueda] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMaterialVisible, setModalMaterialVisible] = useState(false);
   const [materialesReceta, setMaterialesReceta] = useState<DetalleReceta[]>([]);
-  const [mostrarUnidades, setMostrarUnidades] = useState(false);
 
   const [formData, setFormData] = useState({
     nombre: '',
+    codigo: '',
     descripcion: '',
-    rendimiento: 0,
+    rendimiento: 1,
     unidadRendimiento: Unidad.PZ,
     tiempoPreparacion: 0,
     instrucciones: '',
-
   });
 
-  const { cargarRecetas, seleccionarReceta, crearReceta, limpiarRecetas, limpiarError, loading, recetas, recetaSeleccionada } = useRecetas();
-  const { materiales } = useMateriales();
+  const { cargarRecetas, seleccionarReceta, crearReceta, limpiarRecetas, loading, recetas, recetaSeleccionada } = useRecetas();
+  const { materiales, cargarMateriales } = useMateriales();
 
   useEffect(() => {
     cargarRecetas();
-  }, [cargarRecetas]);
+    cargarMateriales();
+  }, []);
+
+  // Cargar datos al editar
+  useEffect(() => {
+    if (recetaSeleccionada) {
+      setFormData({
+        nombre: recetaSeleccionada.nombre,
+        codigo: recetaSeleccionada.codigo,
+        descripcion: recetaSeleccionada.descripcion,
+        rendimiento: recetaSeleccionada.rendimiento,
+        unidadRendimiento: recetaSeleccionada.unidadRendimiento as Unidad,
+        tiempoPreparacion: recetaSeleccionada.tiempoPreparacion,
+        instrucciones: recetaSeleccionada.instrucciones,
+      });
+      setMaterialesReceta(recetaSeleccionada.detalles);
+    } else {
+      setFormData({
+        nombre: '',
+        codigo: '',
+        descripcion: '',
+        rendimiento: 1,
+        unidadRendimiento: Unidad.PZ,
+        tiempoPreparacion: 0,
+        instrucciones: '',
+      });
+      setMaterialesReceta([]);
+    }
+  }, [recetaSeleccionada]);
+
+  // Calcular costos en tiempo real
+  const costos = useMemo(() => {
+    const detallesConCosto = materialesReceta.map((detalle) => {
+      const costoUnitario = detalle.material?.costoUnitario || 0;
+      const subtotal = detalle.cantidad * costoUnitario;
+      return { ...detalle, costoUnitario, subtotal };
+    });
+
+    const costoTotal = detallesConCosto.reduce((sum, item) => sum + item.subtotal, 0);
+    const costoPorUnidad = formData.rendimiento > 0 ? costoTotal / formData.rendimiento : 0;
+
+    return { detallesConCosto, costoTotal, costoPorUnidad };
+  }, [materialesReceta, formData.rendimiento]);
 
   const recetasFiltradas = recetas.filter((receta) =>
-    receta.nombre.toLowerCase().includes(busqueda.toLowerCase())
+    receta.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+    receta.codigo.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   const handleCrearReceta = () => {
+    if (!formData.nombre || !formData.codigo) {
+      Alert.alert('Error', 'Por favor completa los campos requeridos');
+      return;
+    }
+
     const nuevaReceta: CrearRecetaDTO = {
       nombre: formData.nombre,
       descripcion: formData.descripcion,
-      instrucciones: formData.instrucciones || '',
-      rendimiento: formData.rendimiento || 0,
-      unidadRendimiento: formData.unidadRendimiento || Unidad.PZ,
-      costoTotal: 0,
-      tiempoPreparacion: formData.tiempoPreparacion || 0,
+      instrucciones: formData.instrucciones,
+      rendimiento: formData.rendimiento,
+      unidadRendimiento: formData.unidadRendimiento,
+      costoTotal: costos.costoTotal,
+      tiempoPreparacion: formData.tiempoPreparacion,
       activa: true,
       detalles: materialesReceta,
     };
     crearReceta(nuevaReceta);
-    //setModalVisible(false);
-    //setMaterialesReceta([]);
-  }
+    handleCerrarModal();
+  };
 
   const handleEditar = (receta: Receta) => {
     seleccionarReceta(receta);
-    setMaterialesReceta(receta.detalles);
     setModalVisible(true);
   };
 
   const handleNuevo = () => {
     seleccionarReceta(null);
-    setMaterialesReceta([]);
     setModalVisible(true);
   };
 
   const handleEliminar = (receta: Receta) => {
-    console.log('Eliminar:', receta.nombre);
+    Alert.alert(
+      'Eliminar Receta',
+      `¿Estás seguro de eliminar "${receta.nombre}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', style: 'destructive', onPress: () => console.log('Eliminar receta:', receta.id) }
+      ]
+    );
   };
 
   const handleCerrarModal = () => {
     setModalVisible(false);
-    setRecetaSeleccionada(null);
-    setMaterialesReceta([]);
+    seleccionarReceta(null);
   };
 
   const handleAgregarMaterial = (material: Material) => {
     const nuevoMaterial: DetalleReceta = {
-      id: material.id,
-      cantidad: 0,
+      id: material.id, // Usar el ID del material como identificador temporal
+      cantidad: 1,
       unidadMedida: material.unidadMedida,
       merma: 0,
-      material: null,
+      material: material,
     };
     setMaterialesReceta([...materialesReceta, nuevoMaterial]);
     setModalMaterialVisible(false);
+  };
+
+  const handleActualizarCantidad = (index: number, cantidad: number) => {
+    const nuevosM = [...materialesReceta];
+    nuevosM[index].cantidad = cantidad;
+    setMaterialesReceta(nuevosM);
   };
 
   const handleEliminarMaterial = (index: number) => {
@@ -111,36 +147,67 @@ export default function RecetasScreen() {
     setMaterialesReceta(nuevosM);
   };
 
-  const renderRecetaItem = ({ item }: { item: Receta }) => {
-    return (
-      <View style={styles.recetaCard}>
-        <View style={styles.recetaInfo}>
-          <View style={styles.recetaHeader}>
-            <Text style={styles.recetaNombre}>{item.nombre}</Text>
-            <View style={styles.rendimientoBadge}>
-              <Text style={styles.rendimientoTexto}>
-                ↻ {item.rendimiento} {item.unidadRendimiento}
-              </Text>
-            </View>
-          </View>
-          <Text style={styles.recetaDescripcion}>{item.descripcion}</Text>
+  const materialesDisponibles = materiales.filter(
+    (mat) => !materialesReceta.some((mr) => mr.material?.id === mat.id)
+  );
 
-          <View style={styles.materialesPreview}>
-            <Text style={styles.materialesPreviewTitulo}>
-              📋 Materiales ({item.detalles.length})
+  const renderRecetaItem = ({ item }: { item: Receta }) => {
+    const costoReceta = item.detalles.reduce((sum, det) => {
+      return sum + (det.cantidad * (det.material?.costoUnitario || 0));
+    }, 0);
+    const costoPorUnidad = item.rendimiento > 0 ? costoReceta / item.rendimiento : 0;
+
+    return (
+      <POSCard style={styles.recetaCard} variant="elevated">
+        <View style={styles.recetaHeader}>
+          <View style={styles.recetaHeaderLeft}>
+            <Text style={styles.recetaNombre}>{item.nombre}</Text>
+            <Text style={styles.recetaCodigo}>{item.codigo}</Text>
+          </View>
+          <View style={styles.recetaHeaderRight}>
+            <POSBadge
+              label={item.activa ? 'ACTIVA' : 'INACTIVA'}
+              variant={item.activa ? 'success' : 'default'}
+              size="small"
+            />
+          </View>
+        </View>
+
+        <Text style={styles.recetaDescripcion} numberOfLines={2}>
+          {item.descripcion}
+        </Text>
+
+        <View style={styles.recetaInfoGrid}>
+          <View style={styles.recetaInfoItem}>
+            <POSIcon name="bar-chart-outline" size={16} color={COLORS.textSecondary} />
+            <Text style={styles.recetaInfoLabel}>Rendimiento</Text>
+            <Text style={styles.recetaInfoValue}>
+              {item.rendimiento} {item.unidadRendimiento}
             </Text>
-            <View style={styles.materialesPreviewLista}>
-              {item.detalles.slice(0, 3).map((mat, idx) => (
-                <Text key={idx} style={styles.materialPreviewItem}>
-                  • {mat?.material?.nombre}
-                </Text>
-              ))}
-              {item.detalles.length > 3 && (
-                <Text style={styles.materialPreviewMas}>
-                  +{item.detalles.length - 3} más...
-                </Text>
-              )}
-            </View>
+          </View>
+
+          <View style={styles.recetaInfoItem}>
+            <POSIcon name="list-outline" size={16} color={COLORS.textSecondary} />
+            <Text style={styles.recetaInfoLabel}>Ingredientes</Text>
+            <Text style={styles.recetaInfoValue}>{item.detalles.length}</Text>
+          </View>
+
+          <View style={styles.recetaInfoItem}>
+            <POSIcon name="time-outline" size={16} color={COLORS.textSecondary} />
+            <Text style={styles.recetaInfoLabel}>Tiempo</Text>
+            <Text style={styles.recetaInfoValue}>{item.tiempoPreparacion} min</Text>
+          </View>
+        </View>
+
+        <View style={styles.recetaCostoContainer}>
+          <View style={styles.recetaCosto}>
+            <Text style={styles.recetaCostoLabel}>Costo Total</Text>
+            <Text style={styles.recetaCostoTotal}>${costoReceta.toFixed(2)}</Text>
+          </View>
+          <View style={styles.recetaCostoDivider} />
+          <View style={styles.recetaCosto}>
+            <Text style={styles.recetaCostoLabel}>Costo/Unidad</Text>
+            <Text style={styles.recetaCostoUnidad}>${costoPorUnidad.toFixed(2)}</Text>
           </View>
         </View>
 
@@ -149,46 +216,19 @@ export default function RecetasScreen() {
             style={[styles.botonAccion, styles.botonEditar]}
             onPress={() => handleEditar(item)}
           >
-            <Text style={styles.iconoAccion}>✏️</Text>
+            <POSIcon name="create-outline" size={20} color={COLORS.primary} />
+            <Text style={styles.botonAccionTexto}>Editar</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={[styles.botonAccion, styles.botonEliminar]}
             onPress={() => handleEliminar(item)}
           >
-            <Text style={styles.iconoAccion}>🗑️</Text>
+            <POSIcon name="trash-outline" size={20} color={COLORS.danger} />
+            <Text style={[styles.botonAccionTexto, styles.botonEliminarTexto]}>Eliminar</Text>
           </TouchableOpacity>
         </View>
-      </View>
-    );
-  };
-
-  const renderMaterialRecetaItem = (material: DetalleReceta, index: number) => {
-    return (
-      <View key={index} style={styles.materialRecetaItem}>
-        <View style={styles.materialRecetaInfo}>
-          <Text style={styles.materialRecetaNombre}>{material?.material?.nombre}</Text>
-          <View style={styles.materialRecetaCantidadContainer}>
-            <TextInput
-              style={styles.materialRecetaCantidadInput}
-              placeholder="0"
-              keyboardType="decimal-pad"
-              defaultValue={material.cantidad.toString()}
-              onChangeText={(text) => {
-                const nuevosM = [...materialesReceta];
-                nuevosM[index].cantidad = Number(text);
-                setMaterialesReceta(nuevosM);
-              }}
-            />
-            <Text style={styles.materialRecetaUnidad}>{material.unidadMedida}</Text>
-          </View>
-        </View>
-        <TouchableOpacity
-          style={styles.botonEliminarMaterial}
-          onPress={() => handleEliminarMaterial(index)}
-        >
-          <Text style={styles.iconoEliminarMaterial}>✕</Text>
-        </TouchableOpacity>
-      </View>
+      </POSCard>
     );
   };
 
@@ -196,25 +236,31 @@ export default function RecetasScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitulo}>Recetas</Text>
-        <Text style={styles.headerSubtitulo}>
-          {recetasFiltradas.length} recetas encontradas
+        <View style={styles.headerTop}>
+          <Text style={styles.title}>Gestión de Recetas</Text>
+          <POSBadge
+            label={`${recetasFiltradas.length} recetas`}
+            variant="info"
+          />
+        </View>
+        <Text style={styles.subtitle}>
+          Control de costos y producción
         </Text>
       </View>
 
       {/* Buscador */}
       <View style={styles.busquedaContainer}>
-        <Text style={styles.busquedaIcono}>🔍</Text>
+        <POSIcon name="search" size={20} color={COLORS.textSecondary} />
         <TextInput
           style={styles.busquedaInput}
-          placeholder="Buscar receta..."
-          placeholderTextColor="#999"
+          placeholder="Buscar por nombre o código..."
+          placeholderTextColor={COLORS.textSecondary}
           value={busqueda}
           onChangeText={setBusqueda}
         />
         {busqueda.length > 0 && (
           <TouchableOpacity onPress={() => setBusqueda('')}>
-            <Text style={styles.busquedaLimpiar}>✕</Text>
+            <POSIcon name="close-circle" size={20} color={COLORS.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -228,18 +274,18 @@ export default function RecetasScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcono}>📝</Text>
+            <POSIcon name="document-text-outline" size={80} color={COLORS.lightGray} />
             <Text style={styles.emptyTexto}>No se encontraron recetas</Text>
             <Text style={styles.emptySubtexto}>
-              {busqueda ? 'Intenta con otra búsqueda' : 'Comienza agregando una receta'}
+              {busqueda ? 'Intenta con otra búsqueda' : 'Crea tu primera receta'}
             </Text>
           </View>
         }
       />
 
-      {/* Botón Flotante Agregar */}
-      <TouchableOpacity style={styles.botonFlotante} onPress={handleNuevo}>
-        <Text style={styles.botonFlotanteIcono}>+</Text>
+      {/* FAB Button */}
+      <TouchableOpacity style={styles.fabButton} onPress={handleNuevo}>
+        <POSIcon name="add" size={32} color={COLORS.white} />
       </TouchableOpacity>
 
       {/* Modal Crear/Editar Receta */}
@@ -257,117 +303,190 @@ export default function RecetasScreen() {
                 {recetaSeleccionada ? 'Editar Receta' : 'Nueva Receta'}
               </Text>
               <TouchableOpacity onPress={handleCerrarModal}>
-                <Text style={styles.modalCerrar}>✕</Text>
+                <POSIcon name="close" size={28} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
             {/* Formulario */}
             <ScrollView style={styles.modalContenido} showsVerticalScrollIndicator={false}>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Nombre de la Receta *</Text>
-                <TextInput
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, nombre: text }))}
-                  style={styles.formInput}
-                  placeholder="Ej: Pan francés"
-                  placeholderTextColor="#999"
-                  defaultValue={formData.nombre}
-                  value={formData.nombre}
-                />
-              </View>
+              {/* Sección: Información General */}
+              <View style={styles.seccionFormulario}>
+                <Text style={styles.seccionTitulo}>Información General</Text>
 
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Descripción</Text>
-                <TextInput
-                  style={[styles.formInput, styles.formInputMultiline]}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, descripcion: text }))}
-                  placeholder="Descripción de la receta"
-                  placeholderTextColor="#999"
-                  multiline
-                  numberOfLines={3}
-                  defaultValue={formData.descripcion}
-                  value={formData.descripcion}
-                />
-              </View>
-
-              <View style={styles.formRow}>
-                <View style={[styles.formGroup, styles.formGroupHalf]}>
-                  <Text style={styles.formLabel}>Rendimiento *</Text>
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Nombre *</Text>
                   <TextInput
                     style={styles.formInput}
-                    placeholder="0"
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, rendimiento: Number(text) }))}
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    defaultValue={formData.rendimiento.toString()}
-                    value={formData.rendimiento.toString()}
+                    placeholder="Ej: Pan francés"
+                    placeholderTextColor={COLORS.textSecondary}
+                    value={formData.nombre}
+                    onChangeText={(text) => setFormData(prev => ({ ...prev, nombre: text }))}
                   />
                 </View>
 
-                <View style={[styles.formRow, { zIndex: mostrarUnidades ? 1000 : 1 }]}>
-                  <View style={[styles.formGroup, styles.formGroupHalf,
-                  { zIndex: mostrarUnidades ? 1001 : 1, elevation: mostrarUnidades ? 1001 : 1, }]}
-                  >
-                    <Text style={styles.formLabel}>Unidad de Medida *</Text>
-                    <TouchableOpacity
-                      style={styles.formInput}
-                      onPress={() => setMostrarUnidades(!mostrarUnidades)}
-                    >
-                      <Text style={{ fontSize: 16, color: '#212121' }}>
-                        {recetaSeleccionada?.unidadRendimiento || Unidad.PZ}
-                      </Text>
-                    </TouchableOpacity>
-                    {mostrarUnidades && (
-                      <View style={styles.dropdownContainer}>
-                        {Object.values(Unidad).map((unidad) => (
-                          <TouchableOpacity
-                            key={unidad}
-                            style={styles.dropdownItem}
-                            onPress={() => {
-                              setFormData(prev => ({ ...prev, unidadRendimiento: unidad }));
-                              setMostrarUnidades(false);
-                            }}
-                          >
-                            <Text style={styles.dropdownItemText}>{unidad}</Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    )}
-                  </View>
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Código *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Ej: PAN-001"
+                    placeholderTextColor={COLORS.textSecondary}
+                    value={formData.codigo}
+                    onChangeText={(text) => setFormData(prev => ({ ...prev, codigo: text }))}
+                  />
                 </View>
 
-                {/* Sección de Materiales */}
-                <View style={styles.materialesSeccion}>
-                  <View style={styles.materialesSeccionHeader}>
-                    <Text style={styles.materialesSeccionTitulo}>
-                      📦 Materiales ({materialesReceta.length})
-                    </Text>
-                    <TouchableOpacity
-                      style={styles.botonAgregarMaterial}
-                      onPress={() => setModalMaterialVisible(true)}
-                    >
-                      <Text style={styles.botonAgregarMaterialTexto}>+ Agregar</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {materialesReceta.length === 0 ? (
-                    <View style={styles.materialesVacio}>
-                      <Text style={styles.materialesVacioTexto}>
-                        No hay materiales agregados
-                      </Text>
-                      <Text style={styles.materialesVacioSubtexto}>
-                        Toca "Agregar" para añadir materiales
-                      </Text>
-                    </View>
-                  ) : (
-                    <View style={styles.materialesLista}>
-                      {materialesReceta.map((material, index) =>
-                        renderMaterialRecetaItem(material, index)
-                      )}
-                    </View>
-                  )}
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Descripción</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.formInputMultiline]}
+                    placeholder="Descripción de la receta"
+                    placeholderTextColor={COLORS.textSecondary}
+                    multiline
+                    numberOfLines={3}
+                    value={formData.descripcion}
+                    onChangeText={(text) => setFormData(prev => ({ ...prev, descripcion: text }))}
+                  />
                 </View>
               </View>
+
+              {/* Sección: Rendimiento */}
+              <View style={styles.seccionFormulario}>
+                <Text style={styles.seccionTitulo}>Rendimiento y Tiempo</Text>
+
+                <View style={styles.formRow}>
+                  <View style={[styles.formGroup, styles.formGroupHalf]}>
+                    <Text style={styles.formLabel}>Rendimiento *</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="0"
+                      placeholderTextColor={COLORS.textSecondary}
+                      keyboardType="numeric"
+                      value={formData.rendimiento.toString()}
+                      onChangeText={(text) => setFormData(prev => ({ ...prev, rendimiento: Number(text) || 0 }))}
+                    />
+                  </View>
+
+                  <View style={[styles.formGroup, styles.formGroupHalf]}>
+                    <Text style={styles.formLabel}>Unidad *</Text>
+                    <View style={styles.formInput}>
+                      <Text style={styles.formInputText}>{formData.unidadRendimiento}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Tiempo de Preparación (minutos)</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="0"
+                    placeholderTextColor={COLORS.textSecondary}
+                    keyboardType="numeric"
+                    value={formData.tiempoPreparacion.toString()}
+                    onChangeText={(text) => setFormData(prev => ({ ...prev, tiempoPreparacion: Number(text) || 0 }))}
+                  />
+                </View>
+              </View>
+
+              {/* Sección: Ingredientes */}
+              <View style={styles.seccionFormulario}>
+                <View style={styles.seccionHeader}>
+                  <Text style={styles.seccionTitulo}>Ingredientes</Text>
+                  <TouchableOpacity
+                    style={styles.botonAgregar}
+                    onPress={() => setModalMaterialVisible(true)}
+                  >
+                    <POSIcon name="add-circle" size={20} color={COLORS.white} />
+                    <Text style={styles.botonAgregarTexto}>Agregar</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {materialesReceta.length === 0 ? (
+                  <View style={styles.materialesVacio}>
+                    <POSIcon name="cube-outline" size={48} color={COLORS.lightGray} />
+                    <Text style={styles.materialesVacioTexto}>Sin ingredientes</Text>
+                    <Text style={styles.materialesVacioSubtexto}>
+                      Agrega materiales para esta receta
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.tablaIngredientes}>
+                    {/* Encabezado Tabla */}
+                    <View style={styles.tablaHeader}>
+                      <Text style={[styles.tablaHeaderTexto, { flex: 2 }]}>Material</Text>
+                      <Text style={[styles.tablaHeaderTexto, { flex: 1, textAlign: 'center' }]}>Cantidad</Text>
+                      <Text style={[styles.tablaHeaderTexto, { flex: 1, textAlign: 'right' }]}>Costo Unit.</Text>
+                      <Text style={[styles.tablaHeaderTexto, { flex: 1, textAlign: 'right' }]}>Subtotal</Text>
+                      <View style={{ width: 40 }} />
+                    </View>
+
+                    {/* Filas de Ingredientes */}
+                    {costos.detallesConCosto.map((detalle, index) => (
+                      <View key={index} style={styles.tablaFila}>
+                        <View style={{ flex: 2 }}>
+                          <Text style={styles.tablaFilaTexto}>{detalle.material?.nombre}</Text>
+                          <Text style={styles.tablaFilaUnidad}>{detalle.unidadMedida}</Text>
+                        </View>
+
+                        <View style={{ flex: 1, alignItems: 'center' }}>
+                          <TextInput
+                            style={styles.inputCantidad}
+                            placeholder="0"
+                            keyboardType="decimal-pad"
+                            value={detalle.cantidad.toString()}
+                            onChangeText={(text) => handleActualizarCantidad(index, Number(text) || 0)}
+                          />
+                        </View>
+
+                        <Text style={[styles.tablaFilaTexto, { flex: 1, textAlign: 'right' }]}>
+                          ${detalle.costoUnitario.toFixed(2)}
+                        </Text>
+
+                        <Text style={[styles.tablaFilaSubtotal, { flex: 1, textAlign: 'right' }]}>
+                          ${detalle.subtotal.toFixed(2)}
+                        </Text>
+
+                        <TouchableOpacity
+                          style={styles.botonEliminarFila}
+                          onPress={() => handleEliminarMaterial(index)}
+                        >
+                          <POSIcon name="close-circle" size={24} color={COLORS.danger} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              {/* Sección: Instrucciones */}
+              <View style={styles.seccionFormulario}>
+                <Text style={styles.seccionTitulo}>Instrucciones de Preparación</Text>
+                <TextInput
+                  style={[styles.formInput, styles.formInputMultiline]}
+                  placeholder="Escribe las instrucciones paso a paso..."
+                  placeholderTextColor={COLORS.textSecondary}
+                  multiline
+                  numberOfLines={4}
+                  value={formData.instrucciones}
+                  onChangeText={(text) => setFormData(prev => ({ ...prev, instrucciones: text }))}
+                />
+              </View>
             </ScrollView>
+
+            {/* Panel de Costos Fijo */}
+            <View style={styles.panelCostos}>
+              <View style={styles.costoItem}>
+                <Text style={styles.costoLabel}>Total Ingredientes</Text>
+                <Text style={styles.costoValor}>${costos.costoTotal.toFixed(2)}</Text>
+              </View>
+              <View style={styles.costoItem}>
+                <Text style={styles.costoLabel}>Rendimiento</Text>
+                <Text style={styles.costoValor}>{formData.rendimiento} {formData.unidadRendimiento}</Text>
+              </View>
+              <View style={styles.costoItem}>
+                <Text style={styles.costoLabelPrincipal}>Costo por Unidad</Text>
+                <Text style={styles.costoValorPrincipal}>${costos.costoPorUnidad.toFixed(2)}</Text>
+              </View>
+            </View>
 
             {/* Botones de Acción */}
             <View style={styles.modalAcciones}>
@@ -382,7 +501,7 @@ export default function RecetasScreen() {
                 onPress={handleCrearReceta}
               >
                 <Text style={styles.botonGuardarTexto}>
-                  {recetaSeleccionada ? 'Actualizar' : 'Crear'}
+                  {recetaSeleccionada ? 'Actualizar' : 'Crear Receta'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -402,42 +521,35 @@ export default function RecetasScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitulo}>Seleccionar Material</Text>
               <TouchableOpacity onPress={() => setModalMaterialVisible(false)}>
-                <Text style={styles.modalCerrar}>✕</Text>
+                <POSIcon name="close" size={28} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.materialesDisponiblesLista}>
-              {materiales.map((material) => {
-                const yaAgregado = materialesReceta.some(
-                  (m) => m.id === material.id
-                );
-                return (
+              {materialesDisponibles.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyTexto}>Todos los materiales agregados</Text>
+                </View>
+              ) : (
+                materialesDisponibles.map((material) => (
                   <TouchableOpacity
                     key={material.id}
-                    style={[
-                      styles.materialDisponibleItem,
-                      yaAgregado && styles.materialDisponibleItemDeshabilitado,
-                    ]}
+                    style={styles.materialDisponibleItem}
                     onPress={() => handleAgregarMaterial(material)}
-                    disabled={yaAgregado}
                   >
-                    <View>
-                      <Text
-                        style={[
-                          styles.materialDisponibleNombre,
-                          yaAgregado && styles.materialDisponibleNombreDeshabilitado,
-                        ]}
-                      >
-                        {material.nombre}
-                      </Text>
-                      <Text style={styles.materialDisponibleUnidad}>
-                        Unidad: {material.unidadMedida}
-                      </Text>
+                    <View style={styles.materialDisponibleInfo}>
+                      <Text style={styles.materialDisponibleNombre}>{material.nombre}</Text>
+                      <View style={styles.materialDisponibleDetalles}>
+                        <POSIcon name="cube-outline" size={14} color={COLORS.textSecondary} />
+                        <Text style={styles.materialDisponibleUnidad}>{material.unidadMedida}</Text>
+                        <Text style={styles.materialDisponibleSeparador}>•</Text>
+                        <Text style={styles.materialDisponibleCosto}>${material.costoUnitario.toFixed(2)}</Text>
+                      </View>
                     </View>
-                    {yaAgregado && <Text style={styles.yaAgregadoTexto}>✓ Agregado</Text>}
+                    <POSIcon name="add-circle-outline" size={24} color={COLORS.primary} />
                   </TouchableOpacity>
-                );
-              })}
+                ))
+              )}
             </ScrollView>
           </View>
         </View>
@@ -449,139 +561,170 @@ export default function RecetasScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#F5F5F5',
   },
+
   // Header
   header: {
-    backgroundColor: '#fff',
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    backgroundColor: COLORS.white,
+    padding: 20,
+    paddingTop: 60,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: COLORS.border,
   },
-  headerTitulo: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#212121',
-    marginBottom: 4,
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  headerSubtitulo: {
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  subtitle: {
     fontSize: 14,
-    color: '#757575',
+    color: COLORS.textSecondary,
   },
+
   // Buscador
   busquedaContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
-    marginVertical: 15,
-    paddingHorizontal: 15,
+    backgroundColor: COLORS.white,
+    marginHorizontal: 16,
+    marginVertical: 16,
+    paddingHorizontal: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: COLORS.border,
     height: 50,
-  },
-  busquedaIcono: {
-    fontSize: 20,
-    marginRight: 10,
   },
   busquedaInput: {
     flex: 1,
     fontSize: 16,
-    color: '#212121',
+    color: COLORS.text,
+    marginLeft: 12,
   },
-  busquedaLimpiar: {
-    fontSize: 20,
-    color: '#757575',
-    padding: 5,
-  },
+
   // Lista
   listContainer: {
-    padding: 20,
+    padding: 16,
     paddingBottom: 100,
   },
+
+  // Tarjeta Receta
   recetaCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    marginBottom: 16,
     padding: 16,
-    marginBottom: 15,
-    flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  recetaInfo: {
-    flex: 1,
-    marginRight: 10,
   },
   recetaHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
   },
-  recetaNombre: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#212121',
-    marginRight: 8,
+  recetaHeaderLeft: {
     flex: 1,
   },
-  rendimientoBadge: {
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+  recetaHeaderRight: {
+    marginLeft: 12,
   },
-  rendimientoTexto: {
-    fontSize: 11,
-    color: '#2E7D32',
+  recetaNombre: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  recetaCodigo: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
     fontWeight: '600',
   },
   recetaDescripcion: {
     fontSize: 14,
-    color: '#757575',
-    marginBottom: 12,
+    color: COLORS.textSecondary,
+    marginBottom: 16,
+    lineHeight: 20,
   },
-  materialesPreview: {
-    backgroundColor: '#F5F5F5',
+
+  // Grid de información
+  recetaInfoGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  recetaInfoItem: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+    padding: 12,
     borderRadius: 8,
-    padding: 10,
+    alignItems: 'center',
+    gap: 4,
   },
-  materialesPreviewTitulo: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#212121',
-    marginBottom: 6,
-  },
-  materialesPreviewLista: {
-    gap: 2,
-  },
-  materialPreviewItem: {
-    fontSize: 12,
-    color: '#616161',
-  },
-  materialPreviewMas: {
+  recetaInfoLabel: {
     fontSize: 11,
-    color: '#9E9E9E',
-    fontStyle: 'italic',
-    marginTop: 2,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
+  recetaInfoValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+
+  // Costos destacados
+  recetaCostoContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF9E6',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FFE082',
+  },
+  recetaCosto: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  recetaCostoDivider: {
+    width: 1,
+    backgroundColor: '#FFE082',
+    marginHorizontal: 12,
+  },
+  recetaCostoLabel: {
+    fontSize: 11,
+    color: '#9C6F19',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    fontWeight: '600',
+  },
+  recetaCostoTotal: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#9C6F19',
+  },
+  recetaCostoUnidad: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#9C6F19',
+  },
+
   // Acciones
   recetaAcciones: {
-    justifyContent: 'center',
+    flexDirection: 'row',
     gap: 8,
   },
   botonAccion: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
   },
   botonEditar: {
     backgroundColor: '#E3F2FD',
@@ -589,18 +732,24 @@ const styles = StyleSheet.create({
   botonEliminar: {
     backgroundColor: '#FFEBEE',
   },
-  iconoAccion: {
-    fontSize: 20,
+  botonAccionTexto: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
-  // Botón Flotante
-  botonFlotante: {
+  botonEliminarTexto: {
+    color: COLORS.danger,
+  },
+
+  // FAB Button
+  fabButton: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 20,
     right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FF9800',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -609,43 +758,36 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  botonFlotanteIcono: {
-    fontSize: 32,
-    color: '#fff',
-    fontWeight: '300',
-  },
+
   // Empty State
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
   },
-  emptyIcono: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
   emptyTexto: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#757575',
+    color: COLORS.textSecondary,
+    marginTop: 16,
     marginBottom: 8,
   },
   emptySubtexto: {
     fontSize: 14,
-    color: '#9E9E9E',
+    color: COLORS.textSecondary,
   },
-  // Modal Principal
+
+  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: '90%',
-    paddingBottom: 20,
+    maxHeight: '95%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -654,152 +796,240 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: COLORS.border,
   },
   modalTitulo: {
     fontSize: 22,
-    fontWeight: '700',
-    color: '#212121',
-  },
-  modalCerrar: {
-    fontSize: 28,
-    color: '#757575',
-    fontWeight: '300',
+    fontWeight: 'bold',
+    color: COLORS.text,
   },
   modalContenido: {
-    padding: 20,
-    maxHeight: 500,
+    maxHeight: '50%',
   },
+
   // Formulario
+  seccionFormulario: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  seccionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  seccionTitulo: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 16,
+  },
   formGroup: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   formGroupHalf: {
     flex: 1,
   },
   formRow: {
     flexDirection: 'row',
-    gap: 15,
+    gap: 12,
   },
   formLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#212121',
+    color: COLORS.text,
     marginBottom: 8,
   },
   formInput: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    paddingHorizontal: 15,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#212121',
+    color: COLORS.text,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: COLORS.border,
+  },
+  formInputText: {
+    fontSize: 16,
+    color: COLORS.text,
   },
   formInputMultiline: {
-    minHeight: 80,
+    minHeight: 100,
     textAlignVertical: 'top',
   },
-  // Sección de Materiales
-  materialesSeccion: {
-    marginBottom: 20,
-  },
-  materialesSeccionHeader: {
+
+  // Botón Agregar
+  botonAgregar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
-  },
-  materialesSeccionTitulo: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#212121',
-  },
-  botonAgregarMaterial: {
-    backgroundColor: '#FF9800',
-    paddingHorizontal: 15,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+    gap: 6,
   },
-  botonAgregarMaterialTexto: {
+  botonAgregarTexto: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: COLORS.white,
   },
+
+  // Materiales Vacío
   materialesVacio: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    padding: 30,
     alignItems: 'center',
+    padding: 40,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
   },
   materialesVacioTexto: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#757575',
-    marginBottom: 4,
+    color: COLORS.textSecondary,
+    marginTop: 12,
   },
   materialesVacioSubtexto: {
-    fontSize: 12,
-    color: '#9E9E9E',
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginTop: 4,
   },
-  materialesLista: {
-    gap: 10,
-  },
-  materialRecetaItem: {
-    flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-  },
-  materialRecetaInfo: {
-    flex: 1,
-  },
-  materialRecetaNombre: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#212121',
-    marginBottom: 8,
-  },
-  materialRecetaCantidadContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  materialRecetaCantidadInput: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 14,
-    color: '#212121',
+
+  // Tabla de Ingredientes
+  tablaIngredientes: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    minWidth: 80,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
-  materialRecetaUnidad: {
-    fontSize: 14,
-    color: '#757575',
-    fontWeight: '600',
+  tablaHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#F9FAFB',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
-  botonEliminarMaterial: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFEBEE',
-    justifyContent: 'center',
+  tablaHeaderTexto: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    textTransform: 'uppercase',
+  },
+  tablaFila: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.white,
   },
-  iconoEliminarMaterial: {
-    fontSize: 16,
-    color: '#F44336',
+  tablaFilaTexto: {
+    fontSize: 14,
+    color: COLORS.text,
+  },
+  tablaFilaUnidad: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  tablaFilaSubtotal: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.success,
+  },
+  inputCantidad: {
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    fontSize: 14,
+    textAlign: 'center',
+    minWidth: 60,
+  },
+  botonEliminarFila: {
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Panel de Costos
+  panelCostos: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF9E6',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderTopWidth: 2,
+    borderTopColor: '#FFE082',
+    gap: 16,
+  },
+  costoItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  costoLabel: {
+    fontSize: 11,
+    color: '#9C6F19',
+    marginBottom: 4,
+    textTransform: 'uppercase',
     fontWeight: '600',
   },
-  // Modal Materiales Disponibles
+  costoValor: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#9C6F19',
+  },
+  costoLabelPrincipal: {
+    fontSize: 12,
+    color: '#9C6F19',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
+  },
+  costoValorPrincipal: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#9C6F19',
+  },
+
+  // Botones Modal
+  modalAcciones: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  botonModal: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  botonCancelar: {
+    backgroundColor: '#F9FAFB',
+  },
+  botonCancelarTexto: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  botonGuardar: {
+    backgroundColor: COLORS.primary,
+  },
+  botonGuardarTexto: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.white,
+  },
+
+  // Modal Material
   modalMaterialContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '70%',
@@ -811,92 +1041,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F9FAFB',
     borderRadius: 12,
-    padding: 15,
-    marginBottom: 10,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  materialDisponibleItemDeshabilitado: {
-    backgroundColor: '#EEEEEE',
-    opacity: 0.6,
+  materialDisponibleInfo: {
+    flex: 1,
   },
   materialDisponibleNombre: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#212121',
-    marginBottom: 4,
+    color: COLORS.text,
+    marginBottom: 6,
   },
-  materialDisponibleNombreDeshabilitado: {
-    color: '#9E9E9E',
+  materialDisponibleDetalles: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   materialDisponibleUnidad: {
-    fontSize: 12,
-    color: '#757575',
+    fontSize: 13,
+    color: COLORS.textSecondary,
   },
-  yaAgregadoTexto: {
-    fontSize: 14,
-    color: '#4CAF50',
+  materialDisponibleSeparador: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+  materialDisponibleCosto: {
+    fontSize: 13,
     fontWeight: '600',
-  },
-  // Botones Modal
-  modalAcciones: {
-    flexDirection: 'row',
-    gap: 15,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  botonModal: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  botonCancelar: {
-    backgroundColor: '#F5F5F5',
-  },
-  botonCancelarTexto: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#757575',
-  },
-  botonGuardar: {
-    backgroundColor: '#FF9800',
-  },
-  botonGuardarTexto: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  // Dropdown
-  dropdownContainer: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    marginTop: 4,
-    maxHeight: 200,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 1002,
-    zIndex: 1002,
-  },
-  dropdownItem: {
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
-    elevation: 1000,
-    zIndex: 2000,
-
-  },
-  dropdownItemText: {
-    fontSize: 16,
-    color: '#212121',
+    color: COLORS.success,
   },
 });
