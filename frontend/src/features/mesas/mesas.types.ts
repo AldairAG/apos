@@ -20,4 +20,12 @@ export interface CrearMesaDTO {
 
 export interface MesaResponse extends Mesa {
     
-} 
+}
+
+export interface MesaState {
+    mesas: Mesa[];
+    selectedMesa: Mesa | null;
+    loading: boolean;
+    error: string | null;
+}
+ 
