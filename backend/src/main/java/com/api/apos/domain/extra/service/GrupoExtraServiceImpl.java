@@ -64,11 +64,11 @@ public class GrupoExtraServiceImpl implements GrupoExtraService {
                 .toList();
         grupoExtra.setOpciones(opciones);
 
-        grupoExtraRepository.save(grupoExtra);
+        GrupoExtra nuevoGrupoExtra = grupoExtraRepository.save(grupoExtra);
 
-        grupoExtraService.asociarGrupoExtraAProductos(grupoExtraDTO.getProductosIds(), grupoExtra);
+        grupoExtraService.asociarGrupoExtraAProductos(grupoExtraDTO.getProductosIds(), nuevoGrupoExtra);
 
-        return grupoExtra;
+        return nuevoGrupoExtra;
     }
 
     /**
@@ -128,7 +128,10 @@ public class GrupoExtraServiceImpl implements GrupoExtraService {
     @Override
     @Transactional(readOnly = true)
     public List<GrupoExtra> obtenerGruposExtraPorUsuario(Long idUsuario) {
-        return grupoExtraRepository.findByUsuario_Id(idUsuario);
+
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+
+        return grupoExtraRepository.findByUsuario_Id(usuario.getId());
     }
 
     /**

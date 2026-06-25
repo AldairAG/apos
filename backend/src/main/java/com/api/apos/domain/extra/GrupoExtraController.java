@@ -96,9 +96,12 @@ public class GrupoExtraController {
      * Obtener grupos de extras de un usuario
      * GET /api/grupos-extras/usuario/{idUsuario}
      */
-    @GetMapping("/usuario/{idUsuario}")
-    public ResponseEntity<ApiResponseWrapper<List<GrupoExtra>>> obtenerGruposExtraPorUsuario(@PathVariable Long idUsuario) {
+    @GetMapping("/")
+    public ResponseEntity<ApiResponseWrapper<List<GrupoExtra>>> obtenerGruposExtraPorUsuario() {
         try {
+
+            Long idUsuario = 1L; // Aquí deberías obtener el ID del usuario autenticado de tu contexto de seguridad
+            
             List<GrupoExtra> grupos = grupoExtraService.obtenerGruposExtraPorUsuario(idUsuario);
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, grupos, null));
         } catch (Exception e) {

@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.api.apos.domain.usuario.Usuario;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -42,6 +43,7 @@ public class GrupoExtra {
     
     @ManyToOne
     @JoinColumn(name = "usuario_id")
+    @JsonIgnore
     private Usuario usuario;
     
     @OneToMany(mappedBy = "grupoExtra", cascade = CascadeType.ALL)
