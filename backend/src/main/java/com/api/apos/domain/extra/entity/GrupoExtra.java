@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.api.apos.domain.usuario.Usuario;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -47,8 +48,11 @@ public class GrupoExtra {
     private Usuario usuario;
     
     @OneToMany(mappedBy = "grupoExtra", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<OpcionExtra> opciones;
     
+    @JsonIgnore
     @OneToMany(mappedBy = "grupoExtra", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<ProductoGrupoExtra> productosGrupo;
 }

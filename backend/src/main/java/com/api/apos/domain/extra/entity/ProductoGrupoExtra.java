@@ -3,6 +3,7 @@ package com.api.apos.domain.extra.entity;
 import java.time.LocalDateTime;
 
 import com.api.apos.domain.producto.Producto;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -37,9 +38,11 @@ public class ProductoGrupoExtra {
     
     @ManyToOne
     @JoinColumn(name = "producto_id")
+    @JsonBackReference
     private Producto producto;
     
     @ManyToOne
     @JoinColumn(name = "grupo_extra_id")
+    @JsonBackReference
     private GrupoExtra grupoExtra;
 }

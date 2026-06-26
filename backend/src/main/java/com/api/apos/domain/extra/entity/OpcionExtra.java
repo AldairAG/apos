@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.api.apos.domain.material.Material;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -38,6 +39,7 @@ public class OpcionExtra {
     
     @ManyToOne
     @JoinColumn(name = "grupo_extra_id")
+    @JsonBackReference
     private GrupoExtra grupoExtra;
     
     @ManyToOne

@@ -96,7 +96,7 @@ public class GrupoExtraController {
      * Obtener grupos de extras de un usuario
      * GET /api/grupos-extras/usuario/{idUsuario}
      */
-    @GetMapping("/")
+    @GetMapping
     public ResponseEntity<ApiResponseWrapper<List<GrupoExtra>>> obtenerGruposExtraPorUsuario() {
         try {
 

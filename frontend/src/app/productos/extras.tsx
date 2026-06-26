@@ -71,9 +71,9 @@ export default function ExtrasScreen() {
     grupo.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const productosFiltrados = productos.filter((prod) =>
+/*   const productosFiltrados = productos.filter((prod) =>
     prod.nombre.toLowerCase().includes(busquedaProducto.toLowerCase())
-  );
+  ); */
 
   const handleNuevo = () => {
     setGrupoEditando(null);
@@ -611,7 +611,7 @@ export default function ExtrasScreen() {
             </View>
 
             {/* Lista de Productos */}
-            <ScrollView style={styles.productosLista}>
+{/*             <ScrollView style={styles.productosLista}>
               {productosFiltrados.map((producto) => {
                 const isSeleccionado = productosSeleccionados.includes(producto.id);
                 
@@ -637,7 +637,7 @@ export default function ExtrasScreen() {
                 );
               })}
             </ScrollView>
-
+ */}
             {/* Botón Confirmar */}
             <View style={styles.modalAcciones}>
               <TouchableOpacity
