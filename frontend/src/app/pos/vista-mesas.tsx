@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, FlatList, Modal, Alert } from 'react-native';
-import { router } from 'expo-router';
-import { POSCard, POSBadge, POSIcon, COLORS } from '@/components/pos';
-import usePos from '@/features/pos/usePos';
-import { MesaPosResponseDTO, EstadoOrden } from '@/features/pos/pos.types';
+import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
 import { EstadoMesa } from '@/features/mesas/mesas.types';
+import { EstadoOrden, MesaPosResponseDTO } from '@/features/pos/pos.types';
+import usePos from '@/features/pos/usePos';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Alert, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function VistaMesasScreen() {
   const { mesas, cargarMesas, seleccionarMesa, loading } = usePos();

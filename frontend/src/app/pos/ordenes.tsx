@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, FlatList, TextInput } from 'react-native';
-import { router } from 'expo-router';
-import { POSCard, POSBadge, POSIcon, COLORS } from '@/components/pos';
+import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
+import { EstadoOrden, OrdenResponseDTO, TipoOrden } from '@/features/pos/pos.types';
 import usePos from '@/features/pos/usePos';
-import { OrdenResponseDTO, EstadoOrden, TipoOrden } from '@/features/pos/pos.types';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 type FiltroTipo = 'todas' | 'mesas' | 'llevar' | 'entregadas';
 

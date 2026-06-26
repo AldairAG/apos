@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import { POSCard, POSBadge, POSIcon, COLORS } from '@/components/pos';
+import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
+import { EstadoOrden, OrdenResponseDTO, TipoOrden } from '@/features/pos/pos.types';
 import usePos from '@/features/pos/usePos';
-import { OrdenResponseDTO, EstadoOrden, TipoOrden } from '@/features/pos/pos.types';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function DetalleOrdenScreen() {
   const { ordenId } = useLocalSearchParams<{ ordenId: string }>();

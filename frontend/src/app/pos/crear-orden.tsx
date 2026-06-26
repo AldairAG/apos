@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, FlatList, Modal, Alert } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import { POSCard, POSBadge, POSIcon, COLORS } from '@/components/pos';
+import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
+import { CrearOrdenDTO, DetalleOrdenDTO, ProductosBySucursalResponse, TipoOrden } from '@/features/pos/pos.types';
 import usePos from '@/features/pos/usePos';
-import { ProductosBySucursalResponse, TipoOrden, CrearOrdenDTO, DetalleOrdenDTO } from '@/features/pos/pos.types';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 type PasoCreacion = 'seleccion-tipo' | 'seleccion-mesa' | 'agregar-productos';
 

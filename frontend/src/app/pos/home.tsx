@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Animated } from 'react-native';
-import { router } from 'expo-router';
-import { POSCard, POSBadge, POSIcon, COLORS } from '@/components/pos';
-import usePos from '@/features/pos/usePos';
-import { EstadoOrden } from '@/features/pos/pos.types';
+import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
 import { EstadoMesa } from '@/features/mesas/mesas.types';
+import { EstadoOrden } from '@/features/pos/pos.types';
+import usePos from '@/features/pos/usePos';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
   const [menuAbierto, setMenuAbierto] = useState(false);
