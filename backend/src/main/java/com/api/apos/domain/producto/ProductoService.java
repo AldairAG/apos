@@ -3,6 +3,7 @@ package com.api.apos.domain.producto;
 import java.util.List;
 import java.util.Optional;
 
+
 public interface ProductoService {
     
     /**
@@ -129,4 +130,5 @@ public interface ProductoService {
      * @return Optional con el producto si existe
      */
     Optional<Producto> obtenerProductoPorSku(String sku);
+
 }

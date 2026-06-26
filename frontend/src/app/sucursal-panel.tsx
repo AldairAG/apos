@@ -33,7 +33,7 @@ const MENU_OPTIONS: MenuOption[] = [
     id: 'pos',
     titulo: 'Punto de Venta',
     icono: '🛒',
-    ruta: ROUTES.POS.VISTA_MESAS,
+    ruta: ROUTES.POS.HOME,
     color: '#4CAF50',
   },
   {

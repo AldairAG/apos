@@ -55,6 +55,7 @@ export const ROUTES = {
     ORDENES: '/pos/ordenes',
     DETALLE_ORDEN: '/pos/detalle-orden',
     COCINA: '/pos/cocina',
+    HOME: '/pos/home',
   },
 
   // Módulo de Gestión de Caja

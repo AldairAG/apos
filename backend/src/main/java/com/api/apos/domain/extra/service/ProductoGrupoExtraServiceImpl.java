@@ -7,8 +7,11 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.api.apos.domain.extra.entity.GrupoExtra;
 import com.api.apos.domain.extra.entity.ProductoGrupoExtra;
 import com.api.apos.domain.extra.repository.ProductoGrupoExtraRepository;
+import com.api.apos.domain.producto.Producto;
+import com.api.apos.domain.producto.ProductoService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,6 +25,8 @@ import lombok.RequiredArgsConstructor;
 public class ProductoGrupoExtraServiceImpl implements ProductoGrupoExtraService {
     
     private final ProductoGrupoExtraRepository productoGrupoExtraRepository;
+
+    private final ProductoService productoService;
 
     /**
      * Crear una nueva relación producto-grupo de extras
@@ -110,5 +115,25 @@ public class ProductoGrupoExtraServiceImpl implements ProductoGrupoExtraService 
     @Override
     public void eliminarGruposPorProducto(Long idProducto) {
         productoGrupoExtraRepository.deleteByProducto_Id(idProducto);
+    }
+
+    @Override
+    public void asociarGrupoExtraAProductos(List<Long> productosIds, GrupoExtra grupoExtra) {
+
+        for (Long idProducto : productosIds) {
+            Producto producto = productoService.obtenerProductoPorId(idProducto)
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + idProducto));
+
+            ProductoGrupoExtra relacion = ProductoGrupoExtra.builder()
+                    .producto(producto)
+                    .grupoExtra(grupoExtra)
+                    .minimo(0) // Valor por defecto, puede ajustarse según necesidades
+                    .maximo(0) // Valor por defecto, puede ajustarse según necesidades
+                    .obligatorio(false) // Valor por defecto, puede ajustarse según necesidades
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+            productoGrupoExtraRepository.save(relacion);
+        }
     }
 }

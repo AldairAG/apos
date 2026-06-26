@@ -1,36 +1,29 @@
-import { createProductoDTO, Producto } from '@/features/producto/producto/producto.types';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
 import { useCategoria } from '@/features/producto/categoria/useCategoria';
-import { useRecetas } from '@/features/producto/receta/useReceta';
+import { useExtra } from '@/features/producto/grupoExtra/useExtra';
+import { createProductoDTO, Producto } from '@/features/producto/producto/producto.types';
 import { useProducto } from '@/features/producto/producto/useProducto';
-import { useSucursal } from '@/features/sucursal/useSucursal';
+import { Receta } from '@/features/producto/receta/receta.types';
+import { useRecetas } from '@/features/producto/receta/useReceta';
+import { router } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, FlatList, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
+type FiltroTipo = 'todos' | 'activos' | 'inactivos' | 'destacados';
 
 export default function ProductosScreen() {
+  const { productos, loading, saveProducto, cargarProductos } = useProducto();
+  const { categorias, cargarCategorias } = useCategoria();
+  const { recetas, cargarRecetas } = useRecetas();
+  const { grupos, cargarGrupos } = useExtra();
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroActivo, setFiltroActivo] = useState<FiltroTipo>('todos');
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
-  const {sucursalActual}= useSucursal()
-  const {categorias,cargarCategorias}=useCategoria()
-  const {recetas,cargarRecetas}=useRecetas()
-  const {selectedProducto, productos, loading, error, saveProducto, cargarProductos}=useProducto()
+  const [productoEditando, setProductoEditando] = useState<Producto | null>(null);
+  const [modalRecetaVisible, setModalRecetaVisible] = useState(false);
+  const [modalExtrasVisible, setModalExtrasVisible] = useState(false);
 
-
-  // Form fields
   const [formData, setFormData] = useState<createProductoDTO>({
     nombre: '',
     descripcion: '',
@@ -38,237 +31,895 @@ export default function ProductosScreen() {
     costo: 0,
     margen: 0,
     tiempoPreparacion: 0,
-    activo: false,
+    activo: true,
     destacado: false,
     categoriaId: 0,
     recetaId: 0,
-    gruposExtra: [],
+    gruposExtra: undefined,
   });
 
+  const [costoPersonalizado, setCostoPersonalizado] = useState(false);
+  const [extrasSeleccionados, setExtrasSeleccionados] = useState<number[]>([]);
 
-  const handleSearch = () => {
+  useEffect(() => {
+    cargarProductos();
+    cargarCategorias();
+    cargarRecetas();
+    cargarGrupos();
+  }, []);
 
+  useEffect(() => {
+    if (productoEditando) {
+      setFormData({
+        nombre: productoEditando.nombre,
+        descripcion: productoEditando.descripcion,
+        precioVenta: productoEditando.precioVenta,
+        costo: productoEditando.costo,
+        margen: productoEditando.margen,
+        tiempoPreparacion: productoEditando.tiempoPreparacion,
+        activo: productoEditando.activo,
+        destacado: productoEditando.destacado,
+        categoriaId: productoEditando.categoria.id,
+        recetaId: 0,
+        gruposExtra: undefined,
+      });
+      setExtrasSeleccionados(productoEditando.gruposExtra.map((ge) => ge.id));
+    } else {
+      resetFormData();
+    }
+  }, [productoEditando]);
+
+  const resetFormData = () => {
+    setFormData({
+      nombre: '',
+      descripcion: '',
+      precioVenta: 0,
+      costo: 0,
+      margen: 0,
+      tiempoPreparacion: 0,
+      activo: true,
+      destacado: false,
+      categoriaId: 0,
+      recetaId: 0,
+      gruposExtra: undefined,
+    });
+    setCostoPersonalizado(false);
+    setExtrasSeleccionados([]);
   };
 
-  const openModal = (producto?: Producto) => {
-    if (producto) {
-      setEditingProducto(producto);
-    } else {
+  // Receta seleccionada
+  const recetaSeleccionada = useMemo(() => {
+    return recetas.find((r: Receta) => r.id === formData.recetaId);
+  }, [formData.recetaId, recetas]);
+
+  // Calcular valores financieros
+  const valoresFinancieros = useMemo(() => {
+    const costo = formData.costo;
+    const precioVenta = formData.precioVenta;
+    const margen = formData.margen;
+
+    if (precioVenta > 0 && costo >= 0) {
+      const utilidad = precioVenta - costo;
+      const margenCalculado = costo > 0 ? ((utilidad / costo) * 100) : 0;
+      
+      return {
+        costo,
+        precioVenta,
+        utilidad,
+        margen: margenCalculado,
+      };
     }
+
+    return {
+      costo: 0,
+      precioVenta: 0,
+      utilidad: 0,
+      margen: 0,
+    };
+  }, [formData.costo, formData.precioVenta, formData.margen]);
+
+  // Actualizar precio de venta desde margen
+  const actualizarPrecioPorMargen = (nuevoMargen: number) => {
+    const nuevoPrecio = formData.costo * (1 + nuevoMargen / 100);
+    setFormData({
+      ...formData,
+      margen: nuevoMargen,
+      precioVenta: parseFloat(nuevoPrecio.toFixed(2)),
+    });
+  };
+
+  // Actualizar margen desde precio de venta
+  const actualizarMargenPorPrecio = (nuevoPrecio: number) => {
+    const nuevoMargen = formData.costo > 0 ? (((nuevoPrecio - formData.costo) / formData.costo) * 100) : 0;
+    setFormData({
+      ...formData,
+      precioVenta: nuevoPrecio,
+      margen: parseFloat(nuevoMargen.toFixed(2)),
+    });
+  };
+
+  // Seleccionar receta
+  const handleSeleccionarReceta = (recetaId: number) => {
+    const receta = recetas.find((r: Receta) => r.id === recetaId);
+    if (receta && !costoPersonalizado) {
+      // Mock: calcular costo por unidad de receta
+      const costoTotal = 50; // Mock
+      const rendimiento = receta.rendimiento || 1;
+      const costoPorUnidad = costoTotal / rendimiento;
+      
+      setFormData({
+        ...formData,
+        recetaId: recetaId,
+        costo: parseFloat(costoPorUnidad.toFixed(2)),
+      });
+    } else {
+      setFormData({
+        ...formData,
+        recetaId: recetaId,
+      });
+    }
+    setModalRecetaVisible(false);
+  };
+
+  // Filtrar productos
+  const productosFiltrados = useMemo(() => {
+    let resultado = productos;
+
+    // Filtrar por búsqueda
+    if (busqueda) {
+      resultado = resultado.filter((p) =>
+        p.nombre.toLowerCase().includes(busqueda.toLowerCase())
+      );
+    }
+
+    // Filtrar por tipo
+    switch (filtroActivo) {
+      case 'activos':
+        resultado = resultado.filter((p) => p.activo);
+        break;
+      case 'inactivos':
+        resultado = resultado.filter((p) => !p.activo);
+        break;
+      case 'destacados':
+        resultado = resultado.filter((p) => p.destacado);
+        break;
+      default:
+        break;
+    }
+
+    return resultado;
+  }, [productos, busqueda, filtroActivo]);
+
+  const handleNuevo = () => {
+    setProductoEditando(null);
     setModalVisible(true);
   };
 
-  const handleDelete = (producto: Producto) => {
-
+  const handleEditar = (producto: Producto) => {
+    setProductoEditando(producto);
+    setModalVisible(true);
   };
 
-  const handleSubmit = () => {
-    if (!formData.nombre || !formData.precioVenta || !formData.categoriaId) {
-      Alert.alert('Error', 'Por favor complete los campos obligatorios');
+  const handleEliminar = (producto: Producto) => {
+    Alert.alert(
+      'Eliminar Producto',
+      `¿Estás seguro de eliminar "${producto.nombre}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', style: 'destructive', onPress: () => console.log('Eliminar:', producto.id) }
+      ]
+    );
+  };
+
+  const handleCerrarModal = () => {
+    setModalVisible(false);
+    setProductoEditando(null);
+  };
+
+  const handleGuardar = () => {
+    if (!formData.nombre.trim()) {
+      Alert.alert('Error', 'El nombre del producto es requerido');
       return;
     }
-    saveProducto(formData);
-    setModalVisible(false);
-    /* resetForm(); */
+
+    if (!formData.categoriaId) {
+      Alert.alert('Error', 'Debe seleccionar una categoría');
+      return;
+    }
+
+    if (formData.precioVenta <= 0) {
+      Alert.alert('Error', 'El precio de venta debe ser mayor a 0');
+      return;
+    }
+
+    const dataToSave: createProductoDTO = {
+      ...formData,
+      gruposExtra: undefined,
+    };
+
+    saveProducto(dataToSave);
+    handleCerrarModal();
   };
 
-
-  const handleToggleDisponibilidad = async (producto: Producto) => {
-
+  const handleToggleExtra = (grupoId: number) => {
+    if (extrasSeleccionados.includes(grupoId)) {
+      setExtrasSeleccionados(extrasSeleccionados.filter((id) => id !== grupoId));
+    } else {
+      setExtrasSeleccionados([...extrasSeleccionados, grupoId]);
+    }
   };
 
-  const renderProducto = ({ item }: { item: Producto }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{item.nombre}</Text>
-        <View style={styles.badges}>
-          {item.destacado && <Text style={styles.badgeDestacado}>★</Text>}
-          <Text style={[styles.badge, item.disponible ? styles.badgeAvailable : styles.badgeUnavailable]}>
-            {item.disponible ? 'Disponible' : 'No disponible'}
-          </Text>
-        </View>
-      </View>
-      <Text style={styles.cardDescription}>{item.descripcion}</Text>
-      <Text style={styles.cardCategory}>Categoría: {item.categoria.nombre}</Text>
-      <View style={styles.cardPricing}>
-        <Text style={styles.cardPrice}>Precio: ${item.precioVenta}</Text>
-        <Text style={styles.cardCost}>Costo: ${item.costo}</Text>
-        <Text style={styles.cardMargin}>Margen: {item.margen}%</Text>
-      </View>
-      <View style={styles.cardActions}>
-        <TouchableOpacity
-          style={[styles.btnSmall, item.disponible ? styles.btnWarning : styles.btnSuccess]}
-          onPress={() => handleToggleDisponibilidad(item)}
-        >
-          <Text style={styles.btnText}>{item.disponible ? 'Desactivar' : 'Activar'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.btnSmall, styles.btnPrimary]} onPress={() => openModal(item)}>
-          <Text style={styles.btnText}>Editar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.btnSmall, styles.btnDanger]} onPress={() => handleDelete(item)}>
-          <Text style={styles.btnText}>Eliminar</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  if (!sucursalActual) {
+  const renderFiltro = (tipo: FiltroTipo, label: string, icono: string) => {
+    const isActive = filtroActivo === tipo;
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Seleccione una sucursal</Text>
-      </View>
+      <TouchableOpacity
+        style={[styles.filtroChip, isActive && styles.filtroChipActive]}
+        onPress={() => setFiltroActivo(tipo)}
+      >
+        <POSIcon 
+          name={icono as any} 
+          size={16} 
+          color={isActive ? COLORS.white : COLORS.textSecondary} 
+        />
+        <Text style={[styles.filtroChipTexto, isActive && styles.filtroChipTextoActive]}>
+          {label}
+        </Text>
+      </TouchableOpacity>
     );
-  }
+  };
+
+  const renderProductoItem = ({ item }: { item: Producto }) => {
+    return (
+      <POSCard style={styles.productoCard} variant="elevated">
+        <View style={styles.productoHeader}>
+          <View style={styles.productoHeaderLeft}>
+            <Text style={styles.productoNombre}>{item.nombre}</Text>
+            <View style={styles.productoBadges}>
+              {item.destacado && (
+                <POSBadge label="DESTACADO" variant="warning" size="small" />
+              )}
+              <POSBadge 
+                label={item.activo ? 'ACTIVO' : 'INACTIVO'} 
+                variant={item.activo ? 'success' : 'default'}
+                size="small"
+              />
+            </View>
+          </View>
+        </View>
+
+        <Text style={styles.productoCategoria}>
+          <POSIcon name="pricetag-outline" size={14} color={COLORS.primary} />
+          {' '}{item.categoria.nombre}
+        </Text>
+
+        {item.descripcion && (
+          <Text style={styles.productoDescripcion} numberOfLines={2}>
+            {item.descripcion}
+          </Text>
+        )}
+
+        {/* Grid de Información Financiera */}
+        <View style={styles.productoInfoGrid}>
+          <View style={styles.productoInfoItem}>
+            <Text style={styles.productoInfoLabel}>Precio</Text>
+            <Text style={[styles.productoInfoValue, { color: COLORS.success }]}>
+              ${item.precioVenta.toFixed(2)}
+            </Text>
+          </View>
+
+          <View style={styles.productoInfoItem}>
+            <Text style={styles.productoInfoLabel}>Costo</Text>
+            <Text style={styles.productoInfoValue}>
+              ${item.costo.toFixed(2)}
+            </Text>
+          </View>
+
+          <View style={styles.productoInfoItem}>
+            <Text style={styles.productoInfoLabel}>Margen</Text>
+            <Text style={[styles.productoInfoValue, { color: COLORS.warning }]}>
+              {item.margen.toFixed(0)}%
+            </Text>
+          </View>
+        </View>
+
+        {/* Indicadores */}
+        <View style={styles.productoIndicadores}>
+          {item.gruposExtra && item.gruposExtra.length > 0 && (
+            <View style={styles.indicadorChip}>
+              <POSIcon name="add-circle-outline" size={14} color={COLORS.info} />
+              <Text style={styles.indicadorChipTexto}>
+                {item.gruposExtra.length} extra{item.gruposExtra.length !== 1 ? 's' : ''}
+              </Text>
+            </View>
+          )}
+          
+          <View style={styles.indicadorChip}>
+            <POSIcon name="time-outline" size={14} color={COLORS.textSecondary} />
+            <Text style={styles.indicadorChipTexto}>
+              {item.tiempoPreparacion} min
+            </Text>
+          </View>
+        </View>
+
+        {/* Acciones */}
+        <View style={styles.productoAcciones}>
+          <TouchableOpacity
+            style={[styles.botonAccion, styles.botonEditar]}
+            onPress={() => handleEditar(item)}
+          >
+            <POSIcon name="create-outline" size={20} color={COLORS.primary} />
+            <Text style={styles.botonAccionTexto}>Editar</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.botonAccion, styles.botonEliminar]}
+            onPress={() => handleEliminar(item)}
+          >
+            <POSIcon name="trash-outline" size={20} color={COLORS.danger} />
+            <Text style={[styles.botonAccionTexto, styles.botonEliminarTexto]}>Eliminar</Text>
+          </TouchableOpacity>
+        </View>
+      </POSCard>
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Gestión de Productos</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <Text style={styles.title}>Productos</Text>
+          <POSBadge 
+            label={`${productosFiltrados.length} productos`} 
+            variant="info"
+          />
+        </View>
+        <Text style={styles.subtitle}>
+          Administra tu catálogo de productos
+        </Text>
+      </View>
 
-      {/* Navigation Tabs */}
+      {/* Navegación por Tabs */}
       <View style={styles.navigationTabs}>
         <TouchableOpacity style={styles.tabActive}>
+          <POSIcon name="restaurant-outline" size={20} color={COLORS.primary} />
           <Text style={styles.tabTextActive}>Productos</Text>
         </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.tab}
           onPress={() => router.push('/config/categorias')}
         >
+          <POSIcon name="grid-outline" size={20} color={COLORS.textSecondary} />
           <Text style={styles.tabText}>Categorías</Text>
         </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.tab}
           onPress={() => router.push('/productos/extras')}
         >
-          <Text style={styles.tabText}>Grupos Extra</Text>
+          <POSIcon name="add-circle-outline" size={20} color={COLORS.textSecondary} />
+          <Text style={styles.tabText}>Extras</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
+      {/* Buscador */}
+      <View style={styles.busquedaContainer}>
+        <POSIcon name="search" size={20} color={COLORS.textSecondary} />
         <TextInput
-          style={styles.searchInput}
+          style={styles.busquedaInput}
           placeholder="Buscar producto..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmitEditing={handleSearch}
+          placeholderTextColor={COLORS.textSecondary}
+          value={busqueda}
+          onChangeText={setBusqueda}
         />
-        <TouchableOpacity style={styles.btnSearch} onPress={handleSearch}>
-          <Text style={styles.btnText}>Buscar</Text>
-        </TouchableOpacity>
+        {busqueda.length > 0 && (
+          <TouchableOpacity onPress={() => setBusqueda('')}>
+            <POSIcon name="close-circle" size={20} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Add Button */}
-      <TouchableOpacity style={styles.btnAdd} onPress={() => openModal()}>
-        <Text style={styles.btnText}>+ Nuevo Producto</Text>
-      </TouchableOpacity>
+      {/* Filtros */}
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        style={styles.filtrosContainer}
+        contentContainerStyle={styles.filtrosContent}
+      >
+        {renderFiltro('todos', 'Todos', 'apps-outline')}
+        {renderFiltro('activos', 'Activos', 'checkmark-circle-outline')}
+        {renderFiltro('inactivos', 'Inactivos', 'close-circle-outline')}
+        {renderFiltro('destacados', 'Destacados', 'star-outline')}
+      </ScrollView>
 
-      {/* Error Message */}
-      {error && <Text style={styles.error}>{error}</Text>}
-
-      {/* Loading Indicator */}
-      {loading && <ActivityIndicator size="large" color="#007AFF" />}
-
-      {/* Products List */}
+      {/* Lista de Productos */}
       <FlatList
-        data={productos}
-        renderItem={renderProducto}
+        data={productosFiltrados}
+        renderItem={renderProductoItem}
         keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          !loading ? <Text style={styles.emptyText}>No hay productos disponibles</Text> : null
+          <View style={styles.emptyContainer}>
+            <POSIcon name="fast-food-outline" size={80} color={COLORS.border} />
+            <Text style={styles.emptyTexto}>No hay productos</Text>
+            <Text style={styles.emptySubtexto}>
+              {busqueda ? 'Intenta con otra búsqueda' : 'Crea tu primer producto'}
+            </Text>
+          </View>
         }
       />
 
-      {/* Modal for Create/Edit */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
+      {/* FAB Button */}
+      <TouchableOpacity style={styles.fabButton} onPress={handleNuevo}>
+        <POSIcon name="add" size={32} color={COLORS.white} />
+      </TouchableOpacity>
+
+      {/* Modal Crear/Editar Producto */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={handleCerrarModal}
+      >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <ScrollView>
-              <Text style={styles.modalTitle}>{editingProducto ? 'Editar Producto' : 'Nuevo Producto'}</Text>
+          <View style={styles.modalContainer}>
+            {/* Header Modal */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitulo}>
+                {productoEditando ? 'Editar Producto' : 'Nuevo Producto'}
+              </Text>
+              <TouchableOpacity onPress={handleCerrarModal}>
+                <POSIcon name="close" size={28} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
-              <Text style={styles.label}>Nombre *</Text>
-              <TextInput style={styles.input} value={formData.nombre} onChangeText={(text) => setFormData({ ...formData, nombre: text })} />
+            {/* Contenido del Formulario */}
+            <ScrollView style={styles.modalContenido} showsVerticalScrollIndicator={false}>
+              {/* Sección: Información General */}
+              <View style={styles.seccionFormulario}>
+                <Text style={styles.seccionTitulo}>Información General</Text>
+                
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Nombre *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Ej: Hamburguesa Clásica"
+                    placeholderTextColor={COLORS.textSecondary}
+                    value={formData.nombre}
+                    onChangeText={(text) => setFormData({ ...formData, nombre: text })}
+                  />
+                </View>
 
-              <Text style={styles.label}>Descripción</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.descripcion}
-                onChangeText={(text) => setFormData({ ...formData, descripcion: text })}
-                multiline
-              />
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Descripción</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.formInputMultiline]}
+                    placeholder="Describe el producto"
+                    placeholderTextColor={COLORS.textSecondary}
+                    multiline
+                    numberOfLines={3}
+                    value={formData.descripcion}
+                    onChangeText={(text) => setFormData({ ...formData, descripcion: text })}
+                  />
+                </View>
 
-              <Text style={styles.label}>Precio de Venta *</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.precioVenta.toString()}
-                onChangeText={(text) => setFormData({ ...formData, precioVenta: Number(text) })}
-                keyboardType="numeric"
-              />
-
-              <Text style={styles.label}>Costo</Text>
-              <TextInput style={styles.input} value={formData.costo.toString()  } onChangeText={(text) => setFormData({ ...formData, costo: Number(text) })} keyboardType="numeric" />
-
-              <Text style={styles.label}>Tiempo de Preparación (min)</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.tiempoPreparacion.toString()}
-                onChangeText={(text) => setFormData({ ...formData, tiempoPreparacion: Number(text) })}
-                keyboardType="numeric"
-              />
-
-              <Text style={styles.label}>Categoría *</Text>
-              <ScrollView horizontal style={styles.chipContainer}>
-                {categorias.map((cat) => (
-                  <TouchableOpacity
-                    key={cat.id}
-                    style={[styles.chip, formData.categoriaId === cat.id && styles.chipSelected]}
-                    onPress={() => setFormData({ ...formData, categoriaId: cat.id })}
-                  >
-                    <Text style={styles.chipText}>{cat.nombre}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
-              {!editingProducto && (
-                <>
-                  <Text style={styles.label}>Receta *</Text>
-                  <ScrollView horizontal style={styles.chipContainer}>
-                    {recetas.map((receta) => (
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Categoría *</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+                    {categorias.map((cat) => (
                       <TouchableOpacity
-                        key={receta.id}
-                        style={[styles.chip, formData.recetaId === receta.id && styles.chipSelected]}
-                        onPress={() => setFormData({ ...formData, recetaId: receta.id })}
+                        key={cat.id}
+                        style={[
+                          styles.chipCategoria,
+                          formData.categoriaId === cat.id && styles.chipCategoriaActiva,
+                        ]}
+                        onPress={() => setFormData({ ...formData, categoriaId: cat.id })}
                       >
-                        <Text style={styles.chipText}>{receta.nombre}</Text>
+                        <Text
+                          style={[
+                            styles.chipCategoriaTexto,
+                            formData.categoriaId === cat.id && styles.chipCategoriaTextoActivo,
+                          ]}
+                        >
+                          {cat.nombre}
+                        </Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
-                </>
-              )}
+                </View>
 
-              <TouchableOpacity
-                style={styles.checkboxContainer}
-                onPress={() => setFormData({ ...formData, destacado: !formData.destacado })}
-              >
-                <View style={[styles.checkbox, formData.destacado && styles.checkboxChecked]} />
-                <Text style={styles.checkboxLabel}>Producto Destacado</Text>
-              </TouchableOpacity>
+                <View style={styles.formRow}>
+                  <View style={styles.switchContainer}>
+                    <View style={styles.switchLabel}>
+                      <POSIcon name="power" size={20} color={formData.activo ? COLORS.success : COLORS.textSecondary} />
+                      <Text style={styles.switchTextSmall}>Activo</Text>
+                    </View>
+                    <Switch
+                      value={formData.activo}
+                      onValueChange={(value) => setFormData({ ...formData, activo: value })}
+                      trackColor={{ false: COLORS.border, true: COLORS.success }}
+                      thumbColor={COLORS.white}
+                    />
+                  </View>
 
-              <View style={styles.modalActions}>
+                  <View style={styles.switchContainer}>
+                    <View style={styles.switchLabel}>
+                      <POSIcon name="star" size={20} color={formData.destacado ? COLORS.warning : COLORS.textSecondary} />
+                      <Text style={styles.switchTextSmall}>Destacado</Text>
+                    </View>
+                    <Switch
+                      value={formData.destacado}
+                      onValueChange={(value) => setFormData({ ...formData, destacado: value })}
+                      trackColor={{ false: COLORS.border, true: COLORS.warning }}
+                      thumbColor={COLORS.white}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Tiempo de Preparación (min)</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="0"
+                    placeholderTextColor={COLORS.textSecondary}
+                    keyboardType="numeric"
+                    value={formData.tiempoPreparacion.toString()}
+                    onChangeText={(text) => setFormData({ ...formData, tiempoPreparacion: parseFloat(text) || 0 })}
+                  />
+                </View>
+              </View>
+
+              {/* Sección: Receta Asociada */}
+              <View style={styles.seccionFormulario}>
+                <View style={styles.seccionHeader}>
+                  <Text style={styles.seccionTitulo}>Receta Asociada</Text>
+                  {recetaSeleccionada && (
+                    <POSBadge label="VINCULADA" variant="success" size="small" />
+                  )}
+                </View>
+
                 <TouchableOpacity
-                  style={[styles.btnModal, styles.btnSecondary]}
-                  onPress={() => {
-                    setModalVisible(false);
-                    /* resetForm(); */
-                  }}
+                  style={styles.selectorReceta}
+                  onPress={() => setModalRecetaVisible(true)}
                 >
-                  <Text style={styles.btnText}>Cancelar</Text>
+                  {recetaSeleccionada ? (
+                    <>
+                      <POSIcon name="checkmark-circle" size={20} color={COLORS.success} />
+                      <Text style={styles.selectorRecetaTexto}>{recetaSeleccionada.nombre}</Text>
+                    </>
+                  ) : (
+                    <>
+                      <POSIcon name="document-text-outline" size={20} color={COLORS.textSecondary} />
+                      <Text style={[styles.selectorRecetaTexto, styles.selectorRecetaPlaceholder]}>
+                        Seleccionar receta (opcional)
+                      </Text>
+                    </>
+                  )}
+                  <POSIcon name="chevron-forward" size={20} color={COLORS.textSecondary} />
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.btnModal, styles.btnPrimary]} onPress={handleSubmit} >
-                  <Text style={styles.btnText}>Guardar</Text>
+
+                {recetaSeleccionada && (
+                  <POSCard style={styles.resumenReceta} variant="outlined">
+                    <View style={styles.resumenRecetaHeader}>
+                      <POSIcon name="restaurant-outline" size={24} color={COLORS.primary} />
+                      <Text style={styles.resumenRecetaTitulo}>Resumen de Receta</Text>
+                    </View>
+
+                    <View style={styles.resumenRecetaGrid}>
+                      <View style={styles.resumenRecetaItem}>
+                        <Text style={styles.resumenRecetaLabel}>Rendimiento</Text>
+                        <Text style={styles.resumenRecetaValor}>
+                          {recetaSeleccionada.rendimiento} {recetaSeleccionada.unidadRendimiento}
+                        </Text>
+                      </View>
+
+                      <View style={styles.resumenRecetaItem}>
+                        <Text style={styles.resumenRecetaLabel}>Ingredientes</Text>
+                        <Text style={styles.resumenRecetaValor}>
+                          {recetaSeleccionada.detalles?.length || 0}
+                        </Text>
+                      </View>
+
+                      <View style={styles.resumenRecetaItem}>
+                        <Text style={styles.resumenRecetaLabel}>Costo Total</Text>
+                        <Text style={[styles.resumenRecetaValor, { color: COLORS.danger }]}>
+                          $50.00
+                        </Text>
+                      </View>
+
+                      <View style={styles.resumenRecetaItem}>
+                        <Text style={styles.resumenRecetaLabel}>Costo x Unidad</Text>
+                        <Text style={[styles.resumenRecetaValor, { color: COLORS.success }]}>
+                          ${(50 / (recetaSeleccionada.rendimiento || 1)).toFixed(2)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.switchContainer}>
+                      <Text style={styles.switchTextSmall}>Costo personalizado</Text>
+                      <Switch
+                        value={costoPersonalizado}
+                        onValueChange={setCostoPersonalizado}
+                        trackColor={{ false: COLORS.border, true: COLORS.primary }}
+                        thumbColor={COLORS.white}
+                      />
+                    </View>
+                  </POSCard>
+                )}
+              </View>
+
+              {/* Sección: Configuración Comercial */}
+              <View style={styles.seccionFormulario}>
+                <Text style={styles.seccionTitulo}>Configuración Comercial</Text>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Costo {recetaSeleccionada && !costoPersonalizado ? '(de receta)' : ''}</Text>
+                  <View style={styles.precioContainer}>
+                    <Text style={styles.precioSimbolo}>$</Text>
+                    <TextInput
+                      style={styles.precioInput}
+                      placeholder="0.00"
+                      placeholderTextColor={COLORS.textSecondary}
+                      keyboardType="decimal-pad"
+                      value={formData.costo.toString()}
+                      onChangeText={(text) => setFormData({ ...formData, costo: parseFloat(text) || 0 })}
+                      editable={!recetaSeleccionada || costoPersonalizado}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Margen de Ganancia (%)</Text>
+                  <View style={styles.precioContainer}>
+                    <Text style={[styles.precioSimbolo, { color: COLORS.warning }]}>%</Text>
+                    <TextInput
+                      style={styles.precioInput}
+                      placeholder="0"
+                      placeholderTextColor={COLORS.textSecondary}
+                      keyboardType="decimal-pad"
+                      value={formData.margen.toString()}
+                      onChangeText={(text) => actualizarPrecioPorMargen(parseFloat(text) || 0)}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Precio de Venta *</Text>
+                  <View style={styles.precioContainer}>
+                    <Text style={[styles.precioSimbolo, { color: COLORS.success }]}>$</Text>
+                    <TextInput
+                      style={styles.precioInput}
+                      placeholder="0.00"
+                      placeholderTextColor={COLORS.textSecondary}
+                      keyboardType="decimal-pad"
+                      value={formData.precioVenta.toString()}
+                      onChangeText={(text) => actualizarMargenPorPrecio(parseFloat(text) || 0)}
+                    />
+                  </View>
+                </View>
+
+                {/* Panel Financiero Destacado */}
+                <POSCard style={styles.panelFinanciero} variant="elevated">
+                  <View style={styles.panelFinancieroHeader}>
+                    <POSIcon name="trending-up-outline" size={28} color={COLORS.success} />
+                    <Text style={styles.panelFinancieroTitulo}>Análisis Financiero</Text>
+                  </View>
+
+                  <View style={styles.panelFinancieroGrid}>
+                    <View style={styles.panelFinancieroItem}>
+                      <Text style={styles.panelFinancieroLabel}>Costo</Text>
+                      <Text style={styles.panelFinancieroValor}>
+                        ${valoresFinancieros.costo.toFixed(2)}
+                      </Text>
+                    </View>
+
+                    <View style={[styles.panelFinancieroItem, styles.panelFinancieroItemDestacado]}>
+                      <Text style={styles.panelFinancieroLabel}>Utilidad</Text>
+                      <Text style={[styles.panelFinancieroValor, { color: COLORS.success }]}>
+                        ${valoresFinancieros.utilidad.toFixed(2)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.panelFinancieroItem}>
+                      <Text style={styles.panelFinancieroLabel}>Margen</Text>
+                      <Text style={[styles.panelFinancieroValor, { color: COLORS.warning }]}>
+                        {valoresFinancieros.margen.toFixed(1)}%
+                      </Text>
+                    </View>
+
+                    <View style={[styles.panelFinancieroItem, styles.panelFinancieroItemDestacado]}>
+                      <Text style={styles.panelFinancieroLabel}>Precio Venta</Text>
+                      <Text style={[styles.panelFinancieroValor, styles.panelFinancieroValorGrande]}>
+                        ${valoresFinancieros.precioVenta.toFixed(2)}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.panelFinancieroFormula}>
+                    <Text style={styles.panelFinancieroFormulaTexto}>
+                      Precio = Costo × (1 + Margen%)
+                    </Text>
+                  </View>
+                </POSCard>
+              </View>
+
+              {/* Sección: Grupos de Extras */}
+              <View style={styles.seccionFormulario}>
+                <View style={styles.seccionHeader}>
+                  <Text style={styles.seccionTitulo}>Grupos de Extras</Text>
+                  <View style={styles.contadorExtras}>
+                    <POSIcon name="add-circle-outline" size={16} color={COLORS.info} />
+                    <Text style={styles.contadorExtrasTexto}>
+                      {extrasSeleccionados.length} seleccionados
+                    </Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.botonSeleccionarExtras}
+                  onPress={() => setModalExtrasVisible(true)}
+                >
+                  <POSIcon name="list-outline" size={20} color={COLORS.primary} />
+                  <Text style={styles.botonSeleccionarExtrasTexto}>
+                    Seleccionar Grupos de Extras
+                  </Text>
+                  <POSIcon name="chevron-forward" size={20} color={COLORS.textSecondary} />
                 </TouchableOpacity>
+
+                {extrasSeleccionados.length > 0 && (
+                  <View style={styles.extrasSeleccionadosLista}>
+                    {extrasSeleccionados.map((grupoId) => {
+                      const grupo = grupos.find((g) => g.id === grupoId);
+                      return grupo ? (
+                        <View key={grupoId} style={styles.chipExtra}>
+                          <Text style={styles.chipExtraTexto}>{grupo.nombre}</Text>
+                          <Text style={styles.chipExtraOpciones}>
+                            {grupo.opciones.length} opciones
+                          </Text>
+                          <TouchableOpacity onPress={() => handleToggleExtra(grupoId)}>
+                            <POSIcon name="close" size={16} color={COLORS.textSecondary} />
+                          </TouchableOpacity>
+                        </View>
+                      ) : null;
+                    })}
+                  </View>
+                )}
               </View>
             </ScrollView>
+
+            {/* Botones de Acción */}
+            <View style={styles.modalAcciones}>
+              <TouchableOpacity
+                style={[styles.botonModal, styles.botonCancelar]}
+                onPress={handleCerrarModal}
+              >
+                <Text style={styles.botonCancelarTexto}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.botonModal, styles.botonGuardar]}
+                onPress={handleGuardar}
+              >
+                <Text style={styles.botonGuardarTexto}>
+                  {productoEditando ? 'Actualizar' : 'Crear Producto'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Seleccionar Receta */}
+      <Modal
+        visible={modalRecetaVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setModalRecetaVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSecundarioContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitulo}>Seleccionar Receta</Text>
+              <TouchableOpacity onPress={() => setModalRecetaVisible(false)}>
+                <POSIcon name="close" size={28} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.listaRecetas}>
+              <TouchableOpacity
+                style={styles.recetaItem}
+                onPress={() => {
+                  setFormData({ ...formData, recetaId: 0 });
+                  setModalRecetaVisible(false);
+                }}
+              >
+                <View style={styles.recetaItemInfo}>
+                  <Text style={styles.recetaItemNombre}>Sin receta</Text>
+                  <Text style={styles.recetaItemDetalle}>No vincular con receta</Text>
+                </View>
+                {formData.recetaId === 0 && (
+                  <POSIcon name="checkmark-circle" size={28} color={COLORS.success} />
+                )}
+              </TouchableOpacity>
+
+              {recetas.map((receta: Receta) => (
+                <TouchableOpacity
+                  key={receta.id}
+                  style={styles.recetaItem}
+                  onPress={() => handleSeleccionarReceta(receta.id)}
+                >
+                  <View style={styles.recetaItemInfo}>
+                    <Text style={styles.recetaItemNombre}>{receta.nombre}</Text>
+                    <Text style={styles.recetaItemDetalle}>
+                      Rendimiento: {receta.rendimiento} {receta.unidadRendimiento}
+                    </Text>
+                  </View>
+                  {formData.recetaId === receta.id && (
+                    <POSIcon name="checkmark-circle" size={28} color={COLORS.success} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Seleccionar Extras */}
+      <Modal
+        visible={modalExtrasVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalExtrasVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSecundarioContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitulo}>Seleccionar Extras</Text>
+              <TouchableOpacity onPress={() => setModalExtrasVisible(false)}>
+                <POSIcon name="close" size={28} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.listaExtras}>
+              {grupos.map((grupo) => {
+                const isSeleccionado = extrasSeleccionados.includes(grupo.id);
+                
+                return (
+                  <TouchableOpacity
+                    key={grupo.id}
+                    style={[
+                      styles.extraItem,
+                      isSeleccionado && styles.extraItemSeleccionado,
+                    ]}
+                    onPress={() => handleToggleExtra(grupo.id)}
+                  >
+                    <View style={styles.extraItemInfo}>
+                      <Text style={styles.extraItemNombre}>{grupo.nombre}</Text>
+                      <Text style={styles.extraItemDetalle}>
+                        {grupo.opciones.length} opciones disponibles
+                      </Text>
+                    </View>
+                    {isSeleccionado ? (
+                      <POSIcon name="checkmark-circle" size={28} color={COLORS.success} />
+                    ) : (
+                      <POSIcon name="ellipse-outline" size={28} color={COLORS.border} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <View style={styles.modalAcciones}>
+              <TouchableOpacity
+                style={[styles.botonModal, styles.botonGuardar, { flex: 1 }]}
+                onPress={() => setModalExtrasVisible(false)}
+              >
+                <Text style={styles.botonGuardarTexto}>
+                  Confirmar ({extrasSeleccionados.length})
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -279,269 +930,715 @@ export default function ProductosScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
+  
+  // Header
+  header: {
+    backgroundColor: COLORS.white,
     padding: 20,
-    backgroundColor: '#f5f5f5',
+    paddingTop: 60,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 15,
+    color: COLORS.text,
   },
+  subtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+
+  // Navegación por Tabs
   navigationTabs: {
     flexDirection: 'row',
-    marginBottom: 15,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    backgroundColor: COLORS.white,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 12,
     padding: 4,
     shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 6,
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    gap: 6,
   },
   tabActive: {
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: 6,
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 8,
+    gap: 6,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#666',
+    color: COLORS.textSecondary,
   },
   tabTextActive: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+
+  // Buscador
+  busquedaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    marginHorizontal: 16,
+    marginTop: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    height: 50,
+  },
+  busquedaInput: {
+    flex: 1,
+    fontSize: 16,
+    color: COLORS.text,
+    marginLeft: 12,
+  },
+
+  // Filtros
+  filtrosContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
+  },
+  filtrosContent: {
+    gap: 8,
+    paddingRight: 16,
+  },
+  filtroChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  filtroChipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  filtroChipTexto: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: COLORS.textSecondary,
   },
-  searchContainer: {
-    flexDirection: 'row',
-    marginBottom: 10,
+  filtroChipTextoActive: {
+    color: COLORS.white,
   },
-  searchInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    backgroundColor: '#fff',
-    marginRight: 10,
+
+  // Lista
+  listContainer: {
+    padding: 16,
+    paddingBottom: 100,
   },
-  btnSearch: {
-    backgroundColor: '#007AFF',
-    padding: 10,
-    borderRadius: 8,
-    justifyContent: 'center',
+  
+  // Tarjeta Producto
+  productoCard: {
+    marginBottom: 16,
+    padding: 16,
   },
-  btnAdd: {
-    backgroundColor: '#34C759',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  btnText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  error: {
-    color: '#FF3B30',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  list: {
-    paddingBottom: 20,
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#666',
-    marginTop: 20,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  cardHeader: {
+  productoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 8,
   },
-  cardTitle: {
+  productoHeaderLeft: {
+    flex: 1,
+  },
+  productoNombre: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  productoBadges: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  productoCategoria: {
+    fontSize: 14,
+    color: COLORS.primary,
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  productoDescripcion: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  
+  // Grid de información financiera
+  productoInfoGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  productoInfoItem: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    gap: 4,
+  },
+  productoInfoLabel: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  productoInfoValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    flex: 1,
+    color: COLORS.text,
+    textAlign: 'center',
   },
-  badges: {
+
+  // Indicadores
+  productoIndicadores: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  indicadorChip: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  badgeDestacado: {
-    fontSize: 20,
-    marginRight: 5,
-    color: '#FFD700',
-  },
-  badge: {
-    fontSize: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  badgeAvailable: {
-    backgroundColor: '#34C759',
-    color: '#fff',
-  },
-  badgeUnavailable: {
-    backgroundColor: '#FF3B30',
-    color: '#fff',
-  },
-  cardDescription: {
-    color: '#666',
-    marginBottom: 8,
-  },
-  cardCategory: {
-    fontSize: 14,
-    color: '#007AFF',
-    marginBottom: 8,
-  },
-  cardPricing: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  cardPrice: {
-    fontWeight: 'bold',
-    color: '#34C759',
-  },
-  cardCost: {
-    color: '#666',
-  },
-  cardMargin: {
-    color: '#FF9500',
-  },
-  cardActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  btnSmall: {
-    flex: 1,
-    padding: 8,
-    borderRadius: 6,
-    alignItems: 'center',
-    marginHorizontal: 2,
-  },
-  btnPrimary: {
-    backgroundColor: '#007AFF',
-  },
-  btnDanger: {
-    backgroundColor: '#FF3B30',
-  },
-  btnWarning: {
-    backgroundColor: '#FF9500',
-  },
-  btnSuccess: {
-    backgroundColor: '#34C759',
-  },
-  btnSecondary: {
-    backgroundColor: '#8E8E93',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 12,
-    padding: 20,
-    width: '90%',
-    maxHeight: '80%',
+    gap: 4,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
+  indicadorChipTexto: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
   },
-  label: {
+
+  // Acciones
+  productoAcciones: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  botonAccion: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+  botonEditar: {
+    backgroundColor: '#E3F2FD',
+  },
+  botonEliminar: {
+    backgroundColor: '#FFEBEE',
+  },
+  botonAccionTexto: {
     fontSize: 14,
     fontWeight: '600',
-    marginTop: 10,
-    marginBottom: 5,
+    color: COLORS.primary,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    backgroundColor: '#f9f9f9',
+  botonEliminarTexto: {
+    color: COLORS.danger,
   },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  chipContainer: {
-    flexDirection: 'row',
-    marginVertical: 5,
-  },
-  chip: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#E5E5EA',
-    marginRight: 8,
-  },
-  chipSelected: {
-    backgroundColor: '#007AFF',
-  },
-  chipText: {
-    color: '#000',
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
+
+  // FAB Button
+  fabButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 2,
-    borderColor: '#007AFF',
-    borderRadius: 4,
-    marginRight: 10,
+
+  // Empty State
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
   },
-  checkboxChecked: {
-    backgroundColor: '#007AFF',
+  emptyTexto: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    marginTop: 16,
+    marginBottom: 8,
   },
-  checkboxLabel: {
+  emptySubtexto: {
     fontSize: 14,
+    color: COLORS.textSecondary,
   },
-  modalActions: {
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '95%',
+  },
+  modalSecundarioContainer: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+  },
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
-  btnModal: {
+  modalTitulo: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  modalContenido: {
+    maxHeight: '70%',
+  },
+
+  // Formulario
+  seccionFormulario: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  seccionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  seccionTitulo: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 16,
+  },
+  formGroup: {
+    marginBottom: 16,
+  },
+  formRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  formLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  formInput: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: COLORS.text,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  formInputMultiline: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+
+  // Chips de Categoría
+  chipScroll: {
+    flexDirection: 'row',
+  },
+  chipCategoria: {
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  chipCategoriaActiva: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  chipCategoriaTexto: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  chipCategoriaTextoActivo: {
+    color: COLORS.white,
+  },
+
+  // Switch
+  switchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
     flex: 1,
-    padding: 15,
+  },
+  switchLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  switchTextSmall: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+
+  // Selector de Receta
+  selectorReceta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: 12,
+  },
+  selectorRecetaTexto: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  selectorRecetaPlaceholder: {
+    color: COLORS.textSecondary,
+    fontWeight: 'normal',
+  },
+
+  // Resumen de Receta
+  resumenReceta: {
+    marginTop: 16,
+    padding: 16,
+  },
+  resumenRecetaHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  resumenRecetaTitulo: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  resumenRecetaGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 16,
+  },
+  resumenRecetaItem: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: '#F9FAFB',
+    padding: 12,
+    borderRadius: 8,
+  },
+  resumenRecetaLabel: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    marginBottom: 4,
+  },
+  resumenRecetaValor: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+
+  // Precio
+  precioContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 16,
+  },
+  precioSimbolo: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginRight: 8,
+  },
+  precioInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: COLORS.text,
+  },
+
+  // Panel Financiero
+  panelFinanciero: {
+    marginTop: 16,
+    padding: 20,
+    backgroundColor: '#F0F9FF',
+  },
+  panelFinancieroHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+  },
+  panelFinancieroTitulo: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  panelFinancieroGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 16,
+  },
+  panelFinancieroItem: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: COLORS.white,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  panelFinancieroItemDestacado: {
+    backgroundColor: '#E0F2FE',
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  },
+  panelFinancieroLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  panelFinancieroValor: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  panelFinancieroValorGrande: {
+    fontSize: 24,
+    color: COLORS.success,
+  },
+  panelFinancieroFormula: {
+    backgroundColor: COLORS.white,
+    padding: 12,
     borderRadius: 8,
     alignItems: 'center',
-    marginHorizontal: 5,
+  },
+  panelFinancieroFormulaTexto: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
+  },
+
+  // Extras
+  contadorExtras: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 6,
+  },
+  contadorExtrasTexto: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.info,
+  },
+  botonSeleccionarExtras: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  botonSeleccionarExtrasTexto: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.primary,
+    marginLeft: 12,
+  },
+  extrasSeleccionadosLista: {
+    flexDirection: 'column',
+    gap: 8,
+    marginTop: 16,
+  },
+  chipExtra: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    gap: 8,
+  },
+  chipExtraTexto: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.info,
+  },
+  chipExtraOpciones: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+
+  // Botones Modal
+  modalAcciones: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  botonModal: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  botonCancelar: {
+    backgroundColor: '#F9FAFB',
+  },
+  botonCancelarTexto: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  botonGuardar: {
+    backgroundColor: COLORS.primary,
+  },
+  botonGuardarTexto: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.white,
+  },
+
+  // Lista de Recetas
+  listaRecetas: {
+    padding: 20,
+  },
+  recetaItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  recetaItemInfo: {
+    flex: 1,
+  },
+  recetaItemNombre: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  recetaItemDetalle: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+
+  // Lista de Extras
+  listaExtras: {
+    paddingHorizontal: 20,
+    maxHeight: 400,
+  },
+  extraItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  extraItemSeleccionado: {
+    backgroundColor: '#E8F5E9',
+    borderColor: COLORS.success,
+  },
+  extraItemInfo: {
+    flex: 1,
+  },
+  extraItemNombre: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  extraItemDetalle: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
   },
 });

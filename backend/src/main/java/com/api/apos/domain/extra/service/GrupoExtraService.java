@@ -3,10 +3,11 @@ package com.api.apos.domain.extra.service;
 import java.util.List;
 import java.util.Optional;
 
+import com.api.apos.domain.extra.dto.CreateGrupoExtraDTO;
 import com.api.apos.domain.extra.entity.GrupoExtra;
 
 public interface GrupoExtraService {
-    GrupoExtra crearGrupoExtra(GrupoExtra grupoExtra);
+    GrupoExtra crearGrupoExtra(CreateGrupoExtraDTO grupoExtra);
     GrupoExtra actualizarGrupoExtra(Long id, GrupoExtra grupoExtra);
     void eliminarGrupoExtra(Long id);
     Optional<GrupoExtra> obtenerGrupoExtraPorId(Long id);

@@ -1,171 +1,336 @@
-import { Categoria } from '@/features/producto/categoria/categoria.types';
-import { useCategoria } from '@/features/producto/categoria/useCategoria';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity, FlatList, Modal, Switch, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Modal,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { POSCard, POSBadge, POSIcon, COLORS } from '@/components/pos';
+import { useCategoria } from '@/features/producto/categoria/useCategoria';
+import { Categoria } from '@/features/producto/categoria/categoria.types';
+
+// Mock: Conteo de productos por categoría
+const MOCK_PRODUCTOS_POR_CATEGORIA: { [key: number]: number } = {
+  1: 12,
+  2: 8,
+  3: 15,
+  4: 6,
+  5: 10,
+};
 
 export default function CategoriasScreen() {
+  const { categorias, loading, error, cargarCategorias, saveCategoria } = useCategoria();
 
-  const { categorias, selectedCategoria, loading, error, cargarCategorias, saveCategoria } = useCategoria();
-
+  const [busqueda, setBusqueda] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingCategoria, setEditingCategoria] = useState<Categoria | null>(null);
+  const [categoriaEditando, setCategoriaEditando] = useState<Categoria | null>(null);
 
-  // Form fields
-  const [nombre, setNombre] = useState('');
+  const [formData, setFormData] = useState({
+    nombre: '',
+    descripcion: '',
+    activo: true,
+  });
 
   useEffect(() => {
     cargarCategorias();
   }, []);
 
-  const openModal = (categoria?: Categoria) => {
-    if (categoria) {
-      setEditingCategoria(categoria);
-      setNombre(categoria.nombre);
+  useEffect(() => {
+    if (categoriaEditando) {
+      setFormData({
+        nombre: categoriaEditando.nombre,
+        descripcion: categoriaEditando.descripcion,
+        activo: categoriaEditando.activo,
+      });
     } else {
-      resetForm();
+      setFormData({ nombre: '', descripcion: '', activo: true });
     }
+  }, [categoriaEditando]);
+
+  const categoriasFiltradas = categorias.filter((cat) =>
+    cat.nombre.toLowerCase().includes(busqueda.toLowerCase())
+  );
+
+  const handleNueva = () => {
+    setCategoriaEditando(null);
     setModalVisible(true);
   };
 
-  const resetForm = () => {
-    setEditingCategoria(null);
-    setNombre('');
+  const handleEditar = (categoria: Categoria) => {
+    setCategoriaEditando(categoria);
+    setModalVisible(true);
   };
 
-  const handleSubmit = async () => {
-    if (!nombre.trim()) {
-      Alert.alert('Error', 'El nombre es obligatorio');
+  const handleEliminar = (categoria: Categoria) => {
+    Alert.alert(
+      'Eliminar Categoría',
+      `¿Estás seguro de eliminar "${categoria.nombre}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', style: 'destructive', onPress: () => console.log('Eliminar:', categoria.id) }
+      ]
+    );
+  };
+
+  const handleCerrarModal = () => {
+    setModalVisible(false);
+    setCategoriaEditando(null);
+  };
+
+  const handleGuardar = async () => {
+    if (!formData.nombre.trim()) {
+      Alert.alert('Error', 'El nombre de la categoría es requerido');
       return;
     }
 
-    try {
-      const data = editingCategoria
-        ? { id: editingCategoria.id, nombre }
-        : { nombre };
-      const result = await saveCategoria(data);
-      if (result.success) {
-        Alert.alert('Éxito', `Categoría ${editingCategoria ? 'actualizada' : 'creada'} correctamente`);
-        setModalVisible(false);
-        resetForm();
-      } else {
-        Alert.alert('Error', result.error || 'Ocurrió un error al guardar la categoría');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Ocurrió un error al guardar la categoría');
+    const data = categoriaEditando
+      ? { id: categoriaEditando.id, nombre: formData.nombre }
+      : { nombre: formData.nombre };
+
+    const result = await saveCategoria(data);
+    
+    if (result.success) {
+      Alert.alert('Éxito', `Categoría ${categoriaEditando ? 'actualizada' : 'creada'} correctamente`);
+      handleCerrarModal();
+    } else {
+      Alert.alert('Error', result.error || 'Ocurrió un error al guardar la categoría');
     }
   };
 
-  const handleDelete = (categoria: Categoria) => {
+  const renderCategoriaItem = ({ item }: { item: Categoria }) => {
+    const productosAsociados = MOCK_PRODUCTOS_POR_CATEGORIA[item.id] || Math.floor(Math.random() * 15) + 1;
 
+    return (
+      <POSCard style={styles.categoriaCard} variant="elevated">
+        <View style={styles.categoriaHeader}>
+          <View style={styles.categoriaHeaderLeft}>
+            <Text style={styles.categoriaNombre}>{item.nombre}</Text>
+            <POSBadge 
+              label={item.activo ? 'ACTIVA' : 'INACTIVA'} 
+              variant={item.activo ? 'success' : 'default'}
+              size="small"
+            />
+          </View>
+        </View>
+
+        {item.descripcion && (
+          <Text style={styles.categoriaDescripcion} numberOfLines={2}>
+            {item.descripcion}
+          </Text>
+        )}
+
+        <View style={styles.categoriaInfoGrid}>
+          <View style={styles.categoriaInfoItem}>
+            <POSIcon name="fast-food-outline" size={16} color={COLORS.textSecondary} />
+            <Text style={styles.categoriaInfoLabel}>Productos</Text>
+            <Text style={styles.categoriaInfoValue}>{productosAsociados}</Text>
+          </View>
+
+          <View style={styles.categoriaInfoItem}>
+            <POSIcon name="reorder-three-outline" size={16} color={COLORS.textSecondary} />
+            <Text style={styles.categoriaInfoLabel}>Orden</Text>
+            <Text style={styles.categoriaInfoValue}>{item.orden}</Text>
+          </View>
+        </View>
+
+        <View style={styles.categoriaAcciones}>
+          <TouchableOpacity
+            style={[styles.botonAccion, styles.botonEditar]}
+            onPress={() => handleEditar(item)}
+          >
+            <POSIcon name="create-outline" size={20} color={COLORS.primary} />
+            <Text style={styles.botonAccionTexto}>Editar</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.botonAccion, styles.botonEliminar]}
+            onPress={() => handleEliminar(item)}
+          >
+            <POSIcon name="trash-outline" size={20} color={COLORS.danger} />
+            <Text style={[styles.botonAccionTexto, styles.botonEliminarTexto]}>Eliminar</Text>
+          </TouchableOpacity>
+        </View>
+      </POSCard>
+    );
   };
-
-  const renderCategoria = ({ item }: { item: Categoria }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <View style={styles.cardInfo}>
-          <Text style={styles.cardTitle}>{item.nombre}</Text>
-          <Text style={styles.cardOrden}>Orden: {item.orden}</Text>
-        </View>
-        <View style={[styles.badge, item.activo ? styles.badgeActive : styles.badgeInactive]}>
-          <Text style={styles.badgeText}>{item.activo ? 'Activa' : 'Inactiva'}</Text>
-        </View>
-      </View>
-      <Text style={styles.cardDescription}>{item.descripcion}</Text>
-      <View style={styles.cardActions}>
-        <TouchableOpacity style={[styles.btnSmall, styles.btnPrimary]} onPress={() => openModal(item)}>
-          <Text style={styles.btnText}>Editar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.btnSmall, styles.btnDanger]} onPress={() => handleDelete(item)}>
-          <Text style={styles.btnText}>Eliminar</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Gestión de Categorías</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <Text style={styles.title}>Categorías</Text>
+          <POSBadge 
+            label={`${categoriasFiltradas.length} categorías`} 
+            variant="info"
+          />
+        </View>
+        <Text style={styles.subtitle}>
+          Organiza tu menú por categorías
+        </Text>
+      </View>
 
-      {/* Navigation Tabs */}
+      {/* Navegación por Tabs */}
       <View style={styles.navigationTabs}>
         <TouchableOpacity
           style={styles.tab}
           onPress={() => router.push('/productos/productos')}
         >
+          <POSIcon name="restaurant-outline" size={20} color={COLORS.textSecondary} />
           <Text style={styles.tabText}>Productos</Text>
         </TouchableOpacity>
+        
         <TouchableOpacity style={styles.tabActive}>
+          <POSIcon name="grid-outline" size={20} color={COLORS.primary} />
           <Text style={styles.tabTextActive}>Categorías</Text>
         </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.tab}
           onPress={() => router.push('/productos/extras')}
         >
-          <Text style={styles.tabText}>Grupos Extra</Text>
+          <POSIcon name="add-circle-outline" size={20} color={COLORS.textSecondary} />
+          <Text style={styles.tabText}>Extras</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Add Button */}
-      <TouchableOpacity style={styles.btnAdd} onPress={() => openModal()}>
-        <Text style={styles.btnText}>+ Nueva Categoría</Text>
-      </TouchableOpacity>
+      {/* Buscador */}
+      <View style={styles.busquedaContainer}>
+        <POSIcon name="search" size={20} color={COLORS.textSecondary} />
+        <TextInput
+          style={styles.busquedaInput}
+          placeholder="Buscar categoría..."
+          placeholderTextColor={COLORS.textSecondary}
+          value={busqueda}
+          onChangeText={setBusqueda}
+        />
+        {busqueda.length > 0 && (
+          <TouchableOpacity onPress={() => setBusqueda('')}>
+            <POSIcon name="close-circle" size={20} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+        )}
+      </View>
 
-      {/* Error Message */}
-      {error && <Text style={styles.error}>{error}</Text>}
-
-      {/* Loading Indicator */}
-      {loading && <ActivityIndicator size="large" color="#007AFF" />}
-
-      {/* Categories List */}
+      {/* Lista de Categorías */}
       <FlatList
-        data={categorias}
-        renderItem={renderCategoria}
+        data={categoriasFiltradas}
+        renderItem={renderCategoriaItem}
         keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          !loading ? <Text style={styles.emptyText}>No hay categorías disponibles</Text> : null
+          <View style={styles.emptyContainer}>
+            <POSIcon name="albums-outline" size={80} color={COLORS.border} />
+            <Text style={styles.emptyTexto}>No hay categorías</Text>
+            <Text style={styles.emptySubtexto}>
+              {busqueda ? 'Intenta con otra búsqueda' : 'Crea tu primera categoría'}
+            </Text>
+          </View>
         }
       />
 
-      {/* Modal for Create/Edit */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
+      {/* FAB Button */}
+      <TouchableOpacity style={styles.fabButton} onPress={handleNueva}>
+        <POSIcon name="add" size={32} color={COLORS.white} />
+      </TouchableOpacity>
+
+      {/* Modal Crear/Editar Categoría */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={handleCerrarModal}
+      >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {editingCategoria ? 'Editar Categoría' : 'Nueva Categoría'}
-            </Text>
-
-            <Text style={styles.label}>Nombre *</Text>
-            <TextInput
-              style={styles.input}
-              value={nombre}
-              onChangeText={setNombre}
-              placeholder="Ej: Bebidas, Comidas, Postres..."
-            />
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.btnModal, styles.btnSecondary]}
-                onPress={() => {
-                  setModalVisible(false);
-                  resetForm();
-                }}
-              >
-                <Text style={styles.btnText}>Cancelar</Text>
+          <View style={styles.modalContainer}>
+            {/* Header Modal */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitulo}>
+                {categoriaEditando ? 'Editar Categoría' : 'Nueva Categoría'}
+              </Text>
+              <TouchableOpacity onPress={handleCerrarModal}>
+                <POSIcon name="close" size={28} color={COLORS.textSecondary} />
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.btnModal, styles.btnPrimary]} onPress={handleSubmit}>
-                <Text style={styles.btnText}>Guardar</Text>
+            </View>
+
+            {/* Contenido del Formulario */}
+            <ScrollView style={styles.modalContenido} showsVerticalScrollIndicator={false}>
+              {/* Sección: Información de la Categoría */}
+              <View style={styles.seccionFormulario}>
+                <Text style={styles.seccionTitulo}>Información de la Categoría</Text>
+                
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Nombre *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Ej: Bebidas, Comidas, Postres..."
+                    placeholderTextColor={COLORS.textSecondary}
+                    value={formData.nombre}
+                    onChangeText={(text) => setFormData({ ...formData, nombre: text })}
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Descripción</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.formInputMultiline]}
+                    placeholder="Describe la categoría"
+                    placeholderTextColor={COLORS.textSecondary}
+                    multiline
+                    numberOfLines={3}
+                    value={formData.descripcion}
+                    onChangeText={(text) => setFormData({ ...formData, descripcion: text })}
+                  />
+                </View>
+
+                <View style={styles.switchContainer}>
+                  <View style={styles.switchLabel}>
+                    <POSIcon name="power" size={20} color={formData.activo ? COLORS.success : COLORS.textSecondary} />
+                    <Text style={styles.switchText}>Categoría Activa</Text>
+                  </View>
+                  <Switch
+                    value={formData.activo}
+                    onValueChange={(value) => setFormData({ ...formData, activo: value })}
+                    trackColor={{ false: COLORS.border, true: COLORS.success }}
+                    thumbColor={COLORS.white}
+                  />
+                </View>
+              </View>
+
+              {/* Sección: Vista Previa de Productos (Mock) */}
+              {categoriaEditando && (
+                <View style={styles.seccionFormulario}>
+                  <View style={styles.seccionHeader}>
+                    <Text style={styles.seccionTitulo}>Productos Asociados</Text>
+                    <View style={styles.contadorProductos}>
+                      <POSIcon name="fast-food-outline" size={16} color={COLORS.primary} />
+                      <Text style={styles.contadorProductosTexto}>
+                        {MOCK_PRODUCTOS_POR_CATEGORIA[categoriaEditando.id] || 0} productos
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.productosPreview}>
+                    <POSIcon name="information-circle-outline" size={48} color={COLORS.info} />
+                    <Text style={styles.productosPreviewTexto}>
+                      Los productos de esta categoría aparecerán aquí
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+
+            {/* Botones de Acción */}
+            <View style={styles.modalAcciones}>
+              <TouchableOpacity
+                style={[styles.botonModal, styles.botonCancelar]}
+                onPress={handleCerrarModal}
+              >
+                <Text style={styles.botonCancelarTexto}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.botonModal, styles.botonGuardar]}
+                onPress={handleGuardar}
+              >
+                <Text style={styles.botonGuardarTexto}>
+                  {categoriaEditando ? 'Actualizar' : 'Crear Categoría'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -178,185 +343,373 @@ export default function CategoriasScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
+  
+  // Header
+  header: {
+    backgroundColor: COLORS.white,
     padding: 20,
-    backgroundColor: '#f5f5f5',
+    paddingTop: 60,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  navigationTabs: {
-    flexDirection: 'row',
-    marginBottom: 15,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    alignItems: 'center',
-    borderRadius: 6,
-  },
-  tabActive: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    alignItems: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: 6,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-  },
-  tabTextActive: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  btnAdd: {
-    backgroundColor: '#34C759',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  btnText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  error: {
-    color: '#FF3B30',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  list: {
-    paddingBottom: 20,
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#666',
-    marginTop: 20,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  cardHeader: {
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  cardInfo: {
-    flex: 1,
-  },
-  cardTitle: {
-    fontSize: 18,
+  title: {
+    fontSize: 26,
     fontWeight: 'bold',
+    color: COLORS.text,
   },
-  cardOrden: {
+  subtitle: {
     fontSize: 14,
-    color: '#666',
-    marginTop: 4,
+    color: COLORS.textSecondary,
   },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 4,
-  },
-  badgeActive: {
-    backgroundColor: '#34C759',
-  },
-  badgeInactive: {
-    backgroundColor: '#8E8E93',
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  cardDescription: {
-    color: '#666',
-    marginBottom: 10,
-  },
-  cardActions: {
+
+  // Navegación por Tabs
+  navigationTabs: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  btnSmall: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 6,
-    marginLeft: 8,
-  },
-  btnPrimary: {
-    backgroundColor: '#007AFF',
-  },
-  btnDanger: {
-    backgroundColor: '#FF3B30',
-  },
-  btnSecondary: {
-    backgroundColor: '#8E8E93',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
+    marginHorizontal: 16,
+    marginTop: 16,
     borderRadius: 12,
-    padding: 20,
-    width: '90%',
+    padding: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 10,
-    marginBottom: 5,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     borderRadius: 8,
-    padding: 10,
-    backgroundColor: '#f9f9f9',
+    gap: 6,
   },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
+  tabActive: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 8,
+    gap: 6,
   },
-  modalActions: {
+  tabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  tabTextActive: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+
+  // Buscador
+  busquedaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    marginHorizontal: 16,
+    marginVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    height: 50,
+  },
+  busquedaInput: {
+    flex: 1,
+    fontSize: 16,
+    color: COLORS.text,
+    marginLeft: 12,
+  },
+
+  // Lista
+  listContainer: {
+    padding: 16,
+    paddingBottom: 100,
+  },
+  
+  // Tarjeta Categoría
+  categoriaCard: {
+    marginBottom: 16,
+    padding: 16,
+  },
+  categoriaHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
+    alignItems: 'flex-start',
+    marginBottom: 8,
   },
-  btnModal: {
+  categoriaHeaderLeft: {
     flex: 1,
-    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  categoriaNombre: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    flex: 1,
+  },
+  categoriaDescripcion: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  
+  // Grid de información
+  categoriaInfoGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  categoriaInfoItem: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+    padding: 12,
     borderRadius: 8,
     alignItems: 'center',
-    marginHorizontal: 5,
+    gap: 4,
+  },
+  categoriaInfoLabel: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  categoriaInfoValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+
+  // Acciones
+  categoriaAcciones: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  botonAccion: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+  botonEditar: {
+    backgroundColor: '#E3F2FD',
+  },
+  botonEliminar: {
+    backgroundColor: '#FFEBEE',
+  },
+  botonAccionTexto: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  botonEliminarTexto: {
+    color: COLORS.danger,
+  },
+
+  // FAB Button
+  fabButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+
+  // Empty State
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyTexto: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtexto: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '85%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitulo: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  modalContenido: {
+    maxHeight: '65%',
+  },
+
+  // Formulario
+  seccionFormulario: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  seccionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  seccionTitulo: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 16,
+  },
+  formGroup: {
+    marginBottom: 16,
+  },
+  formLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  formInput: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: COLORS.text,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  formInputMultiline: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+
+  // Switch
+  switchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  switchLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  switchText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+
+  // Productos Preview
+  contadorProductos: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 6,
+  },
+  contadorProductosTexto: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  productosPreview: {
+    alignItems: 'center',
+    padding: 32,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+  },
+  productosPreviewTexto: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+
+  // Botones Modal
+  modalAcciones: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  botonModal: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  botonCancelar: {
+    backgroundColor: '#F9FAFB',
+  },
+  botonCancelarTexto: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  botonGuardar: {
+    backgroundColor: COLORS.primary,
+  },
+  botonGuardarTexto: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.white,
   },
 });

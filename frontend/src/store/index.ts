@@ -9,6 +9,7 @@ import recetaReducer from '../features/producto/receta/receta.slice';
 import sucursalReducer from '../features/sucursal/sucursal.slice';
 import authReducer from '../features/usuario/auth/auth.slice';
 import usuarioReducer from '../features/usuario/usuario/usuario.slice';
+import mesaReducer from '../features/mesas/mesa.slice';
 
 export const store = configureStore({
     reducer: {

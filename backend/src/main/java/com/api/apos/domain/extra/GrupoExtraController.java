@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.api.apos.domain.extra.dto.CreateGrupoExtraDTO;
 import com.api.apos.domain.extra.entity.GrupoExtra;
 import com.api.apos.domain.extra.service.GrupoExtraService;
 import com.api.apos.helpers.ApiResponseWrapper;
@@ -25,7 +26,7 @@ import lombok.RequiredArgsConstructor;
  * Endpoints: /api/grupos-extras
  */
 @RestController
-@RequestMapping("/api/grupos-extras")
+@RequestMapping("/api/grupos-extra")
 @RequiredArgsConstructor
 public class GrupoExtraController {
 
@@ -33,10 +34,10 @@ public class GrupoExtraController {
 
     /**
      * Crear un nuevo grupo de extras
-     * POST /api/grupos-extras
+     * POST /api/grupos-extra
      */
     @PostMapping
-    public ResponseEntity<ApiResponseWrapper<GrupoExtra>> crearGrupoExtra(@RequestBody GrupoExtra grupoExtra) {
+    public ResponseEntity<ApiResponseWrapper<GrupoExtra>> crearGrupoExtra(@RequestBody CreateGrupoExtraDTO grupoExtra) {
         try {
             GrupoExtra nuevoGrupo = grupoExtraService.crearGrupoExtra(grupoExtra);
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -95,9 +96,12 @@ public class GrupoExtraController {
      * Obtener grupos de extras de un usuario
      * GET /api/grupos-extras/usuario/{idUsuario}
      */
-    @GetMapping("/usuario/{idUsuario}")
-    public ResponseEntity<ApiResponseWrapper<List<GrupoExtra>>> obtenerGruposExtraPorUsuario(@PathVariable Long idUsuario) {
+    @GetMapping
+    public ResponseEntity<ApiResponseWrapper<List<GrupoExtra>>> obtenerGruposExtraPorUsuario() {
         try {
+
+            Long idUsuario = 1L; // Aquí deberías obtener el ID del usuario autenticado de tu contexto de seguridad
+            
             List<GrupoExtra> grupos = grupoExtraService.obtenerGruposExtraPorUsuario(idUsuario);
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, grupos, null));
         } catch (Exception e) {
