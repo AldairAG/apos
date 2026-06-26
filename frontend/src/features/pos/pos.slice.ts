@@ -1,10 +1,12 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ProductosBySucursalResponse } from "./pos.types";
+import { MesaPosResponseDTO, ProductosBySucursalResponse } from "./pos.types";
 import { fetchProductosBySucursalThunk } from "./pos.thunks";
 
 interface POSState {
     productos: ProductosBySucursalResponse[];
     selectedProducto: ProductosBySucursalResponse | null;
+    mesas: MesaPosResponseDTO[];
+    selectedMesa: MesaPosResponseDTO | null;
     loading: boolean;
     error: string | null;
     searchQuery: string;
@@ -12,7 +14,9 @@ interface POSState {
 
 const initialState: POSState = {
     productos: [],
+    mesas: [],
     selectedProducto: null,
+    selectedMesa: null,
     loading: false,
     error: null,
     searchQuery: '',
@@ -24,6 +28,9 @@ const productoSlice = createSlice({
     reducers: {
         setSelectedProducto: (state, action: PayloadAction<ProductosBySucursalResponse | null>) => {
             state.selectedProducto = action.payload;
+        },
+        setSelectedMesa: (state, action: PayloadAction<MesaPosResponseDTO | null>) => {
+            state.selectedMesa = action.payload;
         },
         setSearchQuery: (state, action: PayloadAction<string>) => {
             state.searchQuery = action.payload;

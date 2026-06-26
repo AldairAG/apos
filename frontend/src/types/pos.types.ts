@@ -7,7 +7,7 @@ export type MetodoPago = 'efectivo' | 'tarjeta' | 'transferencia' | 'multiple';
 
 export interface Mesa {
   id: number;
-  numero: string;
+  nombre: string;
   estado: EstadoMesa;
   capacidad: number;
   personasActuales?: number;

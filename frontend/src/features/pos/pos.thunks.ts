@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { CrearOrdenDTO, OrdenResponseDTO, ProductosBySucursalResponse } from "./pos.types";
+import { CrearOrdenDTO, MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from "./pos.types";
 import { posService } from "./pos.service";
 
 export const createOrdenThunk = createAsyncThunk<
@@ -43,6 +43,21 @@ export const fetchProductosBySucursalThunk = createAsyncThunk<
     } catch (error: any) {
         return rejectWithValue(
             error.response?.data?.message || 'Error al cargar los productos'
+        );
+    }
+});
+
+export const fetchMesasBySucursalThunk = createAsyncThunk<
+    MesaPosResponseDTO[],
+    number,
+    { rejectValue: string }
+>('pos/fetchMesasBySucursal', async (sucursalId, { rejectWithValue }) => {
+    try {
+        const mesas = await posService.getMesasBySucursal(sucursalId);
+        return mesas;
+    } catch (error: any) {
+        return rejectWithValue(
+            error.response?.data?.message || 'Error al cargar las mesas'
         );
     }
 });

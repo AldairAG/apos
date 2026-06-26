@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.api.apos.domain.pos.dto.CrearOrdenDTO;
+import com.api.apos.domain.pos.dto.MesaResponseDTO;
 import com.api.apos.domain.pos.dto.OrdenResponseDTO;
 import com.api.apos.domain.pos.dto.ProductosBySucursalResponse;
 import com.api.apos.domain.pos.service.POSService;
@@ -62,6 +63,19 @@ public class POSController {
             return ResponseEntity.internalServerError().body(new ApiResponseWrapper<>(false, null, e.getMessage()));
         }
     }
+
+    @GetMapping("/mesas/sucursal/{id}")
+    public ResponseEntity<ApiResponseWrapper<List<MesaResponseDTO>>> getMesasBySucursal(@RequestParam Long sucursalId) {
+        try {
+            List<MesaResponseDTO> mesas = posService.obtenerMesasPorSucursal(sucursalId);
+            return ResponseEntity.ok(new ApiResponseWrapper<>(true, mesas, null));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiResponseWrapper<>(false, null, e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.internalServerError().body(new ApiResponseWrapper<>(false, null, e.getMessage()));
+        }
+    }
+    
     
     
 

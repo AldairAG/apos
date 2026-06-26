@@ -1,5 +1,6 @@
 import { Categoria, Mesa } from "@/types/pos.types";
 import { OpcionExtra, ProductoGrupoExtra } from "../producto/producto/producto.types";
+import { EstadoMesa } from "../mesas/mesas.types";
 
 export interface OrdenResponseDTO {
     id: number;
@@ -100,3 +101,16 @@ export enum EstadoOrden {
     CANCELADA= "CANCELADA"
 }
 
+export interface MesaPosResponseDTO {
+    id: number;
+    
+    nombre: string;
+    codigo: string;
+    
+    estado: EstadoMesa;
+    
+    activa: boolean;
+    ordenActual: number;
+    
+    ordenActualDTO: OrdenResponseDTO;
+}

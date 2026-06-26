@@ -1,20 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import { router } from 'expo-router';
 import { POSCard, POSBadge, POSIcon, COLORS } from '@/components/pos';
-import { MOCK_MESAS, MOCK_ORDENES } from '@/data/posMockData';
+import usePos from '@/features/pos/usePos';
+import { EstadoOrden } from '@/features/pos/pos.types';
+import { EstadoMesa } from '@/features/mesas/mesas.types';
 
 export default function HomeScreen() {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const animacionMenu = useState(new Animated.Value(0))[0];
-
-  // Calcular estadísticas
-  const mesasLibres = MOCK_MESAS.filter(m => m.estado === 'libre').length;
-  const mesasOcupadas = MOCK_MESAS.filter(m => m.estado === 'ocupada').length;
-  const mesasReservadas = MOCK_MESAS.filter(m => m.estado === 'reservada').length;
   
-  const ordenesActivas = MOCK_ORDENES.filter(o => o.estado !== 'cobrada' && o.estado !== 'cancelada').length;
-  const ordenesEnCocina = MOCK_ORDENES.filter(o => o.estado === 'preparando').length;
-  const ordenesPendientesCobro = MOCK_ORDENES.filter(o => o.estado === 'lista').length;
+  const { mesas, cargarMesas, cargarOrdenes, getOrdenesBySucursal } = usePos();
+  const [ordenes, setOrdenes] = useState<any[]>([]);
+
+  useEffect(() => {
+    cargarMesas();
+    cargarOrdenes();
+    loadOrdenes();
+  }, []);
+
+  const loadOrdenes = async () => {
+    try {
+      const data = await getOrdenesBySucursal(1); // Usar sucursal actual
+      setOrdenes(data || []);
+    } catch (error) {
+      console.error('Error al cargar órdenes:', error);
+    }
+  };
+
+  // Calcular estadísticas desde datos reales
+  const mesasLibres = mesas.filter((m: any) => m.estado === EstadoMesa.LIBRE).length;
+  const mesasOcupadas = mesas.filter((m: any) => m.estado === EstadoMesa.OCUPADA).length;
+  const mesasReservadas = mesas.filter((m: any) => m.estado === EstadoMesa.RESERVADA).length;
+  
+  const ordenesActivas = ordenes.filter(o => o.estado !== EstadoOrden.CANCELADA && o.estado !== EstadoOrden.ENTREGADA).length;
+  const ordenesEnCocina = ordenes.filter(o => o.estado === EstadoOrden.EN_PREPARACION).length;
+  const ordenesPendientesCobro = ordenes.filter(o => o.estado === EstadoOrden.LISTA).length;
 
   const toggleMenu = () => {
     const toValue = menuAbierto ? 0 : 1;
@@ -33,7 +54,24 @@ export default function HomeScreen() {
       toValue: 0,
       useNativeDriver: true,
     }).start();
-    // Aquí iría la navegación real
+    
+    switch(accion) {
+      case 'nueva-orden':
+        router.push('/pos/crear-orden');
+        break;
+      case 'mesas':
+        router.push('/pos/vista-mesas');
+        break;
+      case 'ordenes':
+        router.push('/pos/ordenes');
+        break;
+      case 'cocina':
+        router.push('/pos/cocina');
+        break;
+      case 'historial':
+        console.log('Navegar a historial');
+        break;
+    }
   };
 
   const renderOpcionMenu = (icono: string, label: string, accion: string, index: number) => {
@@ -142,7 +180,7 @@ export default function HomeScreen() {
           <View style={styles.acceosGrid}>
             <TouchableOpacity 
               style={styles.accesoCard}
-              onPress={() => navigation.navigate('crear-orden')}
+              onPress={() => router.push('/pos/crear-orden')}
               activeOpacity={0.8}
             >
               <POSCard style={styles.accesoCardInner} variant="elevated">
@@ -153,7 +191,7 @@ export default function HomeScreen() {
 
             <TouchableOpacity 
               style={styles.accesoCard}
-              onPress={() => console.log('Ver Mesas')}
+              onPress={() => router.push('/pos/vista-mesas')}
               activeOpacity={0.8}
             >
               <POSCard style={styles.accesoCardInner} variant="elevated">
@@ -164,7 +202,7 @@ export default function HomeScreen() {
 
             <TouchableOpacity 
               style={styles.accesoCard}
-              onPress={() => console.log('Órdenes Activas')}
+              onPress={() => router.push('/pos/ordenes')}
               activeOpacity={0.8}
             >
               <POSCard style={styles.accesoCardInner} variant="elevated">
@@ -175,7 +213,7 @@ export default function HomeScreen() {
 
             <TouchableOpacity 
               style={styles.accesoCard}
-              onPress={() => console.log('Cocina')}
+              onPress={() => router.push('/pos/cocina')}
               activeOpacity={0.8}
             >
               <POSCard style={styles.accesoCardInner} variant="elevated">
@@ -189,32 +227,32 @@ export default function HomeScreen() {
         {/* Actividad Reciente */}
         <View style={[styles.seccion, styles.ultimaSeccion]}>
           <Text style={styles.tituloSeccion}>Actividad Reciente</Text>
-          {MOCK_ORDENES.slice(0, 5).map((orden) => (
+          {ordenes.slice(0, 5).map((orden) => (
             <TouchableOpacity
               key={orden.id}
-              onPress={() => console.log('Ver orden:', orden.numero)}
+              onPress={() => router.push(`/pos/detalle-orden?ordenId=${orden.id}`)}
             >
               <POSCard style={styles.actividadCard}>
                 <View style={styles.actividadHeader}>
                   <View style={styles.actividadInfo}>
-                    <Text style={styles.actividadOrden}>Orden {orden.numero}</Text>
-                    {orden.mesaId && (
+                    <Text style={styles.actividadOrden}>Orden {orden.folio}</Text>
+                    {orden.mesa && (
                       <View style={styles.actividadMesa}>
                         <POSIcon name="restaurant" size={14} color={COLORS.textSecondary} />
-                        <Text style={styles.actividadMesaText}>Mesa {orden.mesaId}</Text>
+                        <Text style={styles.actividadMesaText}>Mesa {orden.mesa.numero || orden.mesa.nombre}</Text>
                       </View>
                     )}
-                    {orden.paraLlevar && (
+                    {orden.tipo === 'PARA_LLEVAR' && (
                       <POSBadge label="LLEVAR" variant="info" size="small" />
                     )}
                   </View>
                   <View style={styles.actividadDerecha}>
                     <POSBadge 
-                      label={orden.estado.toUpperCase()}
+                      label={orden.estado.replace('_', ' ')}
                       variant={
-                        orden.estado === 'pendiente' ? 'warning' :
-                        orden.estado === 'preparando' ? 'info' :
-                        orden.estado === 'lista' ? 'success' :
+                        orden.estado === EstadoOrden.PENDIENTE ? 'warning' :
+                        orden.estado === EstadoOrden.EN_PREPARACION ? 'info' :
+                        orden.estado === EstadoOrden.LISTA ? 'success' :
                         'default'
                       }
                       size="small"
@@ -223,8 +261,8 @@ export default function HomeScreen() {
                   </View>
                 </View>
                 <Text style={styles.actividadDetalle}>
-                  {orden.items.length} {orden.items.length === 1 ? 'producto' : 'productos'}
-                  {orden.tiempoTranscurrido && ` • ${orden.tiempoTranscurrido} min`}
+                  {orden.detalles?.length || 0} {orden.detalles?.length === 1 ? 'producto' : 'productos'}
+                  {orden.tiempoPreparacion && ` • ${orden.tiempoPreparacion} min`}
                 </Text>
               </POSCard>
             </TouchableOpacity>

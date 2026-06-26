@@ -1,6 +1,6 @@
 import { AppDispatch } from "@/store";
-import { createOrdenThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk } from "./pos.thunks";
-import { CrearOrdenDTO } from "./pos.types";
+import { createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk } from "./pos.thunks";
+import { CrearOrdenDTO, MesaPosResponseDTO } from "./pos.types";
 import { useDispatch, useSelector } from "react-redux";
 import { useCallback } from "react";
 import { useSucursal } from "../sucursal/useSucursal";
@@ -8,7 +8,7 @@ import { useSucursal } from "../sucursal/useSucursal";
 
 const usePos = () => {
     const dispatch = useDispatch<AppDispatch>();
-    const { loading, error, productos } = useSelector((state: any) => state.pos);
+    const { loading, error, productos, mesas, selectedMesa } = useSelector((state: any) => state.pos);
     const { sucursalActual } = useSucursal();
 
     const cargarProductos = useCallback(() => {
@@ -17,6 +17,10 @@ const usePos = () => {
 
     const cargarOrdenes = useCallback(() => {
         dispatch(fetchOrdenesBySucursalThunk(sucursalActual?.id || 0));
+    }, [dispatch, sucursalActual]);
+
+    const cargarMesas = useCallback(() => {
+        dispatch(fetchMesasBySucursalThunk(sucursalActual?.id || 0));
     }, [dispatch, sucursalActual]);
 
     const createOrden = async (data: CrearOrdenDTO) => {
@@ -49,7 +53,24 @@ const usePos = () => {
         }
     };
 
+    const fetchMesasBySucursal = async (sucursalId: number) => {
+        try {
+            const mesas = await dispatch(fetchMesasBySucursalThunk(sucursalId)).unwrap();
+            return mesas;
+        } catch (error) {
+            console.error('Error al cargar las mesas:', error);
+            throw error;
+        }
+    };
+
+    const selectMesa = (mesaId: number) => {
+        const mesa = mesas.find((m: MesaPosResponseDTO) => m.id === mesaId) || null;
+        dispatch({ type: 'pos/setSelectedMesa', payload: mesa });
+    }
+
     return {
+        mesas,
+        selectedMesa,
         loading,
         error,
         productos,
@@ -58,6 +79,9 @@ const usePos = () => {
         getProductosBySucursal: fetchProductosBySucursal,
         cargarProductos,
         cargarOrdenes,
+        cargarMesas,
+        seleccionarMesa: selectMesa,
+        getMesasBySucursal: fetchMesasBySucursal,
     };
 };
 

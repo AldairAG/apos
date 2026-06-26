@@ -23,6 +23,7 @@ public class OrdenResponseDTO {
     private Integer tiempoPreparacion;
     
     private String observaciones;
+    private Long mesaId;
     
     private BigDecimal subtotal;
     private BigDecimal descuento;

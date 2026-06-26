@@ -7,11 +7,13 @@ import org.springframework.stereotype.Service;
 import com.api.apos.domain.extra.entity.OpcionExtra;
 import com.api.apos.domain.extra.service.OpcionExtraService;
 import com.api.apos.domain.mesa.Mesa;
+import com.api.apos.domain.mesa.service.MesaService;
 import com.api.apos.domain.orden.entity.DetalleOrden;
 import com.api.apos.domain.orden.entity.DetalleOrdenExtra;
 import com.api.apos.domain.orden.entity.Orden;
 import com.api.apos.domain.orden.service.OrdenService;
 import com.api.apos.domain.pos.dto.CrearOrdenDTO;
+import com.api.apos.domain.pos.dto.MesaResponseDTO;
 import com.api.apos.domain.pos.dto.OrdenResponseDTO;
 import com.api.apos.domain.pos.dto.ProductosBySucursalResponse;
 import com.api.apos.domain.pos.dto.CrearOrdenDTO.DetalleOrdenDTO;
@@ -33,7 +35,9 @@ public class POSServiceImpl implements POSService {
     private final OpcionExtraService opcionExtraService;
 
     private final OrdenService ordenService;
-    
+
+    private final MesaService mesaService;
+
     @Override
     public List<ProductosBySucursalResponse> obtnerProdcutosBySucursal(Long sucursalId) {
         List<Producto> productos = productoService.obtenerProductosPorSucursal(sucursalId);
@@ -60,7 +64,7 @@ public class POSServiceImpl implements POSService {
 
     @Override
     public OrdenResponseDTO crearOrden(CrearOrdenDTO crearOrdenDTO) {
-        
+
         Sucursal sucursal = sucursalService.obtenerSucursalPorId(crearOrdenDTO.getSucursalId());
 
         if (crearOrdenDTO.getMesaId() == null) {
@@ -81,7 +85,7 @@ public class POSServiceImpl implements POSService {
                 .build();
 
         orden = ordenService.crearOrden(orden);
-        
+
         return mapOrdenToResponseDTO(orden);
     }
 
@@ -89,18 +93,21 @@ public class POSServiceImpl implements POSService {
         List<DetalleOrden> detalles = detallesDTO.stream()
                 .map(detalle -> {
                     Producto producto = productoService.obtenerProductoPorId(detalle.getProductoId())
-                            .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + detalle.getProductoId()));
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Producto no encontrado con ID: " + detalle.getProductoId()));
 
                     DetalleOrden detalleOrden = new DetalleOrden();
                     detalleOrden.setProducto(producto);
                     detalleOrden.setCantidad(detalle.getCantidad());
                     detalleOrden.setPrecioUnitario(detalle.getPrecioUnitario());
                     detalleOrden.setSubtotal(detalle.getSubtotal());
-                    
+
                     List<DetalleOrdenExtra> detalleExtraOrdenes = detalle.getExtras().stream()
                             .map(extra -> {
-                                OpcionExtra opcionExtra = opcionExtraService.obtenerOpcionExtraPorId(extra.getOpcionExtraId())
-                                        .orElseThrow(() -> new RuntimeException("Opción extra no encontrada con ID: " + extra.getOpcionExtraId()));
+                                OpcionExtra opcionExtra = opcionExtraService
+                                        .obtenerOpcionExtraPorId(extra.getOpcionExtraId())
+                                        .orElseThrow(() -> new RuntimeException(
+                                                "Opción extra no encontrada con ID: " + extra.getOpcionExtraId()));
 
                                 DetalleOrdenExtra detalleExtraOrden = new DetalleOrdenExtra();
                                 detalleExtraOrden.setOpcionExtra(opcionExtra);
@@ -118,7 +125,7 @@ public class POSServiceImpl implements POSService {
                 .toList();
         return detalles;
     }
-        
+
     private OrdenResponseDTO mapOrdenToResponseDTO(Orden orden) {
         OrdenResponseDTO ordenResponseDTO = new OrdenResponseDTO();
         ordenResponseDTO.setId(orden.getId());
@@ -157,8 +164,25 @@ public class POSServiceImpl implements POSService {
         return response;
     }
 
-    
+    @Override
+    public List<MesaResponseDTO> obtenerMesasPorSucursal(Long sucursalId) {
+        List<Mesa> mesas = mesaService.obtenerMesasPorSucursal(sucursalId);
 
+        List<MesaResponseDTO> response = mesas.stream()
+                .map(mesa -> {
 
-    
+                    Orden ordenActual = ordenService.obtenerOrdenPorId(mesa.getOrdenActual())
+                            .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
+
+                    MesaResponseDTO res = new MesaResponseDTO();
+                    res.setId(mesa.getId());
+                    res.setNombre(mesa.getNombre());
+                    res.setOrdenActualDTO(mapOrdenToResponseDTO(ordenActual));
+                    return res;
+                })
+                .toList();
+
+        return response;
+    }
+
 }

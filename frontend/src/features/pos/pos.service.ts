@@ -1,5 +1,5 @@
 import { apiBase } from '@/api/apiBase';
-import { CrearOrdenDTO, OrdenResponseDTO, ProductosBySucursalResponse } from './pos.types';
+import { CrearOrdenDTO, MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from './pos.types';
 
 const POS_BASE_URL = '/pos';
 
@@ -27,6 +27,16 @@ export const posService = {
     getProductosBySucursal: async (sucursalId: number): Promise<ProductosBySucursalResponse[]> => {
         const response = await apiBase.get<ProductosBySucursalResponse[]>(`${POS_BASE_URL}/productos/sucursal/${sucursalId}`);
         return response.data;
+    },
+
+    /**
+     * Obtiene todas las mesas de una sucursal
+     */
+    getMesasBySucursal: async (sucursalId: number): Promise<MesaPosResponseDTO[]> => {
+        const response = await apiBase.get<MesaPosResponseDTO[]>(`${POS_BASE_URL}/mesas/sucursal/${sucursalId}`);
+        return response.data;
     }
+
+
 
 }

@@ -1,450 +1,401 @@
-import { COLORS, POSBadge, POSButton, POSCard, POSIcon } from '@/components/pos';
-import { MOCK_ORDENES } from '@/data/posMockData';
-import { Descuento, Orden } from '@/types/pos.types';
-import { useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-
-type TabType = 'items' | 'descuentos' | 'division' | 'pago';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { POSCard, POSBadge, POSIcon, COLORS } from '@/components/pos';
+import usePos from '@/features/pos/usePos';
+import { OrdenResponseDTO, EstadoOrden, TipoOrden } from '@/features/pos/pos.types';
 
 export default function DetalleOrdenScreen() {
-  // Simulación: normalmente esto vendría por props o navegación
-  const [orden, setOrden] = useState<Orden>(MOCK_ORDENES[0]);
-  const [tabActiva, setTabActiva] = useState<TabType>('items');
-  const [modalDescuentoVisible, setModalDescuentoVisible] = useState(false);
-  const [modalCortesiaVisible, setModalCortesiaVisible] = useState(false);
-  const [modalDivisionVisible, setModalDivisionVisible] = useState(false);
-  const [modalPagoVisible, setModalPagoVisible] = useState(false);
-  
-  // Estados para descuento
-  const [tipoDescuento, setTipoDescuento] = useState<'porcentaje' | 'monto'>('porcentaje');
-  const [valorDescuento, setValorDescuento] = useState('');
-  const [motivoDescuento, setMotivoDescuento] = useState('');
+  const { ordenId } = useLocalSearchParams<{ ordenId: string }>();
+  const { getOrdenesBySucursal } = usePos();
+  const [orden, setOrden] = useState<OrdenResponseDTO | null>(null);
+  const [mostrarAcciones, setMostrarAcciones] = useState(false);
 
-  const calcularDescuentos = () => {
-    return orden.descuentos.reduce((sum, desc) => {
-      if (desc.tipo === 'porcentaje') {
-        return sum + (orden.subtotal * desc.valor / 100);
-      }
-      return sum + desc.valor;
-    }, 0);
+  useEffect(() => {
+    loadOrden();
+  }, [ordenId]);
+
+  const loadOrden = async () => {
+    try {
+      const ordenes = await getOrdenesBySucursal(1); // Usar sucursal actual
+      const ordenEncontrada = ordenes.find((o: OrdenResponseDTO) => o.id === Number(ordenId));
+      setOrden(ordenEncontrada || null);
+    } catch (error) {
+      console.error('Error al cargar orden:', error);
+    }
   };
 
-  const agregarDescuento = () => {
-    if (!valorDescuento || !motivoDescuento) return;
+  if (!orden) {
+    return (
+      <View style={styles.loadingContainer}>
+        <POSIcon name="hourglass-outline" size={60} color={COLORS.textSecondary} />
+        <Text style={styles.loadingText}>Cargando orden...</Text>
+      </View>
+    );
+  }
 
-    const nuevoDescuento: Descuento = {
-      tipo: tipoDescuento,
-      valor: parseFloat(valorDescuento),
-      motivo: motivoDescuento,
-    };
-
-    const descuentosActualizados = [...orden.descuentos, nuevoDescuento];
-    const totalDescuentos = descuentosActualizados.reduce((sum, desc) => {
-      if (desc.tipo === 'porcentaje') {
-        return sum + (orden.subtotal * desc.valor / 100);
-      }
-      return sum + desc.valor;
-    }, 0);
-
-    setOrden({
-      ...orden,
-      descuentos: descuentosActualizados,
-      total: orden.subtotal - totalDescuentos,
+  const formatearFecha = (fecha: Date) => {
+    const date = new Date(fecha);
+    return date.toLocaleDateString('es-MX', { 
+      weekday: 'long',
+      day: '2-digit', 
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit', 
+      minute: '2-digit' 
     });
-
-    setModalDescuentoVisible(false);
-    setValorDescuento('');
-    setMotivoDescuento('');
   };
 
-  const procesarPago = (metodo: string) => {
-    console.log('Procesar pago:', metodo, orden.total);
-    setModalPagoVisible(false);
+  const calcularTiempoTranscurrido = () => {
+    const ahora = new Date();
+    const inicio = new Date(orden.createdAt);
+    const diffMs = ahora.getTime() - inicio.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    return diffMins;
   };
 
-  const renderTabItems = () => (
-    <ScrollView style={styles.tabContent}>
-      <View style={styles.itemsContainer}>
-        {orden.items.map((item, index) => (
-          <POSCard key={item.id} style={styles.itemCard}>
-            <View style={styles.itemHeader}>
-              <View style={styles.itemInfo}>
-                <Text style={styles.itemCantidad}>{item.cantidad}x</Text>
-                <View style={styles.itemDetalles}>
-                  <Text style={styles.itemNombre}>{item.producto.nombre}</Text>
-                  <Text style={styles.itemPrecioUnitario}>
-                    ${item.precio} c/u
-                  </Text>
-                </View>
-              </View>
-              <Text style={styles.itemTotal}>${item.subtotal.toFixed(2)}</Text>
-            </View>
+  const enviarACocina = () => {
+    console.log('Enviar a cocina:', orden.folio);
+    Alert.alert('Enviar a Cocina', `¿Deseas enviar la orden ${orden.folio} a cocina?`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Enviar', onPress: () => console.log('Enviado') }
+    ]);
+  };
 
-            {item.extras.length > 0 && (
-              <View style={styles.itemExtras}>
-                <Text style={styles.itemExtrasLabel}>Extras:</Text>
-                {item.extras.map(extra => (
-                  <View key={extra.id} style={styles.extraItem}>
-                    <Text style={styles.extraNombre}>• {extra.nombre}</Text>
-                    {extra.precio > 0 && (
-                      <Text style={styles.extraPrecio}>+${extra.precio}</Text>
-                    )}
-                  </View>
-                ))}
-              </View>
-            )}
+  const cobrarOrden = () => {
+    console.log('Cobrar orden:', orden.folio);
+    router.push(`/pos/cobro?ordenId=${orden.id}` as any);
+  };
 
-            {item.notas && (
-              <View style={styles.itemNotas}>
-                <POSIcon name="document-text" size={14} color={COLORS.info} />
-                <Text style={styles.itemNotasText}>{item.notas}</Text>
-              </View>
-            )}
-          </POSCard>
-        ))}
-      </View>
-    </ScrollView>
-  );
+  const cancelarOrden = () => {
+    Alert.alert(
+      'Cancelar Orden',
+      `¿Estás seguro de cancelar la orden ${orden.folio}?`,
+      [
+        { text: 'No', style: 'cancel' },
+        { text: 'Sí, Cancelar', style: 'destructive', onPress: () => console.log('Cancelado') }
+      ]
+    );
+  };
 
-  const renderTabDescuentos = () => (
-    <ScrollView style={styles.tabContent}>
-      <View style={styles.descuentosContainer}>
-        {orden.descuentos.length === 0 ? (
-          <View style={styles.emptyState}>
-            <POSIcon name="pricetag-outline" size={48} color={COLORS.lightGray} />
-            <Text style={styles.emptyStateText}>No hay descuentos aplicados</Text>
-          </View>
-        ) : (
-          orden.descuentos.map((desc, index) => (
-            <POSCard key={index} style={styles.descuentoCard}>
-              <View style={styles.descuentoHeader}>
-                <View style={styles.descuentoInfo}>
-                  <Text style={styles.descuentoMotivo}>{desc.motivo}</Text>
-                  <Text style={styles.descuentoTipo}>
-                    {desc.tipo === 'porcentaje' ? `${desc.valor}%` : `$${desc.valor}`}
-                  </Text>
-                </View>
-                <Text style={styles.descuentoMonto}>
-                  -${desc.tipo === 'porcentaje' 
-                    ? (orden.subtotal * desc.valor / 100).toFixed(2)
-                    : desc.valor.toFixed(2)
-                  }
-                </Text>
-              </View>
-            </POSCard>
-          ))
-        )}
+  const continuarOrden = () => {
+    router.push(`/pos/crear-orden?ordenId=${orden.id}`);
+  };
 
-        <POSButton
-          title="Agregar Descuento"
-          onPress={() => setModalDescuentoVisible(true)}
-          variant="outline"
-          fullWidth
-          style={styles.agregarButton}
-        />
+  const imprimirOrden = () => {
+    console.log('Imprimir orden:', orden.folio);
+  };
 
-        {orden.cortesias.length > 0 && (
-          <View style={styles.cortesiasSection}>
-            <Text style={styles.cortesiasTitle}>Cortesías</Text>
-            {orden.cortesias.map((cortesia, index) => {
-              const item = orden.items.find(i => i.id === cortesia.itemId);
-              return (
-                <POSCard key={index} style={styles.cortesiaCard}>
-                  <View style={styles.cortesiaInfo}>
-                    <POSIcon name="gift" size={20} color={COLORS.warning} />
-                    <View style={styles.cortesiaDetalles}>
-                      <Text style={styles.cortesiaNombre}>
-                        {item?.producto.nombre}
-                      </Text>
-                      <Text style={styles.cortesiaMotivo}>{cortesia.motivo}</Text>
-                    </View>
-                  </View>
-                </POSCard>
-              );
-            })}
-          </View>
-        )}
-      </View>
-    </ScrollView>
-  );
-
-  const renderTabDivision = () => (
-    <ScrollView style={styles.tabContent}>
-      <View style={styles.divisionContainer}>
-        <View style={styles.emptyState}>
-          <POSIcon name="people-outline" size={48} color={COLORS.lightGray} />
-          <Text style={styles.emptyStateText}>División de cuenta</Text>
-          <Text style={styles.emptyStateSubtext}>
-            Divide la cuenta por personas o por artículos
-          </Text>
-        </View>
-
-        <POSButton
-          title="Dividir por Personas"
-          onPress={() => console.log('Dividir por personas')}
-          variant="outline"
-          fullWidth
-          style={styles.divisionButton}
-        />
-
-        <POSButton
-          title="Dividir por Artículos"
-          onPress={() => console.log('Dividir por artículos')}
-          variant="outline"
-          fullWidth
-          style={styles.divisionButton}
-        />
-      </View>
-    </ScrollView>
-  );
-
-  const renderTabPago = () => (
-    <ScrollView style={styles.tabContent}>
-      <View style={styles.pagoContainer}>
-        <View style={styles.resumenPago}>
-          <View style={styles.resumenRow}>
-            <Text style={styles.resumenLabel}>Subtotal:</Text>
-            <Text style={styles.resumenValue}>${orden.subtotal.toFixed(2)}</Text>
-          </View>
-          
-          {orden.descuentos.length > 0 && (
-            <View style={styles.resumenRow}>
-              <Text style={styles.resumenLabel}>Descuentos:</Text>
-              <Text style={[styles.resumenValue, styles.resumenDescuento]}>
-                -${calcularDescuentos().toFixed(2)}
-              </Text>
-            </View>
-          )}
-
-          <View style={[styles.resumenRow, styles.resumenTotal]}>
-            <Text style={styles.resumenTotalLabel}>Total:</Text>
-            <Text style={styles.resumenTotalValue}>${orden.total.toFixed(2)}</Text>
-          </View>
-        </View>
-
-        <Text style={styles.metodosTitle}>Métodos de Pago</Text>
-
-        <TouchableOpacity 
-          style={styles.metodoPagoCard}
-          onPress={() => procesarPago('efectivo')}
-        >
-          <POSIcon name="cash" size={32} color={COLORS.success} />
-          <Text style={styles.metodoPagoText}>Efectivo</Text>
-          <POSIcon name="chevron-forward" size={24} color={COLORS.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.metodoPagoCard}
-          onPress={() => procesarPago('tarjeta')}
-        >
-          <POSIcon name="card" size={32} color={COLORS.primary} />
-          <Text style={styles.metodoPagoText}>Tarjeta</Text>
-          <POSIcon name="chevron-forward" size={24} color={COLORS.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.metodoPagoCard}
-          onPress={() => procesarPago('transferencia')}
-        >
-          <POSIcon name="phone-portrait" size={32} color={COLORS.info} />
-          <Text style={styles.metodoPagoText}>Transferencia</Text>
-          <POSIcon name="chevron-forward" size={24} color={COLORS.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.metodoPagoCard}
-          onPress={() => setModalPagoVisible(true)}
-        >
-          <POSIcon name="wallet" size={32} color={COLORS.warning} />
-          <Text style={styles.metodoPagoText}>Pago Múltiple</Text>
-          <POSIcon name="chevron-forward" size={24} color={COLORS.textSecondary} />
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  );
+  const tiempoTranscurrido = calcularTiempoTranscurrido();
+  const puedeEditar = orden.estado === EstadoOrden.PENDIENTE || orden.estado === EstadoOrden.EN_PREPARACION;
+  const puedeCobrar = orden.estado === EstadoOrden.LISTA;
+  const puedeEnviarCocina = orden.estado === EstadoOrden.PENDIENTE;
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <Text style={styles.title}>Orden {orden.numero}</Text>
-          <POSBadge 
-            label={orden.estado.toUpperCase()}
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <POSIcon name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.title}>Orden {orden.folio}</Text>
+          <POSBadge
+            label={orden.estado.replace('_', ' ')}
             variant={
-              orden.estado === 'pendiente' ? 'warning' :
-              orden.estado === 'preparando' ? 'info' :
-              orden.estado === 'lista' ? 'success' :
-              'default'
+              orden.estado === EstadoOrden.PENDIENTE ? 'warning' :
+              orden.estado === EstadoOrden.EN_PREPARACION ? 'info' :
+              orden.estado === EstadoOrden.LISTA ? 'success' :
+              orden.estado === EstadoOrden.ENTREGADA ? 'default' :
+              'danger'
             }
           />
         </View>
-        
-        {orden.mesaId && (
-          <View style={styles.headerInfo}>
-            <POSIcon name="restaurant" size={16} color={COLORS.textSecondary} />
-            <Text style={styles.headerInfoText}>Mesa {orden.mesaId}</Text>
-          </View>
-        )}
-        
-        {orden.paraLlevar && (
-          <View style={styles.headerInfo}>
-            <POSIcon name="bag-handle" size={16} color={COLORS.primary} />
-            <Text style={styles.headerInfoText}>Para llevar</Text>
-          </View>
-        )}
 
-        {/* Tabs */}
-        <View style={styles.tabs}>
-          <TouchableOpacity
-            style={[styles.tab, tabActiva === 'items' && styles.tabActiva]}
-            onPress={() => setTabActiva('items')}
-          >
-            <POSIcon 
-              name="list" 
-              size={20} 
-              color={tabActiva === 'items' ? COLORS.primary : COLORS.textSecondary} 
-            />
-            <Text style={[styles.tabText, tabActiva === 'items' && styles.tabTextActiva]}>
-              Items
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tab, tabActiva === 'descuentos' && styles.tabActiva]}
-            onPress={() => setTabActiva('descuentos')}
-          >
-            <POSIcon 
-              name="pricetag" 
-              size={20} 
-              color={tabActiva === 'descuentos' ? COLORS.primary : COLORS.textSecondary} 
-            />
-            <Text style={[styles.tabText, tabActiva === 'descuentos' && styles.tabTextActiva]}>
-              Descuentos
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tab, tabActiva === 'division' && styles.tabActiva]}
-            onPress={() => setTabActiva('division')}
-          >
-            <POSIcon 
-              name="people" 
-              size={20} 
-              color={tabActiva === 'division' ? COLORS.primary : COLORS.textSecondary} 
-            />
-            <Text style={[styles.tabText, tabActiva === 'division' && styles.tabTextActiva]}>
-              División
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tab, tabActiva === 'pago' && styles.tabActiva]}
-            onPress={() => setTabActiva('pago')}
-          >
-            <POSIcon 
-              name="cash" 
-              size={20} 
-              color={tabActiva === 'pago' ? COLORS.primary : COLORS.textSecondary} 
-            />
-            <Text style={[styles.tabText, tabActiva === 'pago' && styles.tabTextActiva]}>
-              Pago
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity 
+          style={styles.moreButton}
+          onPress={() => setMostrarAcciones(true)}
+        >
+          <POSIcon name="ellipsis-vertical" size={24} color={COLORS.text} />
+        </TouchableOpacity>
       </View>
 
-      {/* Contenido de tabs */}
-      {tabActiva === 'items' && renderTabItems()}
-      {tabActiva === 'descuentos' && renderTabDescuentos()}
-      {tabActiva === 'division' && renderTabDivision()}
-      {tabActiva === 'pago' && renderTabPago()}
-
-      {/* Modal de Descuento */}
-      <Modal
-        visible={modalDescuentoVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setModalDescuentoVisible(false)}
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Agregar Descuento</Text>
-              <TouchableOpacity onPress={() => setModalDescuentoVisible(false)}>
-                <POSIcon name="close" size={24} color={COLORS.text} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalBody}>
-              <Text style={styles.inputLabel}>Tipo de descuento:</Text>
-              <View style={styles.tipoDescuentoContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.tipoDescuentoButton,
-                    tipoDescuento === 'porcentaje' && styles.tipoDescuentoButtonActivo
-                  ]}
-                  onPress={() => setTipoDescuento('porcentaje')}
-                >
-                  <Text style={[
-                    styles.tipoDescuentoText,
-                    tipoDescuento === 'porcentaje' && styles.tipoDescuentoTextActivo
-                  ]}>
-                    Porcentaje (%)
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.tipoDescuentoButton,
-                    tipoDescuento === 'monto' && styles.tipoDescuentoButtonActivo
-                  ]}
-                  onPress={() => setTipoDescuento('monto')}
-                >
-                  <Text style={[
-                    styles.tipoDescuentoText,
-                    tipoDescuento === 'monto' && styles.tipoDescuentoTextActivo
-                  ]}>
-                    Monto ($)
-                  </Text>
-                </TouchableOpacity>
+        {/* Información General */}
+        <POSCard variant="elevated" style={styles.section}>
+          <Text style={styles.sectionTitle}>Información General</Text>
+          
+          <View style={styles.infoGrid}>
+            <View style={styles.infoItem}>
+              <View style={styles.infoIcon}>
+                <POSIcon name="calendar-outline" size={20} color={COLORS.primary} />
               </View>
-
-              <Text style={styles.inputLabel}>Valor:</Text>
-              <TextInput
-                style={styles.input}
-                value={valorDescuento}
-                onChangeText={setValorDescuento}
-                placeholder={tipoDescuento === 'porcentaje' ? 'Ej: 10' : 'Ej: 50'}
-                keyboardType="numeric"
-                placeholderTextColor={COLORS.textSecondary}
-              />
-
-              <Text style={styles.inputLabel}>Motivo:</Text>
-              <TextInput
-                style={styles.input}
-                value={motivoDescuento}
-                onChangeText={setMotivoDescuento}
-                placeholder="Ej: Cliente frecuente"
-                placeholderTextColor={COLORS.textSecondary}
-              />
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Fecha de Creación</Text>
+                <Text style={styles.infoValue}>{formatearFecha(orden.createdAt)}</Text>
+              </View>
             </View>
 
-            <View style={styles.modalFooter}>
-              <POSButton
-                title="Cancelar"
-                onPress={() => setModalDescuentoVisible(false)}
-                variant="outline"
-                style={styles.modalButton}
-              />
-              <POSButton
-                title="Aplicar"
-                onPress={agregarDescuento}
-                variant="success"
-                style={styles.modalButton}
-              />
+            {orden.tipo === TipoOrden.EN_MESA && orden.mesa && (
+              <View style={styles.infoItem}>
+                <View style={styles.infoIcon}>
+                  <POSIcon name="restaurant" size={20} color={COLORS.primary} />
+                </View>
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>Mesa</Text>
+                  <Text style={styles.infoValue}>{orden.mesa.nombre}</Text>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.infoItem}>
+              <View style={styles.infoIcon}>
+                <POSIcon name="bag-handle-outline" size={20} color={COLORS.primary} />
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Tipo de Orden</Text>
+                <Text style={styles.infoValue}>
+                  {orden.tipo === TipoOrden.EN_MESA ? 'En Mesa' :
+                   orden.tipo === TipoOrden.PARA_LLEVAR ? 'Para Llevar' :
+                   orden.tipo === TipoOrden.DELIVERY ? 'Delivery' : 'Recoger'}
+                </Text>
+              </View>
+            </View>
+
+            {orden.numeroPersonas > 0 && (
+              <View style={styles.infoItem}>
+                <View style={styles.infoIcon}>
+                  <POSIcon name="people-outline" size={20} color={COLORS.primary} />
+                </View>
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>Número de Personas</Text>
+                  <Text style={styles.infoValue}>{orden.numeroPersonas}</Text>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.infoItem}>
+              <View style={styles.infoIcon}>
+                <POSIcon name="time-outline" size={20} color={COLORS.primary} />
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Tiempo Transcurrido</Text>
+                <Text style={styles.infoValue}>
+                  {tiempoTranscurrido < 60 
+                    ? `${tiempoTranscurrido} minutos` 
+                    : `${Math.floor(tiempoTranscurrido / 60)}h ${tiempoTranscurrido % 60}m`
+                  }
+                </Text>
+              </View>
+            </View>
+
+            {orden.tiempoPreparacion > 0 && (
+              <View style={styles.infoItem}>
+                <View style={styles.infoIcon}>
+                  <POSIcon name="flame-outline" size={20} color={COLORS.primary} />
+                </View>
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>Tiempo de Preparación</Text>
+                  <Text style={styles.infoValue}>{orden.tiempoPreparacion} min</Text>
+                </View>
+              </View>
+            )}
+          </View>
+
+          {orden.observaciones && (
+            <View style={styles.observacionesContainer}>
+              <View style={styles.observacionesHeader}>
+                <POSIcon name="chatbox-outline" size={18} color={COLORS.textSecondary} />
+                <Text style={styles.observacionesLabel}>Observaciones</Text>
+              </View>
+              <Text style={styles.observacionesText}>{orden.observaciones}</Text>
+            </View>
+          )}
+        </POSCard>
+
+        {/* Productos */}
+        <POSCard variant="elevated" style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Productos</Text>
+            <POSBadge 
+              label={`${orden.detalles?.length || 0}`} 
+              variant="info" 
+              size="small"
+            />
+          </View>
+
+          <View style={styles.productosContainer}>
+            {orden.detalles?.map((detalle, index) => (
+              <View key={index} style={styles.productoItem}>
+                <View style={styles.productoHeader}>
+                  <View style={styles.productoInfo}>
+                    <View style={styles.productoCantidad}>
+                      <Text style={styles.productoCantidadText}>{detalle.cantidad}x</Text>
+                    </View>
+                    <View style={styles.productoTexto}>
+                      <Text style={styles.productoNombre}>Producto {detalle.productoId}</Text>
+                      <Text style={styles.productoPrecio}>
+                        ${detalle.precioUnitario.toFixed(2)} c/u
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.productoTotal}>${detalle.subtotal.toFixed(2)}</Text>
+                </View>
+
+                {/* Extras */}
+                {detalle.extras && detalle.extras.length > 0 && (
+                  <View style={styles.extrasContainer}>
+                    {detalle.extras.map((extra, extraIndex) => (
+                      <View key={extraIndex} style={styles.extraItem}>
+                        <POSIcon name="add-circle-outline" size={14} color={COLORS.info} />
+                        <Text style={styles.extraNombre}>
+                          {extra.opcionExtra?.nombre || `Extra ${extra.opcionExtra.id}`}
+                        </Text>
+                        <Text style={styles.extraCantidad}>x{extra.cantidad}</Text>
+                        <Text style={styles.extraPrecio}>
+                          +${extra.subtotal.toFixed(2)}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {index < (orden.detalles?.length || 0) - 1 && (
+                  <View style={styles.productoDivider} />
+                )}
+              </View>
+            ))}
+          </View>
+        </POSCard>
+
+        {/* Resumen de Cobro */}
+        <POSCard variant="elevated" style={styles.section}>
+          <Text style={styles.sectionTitle}>Resumen de Cobro</Text>
+
+          <View style={styles.resumenContainer}>
+            <View style={styles.resumenRow}>
+              <Text style={styles.resumenLabel}>Subtotal</Text>
+              <Text style={styles.resumenValue}>${orden.subtotal.toFixed(2)}</Text>
+            </View>
+
+            {orden.descuento > 0 && (
+              <View style={styles.resumenRow}>
+                <Text style={[styles.resumenLabel, { color: COLORS.danger }]}>Descuento</Text>
+                <Text style={[styles.resumenValue, { color: COLORS.danger }]}>
+                  -${orden.descuento.toFixed(2)}
+                </Text>
+              </View>
+            )}
+
+            {orden.propina > 0 && (
+              <View style={styles.resumenRow}>
+                <Text style={styles.resumenLabel}>Propina</Text>
+                <Text style={styles.resumenValue}>${orden.propina.toFixed(2)}</Text>
+              </View>
+            )}
+
+            <View style={styles.resumenDivider} />
+
+            <View style={styles.resumenRow}>
+              <Text style={styles.resumenTotalLabel}>Total</Text>
+              <Text style={styles.resumenTotalValue}>${orden.total.toFixed(2)}</Text>
             </View>
           </View>
-        </View>
+        </POSCard>
+      </ScrollView>
+
+      {/* Acciones Fijas en el Bottom */}
+      <View style={styles.bottomActions}>
+        {puedeEnviarCocina && (
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: COLORS.info, flex: 1 }]}
+            onPress={enviarACocina}
+          >
+            <POSIcon name="send" size={20} color={COLORS.white} />
+            <Text style={styles.actionButtonText}>Enviar a Cocina</Text>
+          </TouchableOpacity>
+        )}
+
+        {puedeEditar && (
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: COLORS.primary, flex: 1 }]}
+            onPress={continuarOrden}
+          >
+            <POSIcon name="pencil" size={20} color={COLORS.white} />
+            <Text style={styles.actionButtonText}>Editar Orden</Text>
+          </TouchableOpacity>
+        )}
+
+        {puedeCobrar && (
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: COLORS.success, flex: 1 }]}
+            onPress={cobrarOrden}
+          >
+            <POSIcon name="cash" size={20} color={COLORS.white} />
+            <Text style={styles.actionButtonText}>Cobrar</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Modal Acciones */}
+      <Modal
+        visible={mostrarAcciones}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setMostrarAcciones(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setMostrarAcciones(false)}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
+            
+            <Text style={styles.modalTitle}>Acciones</Text>
+
+            <TouchableOpacity
+              style={styles.modalAction}
+              onPress={() => {
+                setMostrarAcciones(false);
+                imprimirOrden();
+              }}
+            >
+              <POSIcon name="print-outline" size={24} color={COLORS.text} />
+              <Text style={styles.modalActionText}>Imprimir Orden</Text>
+            </TouchableOpacity>
+
+            {orden.estado !== EstadoOrden.CANCELADA && orden.estado !== EstadoOrden.ENTREGADA && (
+              <TouchableOpacity
+                style={styles.modalAction}
+                onPress={() => {
+                  setMostrarAcciones(false);
+                  cancelarOrden();
+                }}
+              >
+                <POSIcon name="close-circle-outline" size={24} color={COLORS.danger} />
+                <Text style={[styles.modalActionText, { color: COLORS.danger }]}>
+                  Cancelar Orden
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={[styles.modalAction, styles.modalActionCancel]}
+              onPress={() => setMostrarAcciones(false)}
+            >
+              <Text style={styles.modalActionCancelText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -455,252 +406,243 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
+
+  // Loading
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+  },
+
+  // Header
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.white,
-    padding: 16,
+    paddingHorizontal: 16,
     paddingTop: 60,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+    gap: 12,
   },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+  },
+  headerCenter: {
+    flex: 1,
+    gap: 4,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.text,
   },
-  headerInfo: {
+  moreButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Content
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 100,
+    gap: 16,
+  },
+
+  // Section
+  section: {
+    padding: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 16,
+  },
+
+  // Info Grid
+  infoGrid: {
+    gap: 16,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  infoIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E3F2FD',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  infoContent: {
+    flex: 1,
+    gap: 2,
+  },
+  infoLabel: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
+  },
+  infoValue: {
+    fontSize: 15,
+    color: COLORS.text,
+    fontWeight: '600',
+  },
+
+  // Observaciones
+  observacionesContainer: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    gap: 8,
+  },
+  observacionesHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 4,
   },
-  headerInfoText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  tabs: {
-    flexDirection: 'row',
-    marginTop: 16,
-    gap: 4,
-  },
-  tab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabActiva: {
-    borderBottomColor: COLORS.primary,
-  },
-  tabText: {
-    fontSize: 12,
+  observacionesLabel: {
+    fontSize: 13,
     color: COLORS.textSecondary,
     fontWeight: '600',
   },
-  tabTextActiva: {
-    color: COLORS.primary,
+  observacionesText: {
+    fontSize: 14,
+    color: COLORS.text,
+    lineHeight: 20,
   },
-  tabContent: {
-    flex: 1,
+
+  // Productos
+  productosContainer: {
+    gap: 0,
   },
-  itemsContainer: {
-    padding: 16,
-    gap: 12,
+  productoItem: {
+    paddingVertical: 12,
   },
-  itemCard: {
-    padding: 12,
-  },
-  itemHeader: {
+  productoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'flex-start',
   },
-  itemInfo: {
+  productoInfo: {
+    flex: 1,
     flexDirection: 'row',
-    gap: 8,
-    flex: 1,
+    gap: 12,
   },
-  itemCantidad: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.text,
+  productoCantidad: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#E3F2FD',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  itemDetalles: {
-    flex: 1,
-  },
-  itemNombre: {
+  productoCantidadText: {
     fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+  },
+  productoTexto: {
+    flex: 1,
+    gap: 4,
+  },
+  productoNombre: {
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: 2,
   },
-  itemPrecioUnitario: {
+  productoPrecio: {
     fontSize: 13,
     color: COLORS.textSecondary,
   },
-  itemTotal: {
-    fontSize: 18,
+  productoTotal: {
+    fontSize: 16,
     fontWeight: 'bold',
-    color: COLORS.success,
+    color: COLORS.text,
   },
-  itemExtras: {
+  productoDivider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginTop: 12,
+  },
+
+  // Extras
+  extrasContainer: {
     marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  itemExtrasLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    marginBottom: 4,
+    marginLeft: 52,
+    gap: 6,
   },
   extraItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 2,
+    alignItems: 'center',
+    gap: 6,
   },
   extraNombre: {
+    flex: 1,
     fontSize: 13,
-    color: COLORS.text,
+    color: COLORS.textSecondary,
+  },
+  extraCantidad: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
   },
   extraPrecio: {
     fontSize: 13,
-    color: COLORS.success,
-  },
-  itemNotas: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  itemNotasText: {
-    fontSize: 13,
     color: COLORS.info,
-    fontStyle: 'italic',
-    flex: 1,
-  },
-  descuentosContainer: {
-    padding: 16,
-    gap: 12,
-  },
-  descuentoCard: {
-    padding: 12,
-  },
-  descuentoHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  descuentoInfo: {
-    flex: 1,
-  },
-  descuentoMotivo: {
-    fontSize: 15,
     fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 2,
   },
-  descuentoTipo: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-  },
-  descuentoMonto: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.danger,
-  },
-  agregarButton: {
-    marginTop: 8,
-  },
-  cortesiasSection: {
-    marginTop: 20,
-  },
-  cortesiasTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: 12,
-  },
-  cortesiaCard: {
-    padding: 12,
-    marginBottom: 8,
-  },
-  cortesiaInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+
+  // Resumen
+  resumenContainer: {
     gap: 12,
-  },
-  cortesiaDetalles: {
-    flex: 1,
-  },
-  cortesiaNombre: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 2,
-  },
-  cortesiaMotivo: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-  },
-  divisionContainer: {
-    padding: 16,
-  },
-  divisionButton: {
-    marginBottom: 12,
-  },
-  pagoContainer: {
-    padding: 16,
-  },
-  resumenPago: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   resumenRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'center',
   },
   resumenLabel: {
-    fontSize: 16,
+    fontSize: 15,
     color: COLORS.textSecondary,
   },
   resumenValue: {
-    fontSize: 16,
-    color: COLORS.text,
+    fontSize: 15,
     fontWeight: '600',
+    color: COLORS.text,
   },
-  resumenDescuento: {
-    color: COLORS.danger,
-  },
-  resumenTotal: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+  resumenDivider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginVertical: 4,
   },
   resumenTotalLabel: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.text,
   },
@@ -709,49 +651,37 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.success,
   },
-  metodosTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: 16,
+
+  // Bottom Actions
+  bottomActions: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 16,
+    backgroundColor: COLORS.white,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 8,
   },
-  metodoPagoCard: {
+  actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  metodoPagoText: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginLeft: 16,
-  },
-  emptyState: {
-    alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 8,
   },
-  emptyStateText: {
-    fontSize: 16,
+  actionButtonText: {
+    fontSize: 15,
     fontWeight: '600',
-    color: COLORS.textSecondary,
-    marginTop: 12,
+    color: COLORS.white,
   },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginTop: 4,
-    textAlign: 'center',
-  },
+
+  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -761,69 +691,47 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '80%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     padding: 20,
+    paddingBottom: 40,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: COLORS.border,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 16,
+  },
+  modalAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  modalActionText: {
+    fontSize: 16,
     color: COLORS.text,
+    fontWeight: '500',
   },
-  modalBody: {
-    padding: 20,
+  modalActionCancel: {
+    borderBottomWidth: 0,
+    marginTop: 8,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    justifyContent: 'center',
   },
-  inputLabel: {
+  modalActionCancelText: {
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: COLORS.lightGray,
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 16,
-    color: COLORS.text,
-    marginBottom: 16,
-  },
-  tipoDescuentoContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  tipoDescuentoButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: COLORS.lightGray,
-    alignItems: 'center',
-  },
-  tipoDescuentoButtonActivo: {
-    backgroundColor: COLORS.primary,
-  },
-  tipoDescuentoText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  tipoDescuentoTextActivo: {
-    color: COLORS.white,
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    gap: 12,
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  modalButton: {
-    flex: 1,
+    textAlign: 'center',
   },
 });

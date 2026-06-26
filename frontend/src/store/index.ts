@@ -1,7 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { apiBase } from '../api/apiBase';
 import materialesReducer from '../features/inventario/materiales/materiales.slice';
-import mesaReducer from '../features/mesas/mesa.slice';
 import categoriaReducer from '../features/producto/categoria/categoria.slice';
 import grupoExtraReducer from '../features/producto/grupoExtra/grupoExtra.slice';
 import productoReducer from '../features/producto/producto/producto.slice';
