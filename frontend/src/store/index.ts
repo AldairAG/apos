@@ -9,6 +9,7 @@ import sucursalReducer from '../features/sucursal/sucursal.slice';
 import authReducer from '../features/usuario/auth/auth.slice';
 import usuarioReducer from '../features/usuario/usuario/usuario.slice';
 import mesaReducer from '../features/mesas/mesa.slice';
+import posReducer from '../features/pos/pos.slice';
 
 export const store = configureStore({
     reducer: {
@@ -21,6 +22,7 @@ export const store = configureStore({
         categorias: categoriaReducer,
         gruposExtra: grupoExtraReducer,
         mesas: mesaReducer,
+        pos: posReducer,
     },
 }); 
 // Inicializar el token de apiBase desde sessionStorage al cargar la aplicación

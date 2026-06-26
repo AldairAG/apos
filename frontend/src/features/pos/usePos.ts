@@ -1,4 +1,4 @@
-import { AppDispatch } from "@/store";
+import { AppDispatch, RootState } from "@/store";
 import { createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk } from "./pos.thunks";
 import { CrearOrdenDTO, MesaPosResponseDTO } from "./pos.types";
 import { useDispatch, useSelector } from "react-redux";
@@ -8,7 +8,7 @@ import { useSucursal } from "../sucursal/useSucursal";
 
 const usePos = () => {
     const dispatch = useDispatch<AppDispatch>();
-    const { loading, error, productos, mesas, selectedMesa } = useSelector((state: any) => state.pos);
+    const { loading, error, productos, mesas, selectedMesa } = useSelector((state: RootState) => state.pos);
     const { sucursalActual } = useSucursal();
 
     const cargarProductos = useCallback(() => {

@@ -1,18 +1,20 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { MesaPosResponseDTO, ProductosBySucursalResponse } from "./pos.types";
-import { fetchProductosBySucursalThunk } from "./pos.thunks";
+import { MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from "./pos.types";
+import { createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk } from "./pos.thunks";
 
 interface POSState {
     productos: ProductosBySucursalResponse[];
     selectedProducto: ProductosBySucursalResponse | null;
     mesas: MesaPosResponseDTO[];
     selectedMesa: MesaPosResponseDTO | null;
+    ordenes: OrdenResponseDTO[]; // Replace 'any' with the appropriate type for your orders
     loading: boolean;
     error: string | null;
     searchQuery: string;
 }
 
 const initialState: POSState = {
+    ordenes: [],
     productos: [],
     mesas: [],
     selectedProducto: null,
@@ -22,8 +24,8 @@ const initialState: POSState = {
     searchQuery: '',
 };
 
-const productoSlice = createSlice({
-    name: 'producto',
+const posSlice = createSlice({
+    name: 'pos',
     initialState,
     reducers: {
         setSelectedProducto: (state, action: PayloadAction<ProductosBySucursalResponse | null>) => {
@@ -59,31 +61,46 @@ const productoSlice = createSlice({
                 state.error = action.payload as string;
             });
         builder
-            .addCase(fetchProductosBySucursalThunk.pending, (state) => {
+            .addCase(fetchOrdenesBySucursalThunk.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(fetchProductosBySucursalThunk.fulfilled, (state, action) => {
+            .addCase(fetchOrdenesBySucursalThunk.fulfilled, (state, action) => {
                 state.loading = false;
-                state.productos = action.payload;
+                state.ordenes = action.payload;
             })
-            .addCase(fetchProductosBySucursalThunk.rejected, (state, action) => {
+            .addCase(fetchOrdenesBySucursalThunk.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             });
         builder
-            .addCase(fetchProductosBySucursalThunk.pending, (state) => {
+            .addCase(createOrdenThunk.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(fetchProductosBySucursalThunk.fulfilled, (state, action) => {
+            .addCase(createOrdenThunk.fulfilled, (state, action) => {
                 state.loading = false;
-                state.productos = action.payload;
+                state.ordenes = [...state.ordenes, action.payload];
             })
-            .addCase(fetchProductosBySucursalThunk.rejected, (state, action) => {
+            .addCase(createOrdenThunk.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            });
+        builder
+            .addCase(fetchMesasBySucursalThunk.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchMesasBySucursalThunk.fulfilled, (state, action) => {
+                state.loading = false;
+                state.mesas = action.payload;
+            })
+            .addCase(fetchMesasBySucursalThunk.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             });
 
     }
 })
+export const { setSearchQuery,setSelectedMesa,clearError,clearProductos,setSelectedProducto  } = posSlice.actions;
+export default posSlice.reducer;

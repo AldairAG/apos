@@ -18,7 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 
 
 @RestController
@@ -40,8 +40,8 @@ public class POSController {
         }
     }
 
-    @GetMapping("orden/sucursal/{id}")
-    public ResponseEntity<ApiResponseWrapper<List<OrdenResponseDTO>>> getOrdenesBySucursal(@RequestParam Long sucursalId) {
+    @GetMapping("orden/sucursal/{sucursalId}")
+    public ResponseEntity<ApiResponseWrapper<List<OrdenResponseDTO>>> getOrdenesBySucursal(@PathVariable Long sucursalId) {
         try {
             List<OrdenResponseDTO> ordenes = posService.obtenerOrdenesPorSucursal(sucursalId);
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, ordenes, null));
@@ -52,8 +52,8 @@ public class POSController {
         }
     }
 
-    @GetMapping("/productos/sucursal/{id}")
-    public ResponseEntity<ApiResponseWrapper<List<ProductosBySucursalResponse>>> getProductosBySucursal(@RequestParam Long sucursalId) {
+    @GetMapping("/productos/sucursal/{sucursalId}")
+    public ResponseEntity<ApiResponseWrapper<List<ProductosBySucursalResponse>>> getProductosBySucursal(@PathVariable Long sucursalId) {
         try {
             List<ProductosBySucursalResponse> productos = posService.obtnerProdcutosBySucursal(sucursalId);
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, productos, null));
@@ -64,8 +64,8 @@ public class POSController {
         }
     }
 
-    @GetMapping("/mesas/sucursal/{id}")
-    public ResponseEntity<ApiResponseWrapper<List<MesaResponseDTO>>> getMesasBySucursal(@RequestParam Long sucursalId) {
+    @GetMapping("/mesas/sucursal/{sucursalId}")
+    public ResponseEntity<ApiResponseWrapper<List<MesaResponseDTO>>> getMesasBySucursal(@PathVariable Long sucursalId) {
         try {
             List<MesaResponseDTO> mesas = posService.obtenerMesasPorSucursal(sucursalId);
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, mesas, null));
