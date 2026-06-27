@@ -8,6 +8,7 @@ interface POSState {
     mesas: MesaPosResponseDTO[];
     selectedMesa: MesaPosResponseDTO | null;
     ordenes: OrdenResponseDTO[]; // Replace 'any' with the appropriate type for your orders
+    ordenSelected: OrdenResponseDTO | null;
     loading: boolean;
     error: string | null;
     searchQuery: string;
@@ -19,6 +20,7 @@ const initialState: POSState = {
     mesas: [],
     selectedProducto: null,
     selectedMesa: null,
+    ordenSelected: null,
     loading: false,
     error: null,
     searchQuery: '',

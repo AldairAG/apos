@@ -1,6 +1,6 @@
 import { Categoria, Mesa } from "@/types/pos.types";
-import { OpcionExtra, ProductoGrupoExtra } from "../producto/producto/producto.types";
 import { EstadoMesa } from "../mesas/mesas.types";
+import { OpcionExtra } from "../producto/producto/producto.types";
 
 export interface OrdenResponseDTO {
     id: number;
@@ -18,7 +18,7 @@ export interface OrdenResponseDTO {
     horaEntrega: Date;
     createdAt: Date;
     mesa: Mesa;
-    detalles: DetalleOrden[];
+    detalles: DetalleOrdenResponseDTO[];
 }
 
 export interface ProductosBySucursalResponse {
@@ -31,7 +31,30 @@ export interface ProductosBySucursalResponse {
     disponible: boolean;
     destacado: boolean;
     categoria: Categoria;
-    gruposExtra: ProductoGrupoExtra[];
+    gruposExtra: ProductoGrupoExtraResponse[];
+}
+
+export interface ProductoGrupoExtraResponse {
+    id: number;
+    minimo: number;
+    maximo: number;
+    obligatorio: boolean;
+    grupoExtra: GrupoExtraResponse;
+}
+
+export interface GrupoExtraResponse {
+    id: number;
+    nombre: string;
+    descripcion: string;
+    activo: boolean;
+    opciones: OpcionExtraResponse[];
+}
+
+export interface OpcionExtraResponse {
+    id: number;
+    nombre: string;
+    precio: number;
+    activo: boolean;
 }
 
 export interface CrearOrdenDTO {
@@ -56,7 +79,6 @@ export interface DetalleOrdenDTO {
     subtotal: number;
     extras: DetalleOrdenExtraDTO[];
 }
-
 
 export interface DetalleOrdenExtraDTO {
     opcionExtraId: number;
@@ -114,3 +136,22 @@ export interface MesaPosResponseDTO {
     
     ordenActualDTO: OrdenResponseDTO;
 }
+
+    export interface DetalleOrdenResponseDTO {
+        id: number;
+        nombreProducto: string;
+        cantidad: number;
+        precioUnitario: number;
+        total: number;
+        extras: DetalleOrdenExtraResponseDTO[];
+
+    }
+
+    export interface DetalleOrdenExtraResponseDTO {
+        id: number;
+        nombreExtra: string;
+        precioExtra: number;
+        opcionId: number;
+        cantidad: number;
+        total: number;
+    }

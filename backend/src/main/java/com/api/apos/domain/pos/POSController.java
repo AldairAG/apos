@@ -40,7 +40,7 @@ public class POSController {
         }
     }
 
-    @GetMapping("orden/sucursal/{sucursalId}")
+    @GetMapping("/orden/sucursal/{sucursalId}")
     public ResponseEntity<ApiResponseWrapper<List<OrdenResponseDTO>>> getOrdenesBySucursal(@PathVariable Long sucursalId) {
         try {
             List<OrdenResponseDTO> ordenes = posService.obtenerOrdenesPorSucursal(sucursalId);
