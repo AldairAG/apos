@@ -9,7 +9,7 @@ export const posService = {
      * Crea una nueva orden
      */
     createOrden: async (data: CrearOrdenDTO): Promise<OrdenResponseDTO> => {
-        const response = await apiBase.post<OrdenResponseDTO>(POS_BASE_URL, data);
+        const response = await apiBase.post<OrdenResponseDTO>(`${POS_BASE_URL}/crear-orden`, data);
         return response.data;
     },
 

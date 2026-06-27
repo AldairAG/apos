@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.api.apos.domain.extra.entity.OpcionExtra;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -38,9 +39,11 @@ public class DetalleOrdenExtra {
     
     @ManyToOne
     @JoinColumn(name = "detalle_orden_id")
+    @JsonIgnore
     private DetalleOrden detalleOrden;
     
     @ManyToOne
     @JoinColumn(name = "opcion_extra_id")
+    @JsonIgnore
     private OpcionExtra opcionExtra;
 }

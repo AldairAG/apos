@@ -58,6 +58,7 @@ public class Producto {
     private Categoria categoria;
     
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<DetalleOrden> detallesOrden;
     
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL)
