@@ -1,5 +1,6 @@
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { SucursalSelector } from '@/components/SucursalSelector';
+import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
 import { useSucursal } from '@/features/sucursal/useSucursal';
 import { useAuth } from '@/features/usuario/auth/useAuth';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
@@ -17,7 +18,6 @@ import {
 
 const { width } = Dimensions.get('window');
 
-// Módulos principales
 interface Modulo {
   titulo: string;
   subtitulo: string;
@@ -26,60 +26,58 @@ interface Modulo {
   color: string;
 }
 
-// Módulos de productos e inventario
 const MODULOS_PRINCIPALES: Modulo[] = [
   {
     titulo: 'Materiales',
     subtitulo: 'Gestión de materiales',
-    icono: '📦',
+    icono: 'cube',
     ruta: ROUTES.INVENTARIO.MATERIALES,
-    color: '#2196F3',
+    color: COLORS.info,
   },
   {
     titulo: 'Recetas',
     subtitulo: 'Administrar recetas',
-    icono: '📝',
+    icono: 'document-text',
     ruta: ROUTES.PRODUCTOS.RECETAS,
-    color: '#FF9800',
+    color: COLORS.warning,
   },
   {
     titulo: 'Productos',
     subtitulo: 'Catálogo de productos',
-    icono: '🍽️',
+    icono: 'restaurant',
     ruta: ROUTES.PRODUCTOS.PRODUCTOS,
-    color: '#4CAF50',
+    color: COLORS.success,
   },
 ];
 
-// Reportes principales
 const REPORTES: Modulo[] = [
   {
     titulo: 'Ventas',
     subtitulo: 'Reporte de ventas',
-    icono: '📈',
+    icono: 'trending-up',
     ruta: ROUTES.REPORTES.VENTAS,
-    color: '#4CAF50',
+    color: COLORS.success,
   },
   {
     titulo: 'Inventario',
     subtitulo: 'Control de stock',
-    icono: '📊',
+    icono: 'bar-chart',
     ruta: ROUTES.REPORTES.INVENTARIO,
-    color: '#2196F3',
+    color: COLORS.info,
   },
   {
     titulo: 'Gastos',
     subtitulo: 'Registro de gastos',
-    icono: '💸',
+    icono: 'cash',
     ruta: ROUTES.REPORTES.GASTOS,
-    color: '#F44336',
+    color: COLORS.danger,
   },
   {
     titulo: 'Cortes',
     subtitulo: 'Cortes de caja',
-    icono: '🧮',
+    icono: 'calculator',
     ruta: ROUTES.REPORTES.CORTES,
-    color: '#9C27B0',
+    color: COLORS.primary,
   },
 ];
 
@@ -87,7 +85,7 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { logout } = useAuth();
   const { menu, rol } = useRoleBasedNavigation();
-  const { sucursalActual,recargarSucursales } = useSucursal();
+  const { sucursalActual, recargarSucursales } = useSucursal();
   const [mostrarSelectorSucursal, setMostrarSelectorSucursal] = useState(false);
   const [moduloDestino, setModuloDestino] = useState<string | null>(null);
 
@@ -101,23 +99,18 @@ export default function DashboardScreen() {
   };
 
   const verificarYNavegar = (ruta: string) => {
-    // Si no hay sucursal seleccionada
     if (!sucursalActual) {
       setModuloDestino(ruta);
       setMostrarSelectorSucursal(true);
       return;
     }
-    
-    // Navegar directamente
     router.push(ruta as any);
   };
 
   const handleSucursalCardClick = () => {
-    // Si hay sucursal seleccionada, navegar al panel
     if (sucursalActual) {
       router.push(ROUTES.SUCURSAL_PANEL as any);
     } else {
-      // Si no hay sucursal, abrir selector
       setMostrarSelectorSucursal(true);
     }
   };
@@ -131,43 +124,42 @@ export default function DashboardScreen() {
 
   const getRoleName = (rolKey: string | null) => {
     switch (rolKey) {
-      case Rol.ADMINISTRADOR:
-        return 'Admin';
-      case Rol.GERENTE:
-        return 'Gerente';
-      case Rol.MESERO:
-        return 'Mesero';
-      case Rol.COCINA:
-        return 'Cocina';
-      default:
-        return 'Usuario';
+      case Rol.ADMINISTRADOR: return 'Administrador';
+      case Rol.GERENTE: return 'Gerente';
+      case Rol.MESERO: return 'Mesero';
+      case Rol.COCINA: return 'Cocina';
+      default: return 'Usuario';
     }
   };
 
-  const renderModuloCard = (modulo: Modulo) => {
-    return (
-      <TouchableOpacity
-        key={modulo.ruta}
-        style={[styles.moduloCard, { backgroundColor: modulo.color }]}
-        onPress={() => verificarYNavegar(modulo.ruta)}
-        activeOpacity={0.8}
+  const renderModuloCard = (modulo: Modulo) => (
+    <TouchableOpacity
+      key={modulo.ruta}
+      style={styles.moduloWrapper}
+      onPress={() => verificarYNavegar(modulo.ruta)}
+      activeOpacity={0.8}
+    >
+      <POSCard
+        style={StyleSheet.flatten([styles.moduloCard, { backgroundColor: modulo.color }])}
+        variant="elevated"
       >
-        <Text style={styles.moduloIcon}>{modulo.icono}</Text>
+        <POSIcon name={modulo.icono as any} size={40} color={COLORS.white} />
         <Text style={styles.moduloTitulo}>{modulo.titulo}</Text>
         <Text style={styles.moduloSubtitulo}>{modulo.subtitulo}</Text>
-      </TouchableOpacity>
-    );
-  };
+      </POSCard>
+    </TouchableOpacity>
+  );
 
   return (
     <ProtectedRoute requiredRoute={ROUTES.DASHBOARD}>
       <View style={styles.container}>
-        {/* Header Minimalista */}
+
+        {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerContent}>
+          <View style={styles.headerTop}>
             <View style={styles.userInfo}>
               <View style={styles.avatarContainer}>
-                <Text style={styles.avatarIcon}>👤</Text>
+                <POSIcon name="person" size={22} color={COLORS.white} />
               </View>
               <View>
                 <Text style={styles.welcomeText}>Bienvenido</Text>
@@ -177,81 +169,91 @@ export default function DashboardScreen() {
             <TouchableOpacity
               style={styles.logoutButton}
               onPress={handleLogout}
+              activeOpacity={0.8}
             >
-              <Text style={styles.logoutIcon}>🚪</Text>
+              <POSIcon name="log-out" size={22} color={COLORS.danger} />
             </TouchableOpacity>
           </View>
+          <Text style={styles.subtitle}>
+            {new Date().toLocaleDateString('es-MX', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </Text>
         </View>
 
-        <ScrollView 
-          style={styles.content} 
+        <ScrollView
+          style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Selector de Sucursal Card */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>SUCURSAL ACTUAL</Text>
-            <TouchableOpacity
-              style={[
-                styles.sucursalCard,
-                sucursalActual ? styles.sucursalCardActive : styles.sucursalCardInactive
-              ]}
-              onPress={handleSucursalCardClick}
-              activeOpacity={0.7}
-            >
-              <View style={styles.sucursalCardContent}>
-                <View style={[
-                  styles.sucursalIconContainer,
-                  sucursalActual ? styles.iconContainerGreen : styles.iconContainerRed
-                ]}>
-                  <Text style={styles.sucursalIconText}>🏪</Text>
+
+          {/* Sucursal Actual */}
+          <View style={styles.seccion}>
+            <Text style={styles.tituloSeccion}>Sucursal Actual</Text>
+            <TouchableOpacity onPress={handleSucursalCardClick} activeOpacity={0.8}>
+              <POSCard
+                style={StyleSheet.flatten([
+                  styles.sucursalCard,
+                  { borderColor: sucursalActual ? COLORS.success : COLORS.danger },
+                ])}
+                variant="elevated"
+              >
+                <View style={styles.sucursalCardContent}>
+                  <View style={[
+                    styles.sucursalIconContainer,
+                    { backgroundColor: sucursalActual ? COLORS.success : COLORS.danger },
+                  ]}>
+                    <POSIcon name="storefront" size={28} color={COLORS.white} />
+                  </View>
+
+                  <View style={styles.sucursalInfo}>
+                    {sucursalActual ? (
+                      <>
+                        <POSBadge label="ACTIVA" variant="success" size="small" />
+                        <Text style={styles.sucursalNombre}>{sucursalActual.nombre}</Text>
+                        <Text style={styles.sucursalCodigo}>{sucursalActual.codigo}</Text>
+                        <Text style={styles.sucursalAccion}>Toca para entrar al panel</Text>
+                      </>
+                    ) : (
+                      <>
+                        <POSBadge label="SIN SELECCIONAR" variant="danger" size="small" />
+                        <Text style={styles.sucursalNombreInactiva}>Toca para seleccionar</Text>
+                      </>
+                    )}
+                  </View>
+
+                  <POSIcon
+                    name="chevron-forward"
+                    size={24}
+                    color={sucursalActual ? COLORS.success : COLORS.danger}
+                  />
                 </View>
-                <View style={styles.sucursalInfo}>
-                  {sucursalActual ? (
-                    <>
-                      <Text style={styles.sucursalLabel}>Activa</Text>
-                      <Text style={styles.sucursalNombre}>
-                        {sucursalActual.nombre}
-                      </Text>
-                      <Text style={styles.sucursalCodigo}>
-                        {sucursalActual.codigo}
-                      </Text>
-                      <Text style={styles.sucursalAction}>
-                        Toca para entrar al panel
-                      </Text>
-                    </>
-                  ) : (
-                    <>
-                      <Text style={styles.sucursalLabel}>Sin Seleccionar</Text>
-                      <Text style={styles.sucursalNombreInactive}>
-                        Toca para seleccionar
-                      </Text>
-                    </>
-                  )}
-                </View>
-                <Text style={[styles.chevronIcon, { color: sucursalActual ? '#4CAF50' : '#F44336' }]}>›</Text>
-              </View>
+              </POSCard>
             </TouchableOpacity>
           </View>
 
-          {/* Módulos Principales */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>GESTIÓN</Text>
+          {/* Gestión */}
+          <View style={styles.seccion}>
+            <Text style={styles.tituloSeccion}>Gestión</Text>
             <View style={styles.modulosGrid}>
               {MODULOS_PRINCIPALES.map(renderModuloCard)}
             </View>
           </View>
 
           {/* Reportes */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>REPORTES</Text>
-            <View style={styles.reportesGrid}>
+          <View style={[styles.seccion, styles.ultimaSeccion]}>
+            <Text style={styles.tituloSeccion}>Reportes</Text>
+            <View style={styles.modulosGrid}>
               {REPORTES.map(renderModuloCard)}
             </View>
           </View>
+
         </ScrollView>
 
-        {/* Modal de Selección de Sucursal */}
+        {/* Modal Selector de Sucursal */}
         <SucursalSelector
           visible={mostrarSelectorSucursal}
           onClose={() => {
@@ -260,6 +262,7 @@ export default function DashboardScreen() {
           }}
           onSelect={handleSucursalSeleccionada}
         />
+
       </View>
     </ProtectedRoute>
   );
@@ -268,20 +271,22 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#F5F5F5',
   },
+
+  // ── Header (igual que HomeScreen) ──────────────────────────────────────────
   header: {
-    backgroundColor: '#fff',
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    backgroundColor: COLORS.white,
+    padding: 20,
+    paddingTop: 60,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: COLORS.border,
   },
-  headerContent: {
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
   },
   userInfo: {
     flexDirection: 'row',
@@ -289,199 +294,128 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   avatarContainer: {
-    width: 45,
-    height: 45,
-    borderRadius: 23,
-    backgroundColor: '#4CAF50',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarIcon: {
-    fontSize: 24,
-  },
   welcomeText: {
     fontSize: 12,
-    color: '#757575',
+    color: COLORS.textSecondary,
     marginBottom: 2,
   },
   roleText: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#212121',
+    color: COLORS.text,
   },
   logoutButton: {
-    width: 45,
-    height: 45,
-    borderRadius: 23,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#FFEBEE',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logoutIcon: {
-    fontSize: 24,
+  subtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textTransform: 'capitalize',
   },
-  content: {
+
+  // ── Scroll ─────────────────────────────────────────────────────────────────
+  scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    paddingBottom: 40,
   },
-  section: {
-    marginBottom: 30,
+
+  // ── Secciones (igual que HomeScreen) ──────────────────────────────────────
+  seccion: {
+    padding: 16,
   },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#757575',
-    marginBottom: 15,
-    letterSpacing: 1,
+  ultimaSeccion: {
+    paddingBottom: 20,
   },
-  // Sucursal Card
+  tituloSeccion: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 12,
+  },
+
+  // ── Sucursal Card ──────────────────────────────────────────────────────────
   sucursalCard: {
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  sucursalCardActive: {
-    backgroundColor: '#fff',
+    padding: 16,
     borderWidth: 2,
-    borderColor: '#4CAF50',
-  },
-  sucursalCardInactive: {
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#F44336',
+    borderRadius: 12,
   },
   sucursalCardContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 15,
+    gap: 14,
   },
   sucursalIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  iconContainerGreen: {
-    backgroundColor: '#4CAF50',
-  },
-  iconContainerRed: {
-    backgroundColor: '#F44336',
-  },
-  sucursalIconText: {
-    fontSize: 32,
-  },
-  chevronIcon: {
-    fontSize: 32,
-    fontWeight: '300',
   },
   sucursalInfo: {
     flex: 1,
-  },
-  sucursalLabel: {
-    fontSize: 11,
-    color: '#757575',
-    marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    fontWeight: '600',
+    gap: 4,
   },
   sucursalNombre: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
-    color: '#212121',
-    marginBottom: 2,
+    color: COLORS.text,
   },
   sucursalCodigo: {
     fontSize: 12,
-    color: '#9E9E9E',
+    color: COLORS.textSecondary,
+  },
+  sucursalAccion: {
+    fontSize: 12,
+    color: COLORS.success,
+    fontWeight: '600',
     marginTop: 2,
   },
-  sucursalAction: {
-    fontSize: 11,
-    color: '#4CAF50',
-    marginTop: 6,
+  sucursalNombreInactiva: {
+    fontSize: 15,
     fontWeight: '600',
+    color: COLORS.danger,
+    marginTop: 4,
   },
-  sucursalNombreInactive: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#F44336',
-  },
-  // Módulos Grid (Productos, Materiales, Recetas)
+
+  // ── Módulos / Reportes Grid ────────────────────────────────────────────────
   modulosGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 15,
+    gap: 12,
+  },
+  moduloWrapper: {
+    width: '48%',
   },
   moduloCard: {
-    width: (width - 55) / 2,
-    aspectRatio: 1,
-    borderRadius: 16,
-    padding: 20,
-    justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  moduloIcon: {
-    fontSize: 48,
+    padding: 20,
+    gap: 10,
+    aspectRatio: 1,
+    justifyContent: 'center',
   },
   moduloTitulo: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    color: '#fff',
-    marginTop: 12,
+    color: COLORS.white,
     textAlign: 'center',
   },
   moduloSubtitulo: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  // Reportes Grid
-  reportesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 15,
-  },
-  reporteCard: {
-    width: (width - 55) / 2,
-    aspectRatio: 1,
-    borderRadius: 16,
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  reporteIcon: {
-    fontSize: 48,
-  },
-  reporteTitulo: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-    marginTop: 12,
-    textAlign: 'center',
-  },
-  reporteSubtitulo: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginTop: 4,
+    color: 'rgba(255,255,255,0.85)',
     textAlign: 'center',
   },
 });

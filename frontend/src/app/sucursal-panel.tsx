@@ -1,25 +1,25 @@
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { SucursalRequiredRoute } from '@/components/SucursalRequiredRoute';
+import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
 import { useSucursal } from '@/features/sucursal/useSucursal';
 import { ROUTES } from '@/routes/routes';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Dimensions,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 const IS_MOBILE = width < 768;
 const IS_TABLET = width >= 768 && width < 1024;
 
-// Opciones del menú del sidebar
 interface MenuOption {
   id: string;
   titulo: string;
@@ -32,96 +32,83 @@ const MENU_OPTIONS: MenuOption[] = [
   {
     id: 'pos',
     titulo: 'Punto de Venta',
-    icono: '🛒',
+    icono: 'cart',
     ruta: ROUTES.POS.HOME,
-    color: '#4CAF50',
+    color: COLORS.success,
   },
   {
     id: 'inventario',
     titulo: 'Inventario',
-    icono: '📦',
+    icono: 'cube',
     ruta: ROUTES.INVENTARIO.MATERIALES,
-    color: '#2196F3',
+    color: COLORS.info,
   },
   {
     id: 'productos',
     titulo: 'Productos',
-    icono: '🍽️',
+    icono: 'restaurant',
     ruta: ROUTES.PRODUCTOS.PRODUCTOS,
-    color: '#FF9800',
+    color: COLORS.warning,
   },
   {
     id: 'mesas',
     titulo: 'Configuración de Mesas',
-    icono: '🍽️',
+    icono: 'grid',
     ruta: ROUTES.CONFIG.MESAS,
-    color: '#27037a',
+    color: COLORS.primary,
   },
   {
     id: 'corte',
     titulo: 'Corte de Caja',
-    icono: '🧮',
+    icono: 'calculator',
     ruta: ROUTES.REPORTES.CORTES,
     color: '#9C27B0',
   },
   {
     id: 'gastos',
     titulo: 'Gastos',
-    icono: '💸',
+    icono: 'cash',
     ruta: ROUTES.CAJA.GASTOS,
-    color: '#F44336',
+    color: COLORS.danger,
   },
 ];
 
 export default function SucursalPanelScreen() {
   const router = useRouter();
   const { sucursalActual } = useSucursal();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(IS_MOBILE);
+
+  // En móvil: controla si el drawer está abierto (false = cerrado).
+  // En tablet/desktop: el sidebar siempre está visible, este estado no se usa.
+  const [drawerAbierto, setDrawerAbierto] = useState(false);
   const [activeOption, setActiveOption] = useState<string | null>(null);
 
   const handleMenuClick = (option: MenuOption) => {
     setActiveOption(option.id);
     router.push(option.ruta as any);
-    
-    // En móvil, cerrar el sidebar después de seleccionar
-    if (IS_MOBILE) {
-      setSidebarCollapsed(true);
-    }
+    // En móvil cerramos el drawer al navegar
+    if (IS_MOBILE) setDrawerAbierto(false);
   };
 
   const handleBackToDashboard = () => {
     router.back();
   };
 
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
-
   const renderSidebarContent = () => (
     <>
       {/* Header del Sidebar */}
       <View style={styles.sidebarHeader}>
-        {!sidebarCollapsed && (
-          <>
-            <View style={styles.sucursalBadge}>
-              <Text style={styles.sucursalIcon}>🏪</Text>
-            </View>
-            <View style={styles.sucursalHeaderInfo}>
-              <Text style={styles.sucursalHeaderLabel}>SUCURSAL</Text>
-              <Text style={styles.sucursalHeaderNombre} numberOfLines={1}>
-                {sucursalActual?.nombre || 'Sin Sucursal'}
-              </Text>
-              <Text style={styles.sucursalHeaderCodigo}>
-                {sucursalActual?.codigo || '---'}
-              </Text>
-            </View>
-          </>
-        )}
-        {sidebarCollapsed && (
-          <View style={styles.sucursalBadgeCollapsed}>
-            <Text style={styles.sucursalIconCollapsed}>🏪</Text>
-          </View>
-        )}
+        <View style={styles.sucursalBadge}>
+          <POSIcon name="storefront" size={34} color={COLORS.white} />
+        </View>
+        <View style={styles.sucursalHeaderInfo}>
+          <POSBadge label="SUCURSAL" variant="success" size="small" />
+          <Text style={styles.sucursalHeaderNombre} numberOfLines={1}>
+            {sucursalActual?.nombre || 'Sin Sucursal'}
+          </Text>
+          <Text style={styles.sucursalHeaderCodigo}>
+            {sucursalActual?.codigo || '---'}
+          </Text>
+        </View>
       </View>
 
       {/* Divider */}
@@ -136,8 +123,7 @@ export default function SucursalPanelScreen() {
               key={option.id}
               style={[
                 styles.menuItem,
-                sidebarCollapsed && styles.menuItemCollapsed,
-                isActive && styles.menuItemActive,
+                isActive && { borderColor: option.color, backgroundColor: `${option.color}15` },
               ]}
               onPress={() => handleMenuClick(option)}
               activeOpacity={0.7}
@@ -145,22 +131,24 @@ export default function SucursalPanelScreen() {
               <View
                 style={[
                   styles.menuIconContainer,
-                  { backgroundColor: isActive ? option.color : '#F5F5F5' },
+                  { backgroundColor: isActive ? option.color : '#F0F0F0' },
                 ]}
               >
-                <Text style={styles.menuIcon}>{option.icono}</Text>
+                <POSIcon
+                  name={option.icono as any}
+                  size={20}
+                  color={isActive ? COLORS.white : COLORS.textSecondary}
+                />
               </View>
-              {!sidebarCollapsed && (
-                <Text
-                  style={[
-                    styles.menuText,
-                    isActive && { color: option.color, fontWeight: '700' },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {option.titulo}
-                </Text>
-              )}
+              <Text
+                style={[
+                  styles.menuText,
+                  isActive && { color: option.color, fontWeight: '700' },
+                ]}
+                numberOfLines={1}
+              >
+                {option.titulo}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -169,17 +157,12 @@ export default function SucursalPanelScreen() {
       {/* Footer del Sidebar */}
       <View style={styles.sidebarFooter}>
         <TouchableOpacity
-          style={[
-            styles.backButton,
-            sidebarCollapsed && styles.backButtonCollapsed,
-          ]}
+          style={styles.backButton}
           onPress={handleBackToDashboard}
           activeOpacity={0.7}
         >
-          <Text style={styles.backIcon}>←</Text>
-          {!sidebarCollapsed && (
-            <Text style={styles.backText}>Volver al Dashboard</Text>
-          )}
+          <POSIcon name="arrow-back" size={20} color={COLORS.textSecondary} />
+          <Text style={styles.backText}>Volver al Dashboard</Text>
         </TouchableOpacity>
       </View>
     </>
@@ -189,65 +172,98 @@ export default function SucursalPanelScreen() {
     <ProtectedRoute requiredRoute={ROUTES.SUCURSAL_PANEL}>
       <SucursalRequiredRoute requiredRoute={ROUTES.SUCURSAL_PANEL}>
         <View style={styles.container}>
-          {/* Overlay para móvil cuando el sidebar está abierto */}
-          {IS_MOBILE && !sidebarCollapsed && (
-            <Pressable style={styles.overlay} onPress={toggleSidebar} />
+
+          {/*
+           * MÓVIL: drawer como overlay absoluto.
+           * TABLET/DESKTOP: sidebar fijo en el layout normal (no overlay).
+           */}
+
+          {IS_MOBILE ? (
+            <>
+              {/* Overlay oscuro al abrir el drawer */}
+              {drawerAbierto && (
+                <Pressable
+                  style={styles.overlay}
+                  onPress={() => setDrawerAbierto(false)}
+                />
+              )}
+              {/* Drawer deslizable desde la izquierda */}
+              {drawerAbierto && (
+                <View style={styles.drawer}>
+                  {renderSidebarContent()}
+                </View>
+              )}
+            </>
+          ) : (
+            /* Sidebar fijo visible siempre en tablet/desktop */
+            <View style={styles.sidebar}>
+              {renderSidebarContent()}
+            </View>
           )}
 
-          {/* Sidebar */}
-          <View
-            style={[
-              styles.sidebar,
-              sidebarCollapsed ? styles.sidebarCollapsed : styles.sidebarExpanded,
-              IS_MOBILE && !sidebarCollapsed && styles.sidebarMobile,
-            ]}
-          >
-            {renderSidebarContent()}
-          </View>
-
-          {/* Área de Contenido Principal */}
+          {/* Contenido Principal */}
           <View style={styles.mainContent}>
-            {/* Header del Contenido */}
+
+            {/* Header */}
             <View style={styles.contentHeader}>
-              <TouchableOpacity
-                style={styles.menuToggle}
-                onPress={toggleSidebar}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.menuToggleIcon}>☰</Text>
-              </TouchableOpacity>
+              {/* Botón de menú solo visible en móvil */}
+              {IS_MOBILE ? (
+                <TouchableOpacity
+                  style={styles.menuToggle}
+                  onPress={() => setDrawerAbierto(true)}
+                  activeOpacity={0.8}
+                >
+                  <POSIcon name="menu" size={24} color={COLORS.text} />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.headerSpacer} />
+              )}
               <Text style={styles.contentTitle}>Panel de Sucursal</Text>
               <View style={styles.headerSpacer} />
             </View>
 
-            {/* Contenido Vacío por Defecto */}
-            <View style={styles.emptyContent}>
-              <Text style={styles.emptyIcon}>📍</Text>
-              <Text style={styles.emptyTitle}>
-                {sucursalActual?.nombre || 'Panel de Sucursal'}
-              </Text>
-              <Text style={styles.emptyMessage}>
-                Selecciona una opción del menú lateral para comenzar
-              </Text>
-
-              {/* Cards de acceso rápido */}
-              <View style={styles.quickAccessGrid}>
-                {MENU_OPTIONS.map((option) => (
-                  <TouchableOpacity
-                    key={option.id}
-                    style={[
-                      styles.quickAccessCard,
-                      { borderLeftColor: option.color },
-                    ]}
-                    onPress={() => handleMenuClick(option)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.quickAccessIcon}>{option.icono}</Text>
-                    <Text style={styles.quickAccessTitle}>{option.titulo}</Text>
-                  </TouchableOpacity>
-                ))}
+            {/* Estado vacío + accesos rápidos */}
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Info de sucursal */}
+              <View style={styles.welcomeSection}>
+                <POSIcon name="location" size={48} color={COLORS.primary} />
+                <Text style={styles.emptyTitle}>
+                  {sucursalActual?.nombre || 'Panel de Sucursal'}
+                </Text>
+                <Text style={styles.emptyMessage}>
+                  Selecciona una opción del menú lateral para comenzar
+                </Text>
               </View>
-            </View>
+
+              {/* Accesos rápidos */}
+              <View style={styles.seccion}>
+                <Text style={styles.tituloSeccion}>Accesos Rápidos</Text>
+                <View style={styles.quickAccessGrid}>
+                  {MENU_OPTIONS.map((option) => (
+                    <TouchableOpacity
+                      key={option.id}
+                      style={styles.quickAccessWrapper}
+                      onPress={() => handleMenuClick(option)}
+                      activeOpacity={0.8}
+                    >
+                      <POSCard style={styles.quickAccessCard} variant="elevated">
+                        <View style={[styles.quickAccessIconContainer, { backgroundColor: option.color }]}>
+                          <POSIcon name={option.icono as any} size={26} color={COLORS.white} />
+                        </View>
+                        <Text style={styles.quickAccessTitle} numberOfLines={2}>
+                          {option.titulo}
+                        </Text>
+                      </POSCard>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </ScrollView>
+
           </View>
         </View>
       </SucursalRequiredRoute>
@@ -259,104 +275,105 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#F5F5F5',
   },
-  // Overlay para móvil
+
+  // ── Overlay móvil (oscurece el contenido detrás del drawer) ──────────────
   overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.4)',
     zIndex: 9,
   },
-  // Sidebar
-  sidebar: {
-    backgroundColor: '#fff',
-    borderRightWidth: 1,
-    borderRightColor: '#E0E0E0',
-    zIndex: 10,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 2, height: 0 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  sidebarExpanded: {
-    width: IS_MOBILE ? width * 0.75 : IS_TABLET ? 240 : 280,
-  },
-  sidebarCollapsed: {
-    width: IS_MOBILE ? 0 : 80,
-  },
-  sidebarMobile: {
+
+  // ── Drawer móvil (posición absoluta, encima del contenido) ────────────────
+  drawer: {
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
-    height: height,
+    width: width * 0.78,
+    height,
+    backgroundColor: COLORS.white,
+    borderRightWidth: 1,
+    borderRightColor: COLORS.border,
+    zIndex: 10,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 4, height: 0 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+      },
+      android: { elevation: 8 },
+    }),
   },
-  // Header del Sidebar
+
+  // ── Sidebar fijo tablet/desktop (ocupa espacio en el layout) ─────────────
+  sidebar: {
+    width: IS_TABLET ? 240 : 280,
+    backgroundColor: COLORS.white,
+    borderRightWidth: 1,
+    borderRightColor: COLORS.border,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 2, height: 0 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: { elevation: 4 },
+    }),
+  },
+
+  // ── Header del Sidebar ────────────────────────────────────────────────────
   sidebarHeader: {
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 20,
     alignItems: 'center',
+    gap: 12,
   },
   sucursalBadge: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#4CAF50',
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: COLORS.success,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 15,
-  },
-  sucursalIcon: {
-    fontSize: 36,
   },
   sucursalBadgeCollapsed: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#4CAF50',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.success,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  sucursalIconCollapsed: {
-    fontSize: 28,
   },
   sucursalHeaderInfo: {
     alignItems: 'center',
+    gap: 4,
     width: '100%',
-  },
-  sucursalHeaderLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#757575',
-    letterSpacing: 1,
-    marginBottom: 4,
   },
   sucursalHeaderNombre: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#212121',
+    color: COLORS.text,
     textAlign: 'center',
-    marginBottom: 4,
   },
   sucursalHeaderCodigo: {
-    fontSize: 11,
-    color: '#9E9E9E',
+    fontSize: 12,
+    color: COLORS.textSecondary,
   },
+
+  // ── Divider ────────────────────────────────────────────────────────────────
   divider: {
     height: 1,
-    backgroundColor: '#E0E0E0',
-    marginHorizontal: 15,
-    marginBottom: 15,
+    backgroundColor: COLORS.border,
+    marginHorizontal: 12,
+    marginBottom: 12,
   },
-  // Menú
+
+  // ── Menú ──────────────────────────────────────────────────────────────────
   menuContainer: {
     flex: 1,
     paddingHorizontal: 10,
@@ -364,66 +381,52 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 15,
-    marginBottom: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    marginBottom: 6,
     borderRadius: 12,
-    backgroundColor: '#FAFAFA',
-  },
-  menuItemCollapsed: {
-    justifyContent: 'center',
-    paddingHorizontal: 0,
-  },
-  menuItemActive: {
-    backgroundColor: '#F1F8F4',
-    borderWidth: 2,
-    borderColor: '#4CAF50',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    backgroundColor: '#F7F7F7',
   },
   menuIconContainer: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  menuIcon: {
-    fontSize: 22,
-  },
   menuText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#424242',
+    color: COLORS.text,
     marginLeft: 12,
     flex: 1,
   },
-  // Footer del Sidebar
+
+  // ── Footer del Sidebar ────────────────────────────────────────────────────
   sidebarFooter: {
-    padding: 15,
+    padding: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: COLORS.border,
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 15,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 10,
-  },
-  backButtonCollapsed: {
-    paddingHorizontal: 0,
-  },
-  backIcon: {
-    fontSize: 20,
-    marginRight: 8,
+    paddingHorizontal: 14,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 12,
+    gap: 8,
   },
   backText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#424242',
+    color: COLORS.textSecondary,
   },
-  // Contenido Principal
+
+  // ── Contenido Principal ───────────────────────────────────────────────────
   mainContent: {
     flex: 1,
   },
@@ -434,86 +437,90 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: COLORS.border,
   },
+  // Botón hamburguesa — solo se renderiza en móvil
   menuToggle: {
-    width: 45,
-    height: 45,
-    borderRadius: 23,
-    backgroundColor: '#F5F5F5',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  menuToggleIcon: {
-    fontSize: 24,
-    color: '#424242',
   },
   contentTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#212121',
+    fontWeight: 'bold',
+    color: COLORS.text,
   },
+  // Spacer invisible para centrar el título cuando no hay botón
   headerSpacer: {
-    width: 45,
+    width: 44,
   },
-  // Contenido Vacío
-  emptyContent: {
+
+  // ── Scroll ────────────────────────────────────────────────────────────────
+  scrollView: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
   },
-  emptyIcon: {
-    fontSize: 72,
-    marginBottom: 20,
+  scrollContent: {
+    paddingBottom: 40,
+  },
+
+  // ── Welcome / Estado vacío ────────────────────────────────────────────────
+  welcomeSection: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+    gap: 10,
   },
   emptyTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#212121',
-    marginBottom: 10,
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: COLORS.text,
     textAlign: 'center',
   },
   emptyMessage: {
-    fontSize: 16,
-    color: '#757575',
+    fontSize: 14,
+    color: COLORS.textSecondary,
     textAlign: 'center',
-    marginBottom: 40,
   },
-  // Quick Access Cards
+
+  // ── Accesos Rápidos ───────────────────────────────────────────────────────
+  seccion: {
+    padding: 16,
+  },
+  tituloSeccion: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 12,
+  },
   quickAccessGrid: {
-    width: '100%',
-    maxWidth: 600,
-    gap: 15,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  quickAccessWrapper: {
+    width: '48%',
   },
   quickAccessCard: {
-    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
     padding: 20,
-    borderLeftWidth: 4,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    gap: 12,
   },
-  quickAccessIcon: {
-    fontSize: 32,
-    marginRight: 15,
+  quickAccessIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   quickAccessTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#212121',
+    color: COLORS.text,
+    textAlign: 'center',
   },
 });
