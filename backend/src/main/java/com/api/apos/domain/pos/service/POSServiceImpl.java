@@ -1,6 +1,7 @@
 package com.api.apos.domain.pos.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -42,7 +43,6 @@ public class POSServiceImpl implements POSService {
     private final OrdenService ordenService;
 
     private final MesaService mesaService;
-
 
     @Override
     public List<ProductosBySucursalResponse> obtnerProdcutosBySucursal(Long sucursalId) {
@@ -101,10 +101,6 @@ public class POSServiceImpl implements POSService {
 
         Sucursal sucursal = sucursalService.obtenerSucursalPorId(crearOrdenDTO.getSucursalId());
 
-        if (crearOrdenDTO.getMesaId() == null) {
-
-        }
-
         Orden orden = Orden.builder()
                 .tipo(crearOrdenDTO.getTipo())
                 .numeroPersonas(crearOrdenDTO.getNumeroPersonas())
@@ -131,6 +127,13 @@ public class POSServiceImpl implements POSService {
         orden.setDetalles(detalles);
 
         Orden ordenGuardada = ordenService.crearOrden(orden);
+
+        if (crearOrdenDTO.getMesaId() != null) {
+            mesaService.asignarOrdenAMesa(crearOrdenDTO.getMesaId(), ordenGuardada.getId());
+        }
+
+
+
         return mapOrdenToResponseDTO(ordenGuardada);
     }
 
@@ -243,13 +246,18 @@ public class POSServiceImpl implements POSService {
         List<MesaResponseDTO> response = mesas.stream()
                 .map(mesa -> {
 
-                    Orden ordenActual = ordenService.obtenerOrdenPorId(mesa.getOrdenActual())
-                            .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
-
                     MesaResponseDTO res = new MesaResponseDTO();
                     res.setId(mesa.getId());
                     res.setNombre(mesa.getNombre());
-                    res.setOrdenActualDTO(mapOrdenToResponseDTO(ordenActual));
+                    res.setEstado(mesa.getEstado());
+                    res.setActiva(mesa.getActiva());
+
+                    Optional<Orden> ordenActual = ordenService.obtenerOrdenPorId(mesa.getOrdenActual());
+                    if (ordenActual.isPresent()) {
+                        res.setOrdenActualDTO(mapOrdenToResponseDTO(ordenActual.get()));
+                    } else {
+                        res.setOrdenActualDTO(null);
+                    }
                     return res;
                 })
                 .toList();

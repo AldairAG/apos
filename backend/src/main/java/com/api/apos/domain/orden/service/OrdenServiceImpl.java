@@ -110,6 +110,9 @@ public class OrdenServiceImpl implements OrdenService {
     @Override
     @Transactional(readOnly = true)
     public Optional<Orden> obtenerOrdenPorId(Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
         return ordenRepository.findById(id);
     }
 
