@@ -1,9 +1,11 @@
 import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
-import { CrearOrdenDTO, DetalleOrdenDTO, ProductosBySucursalResponse, TipoOrden } from '@/features/pos/pos.types';
+import { CrearOrdenDTO, DetalleOrdenDTO, OpcionExtraResponse, ProductosBySucursalResponse, TipoOrden } from '@/features/pos/pos.types';
 import usePos from '@/features/pos/usePos';
+import { EstadoMesa } from '@/features/mesas/mesas.types';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useSucursal } from '@/features/sucursal/useSucursal';
 
 type PasoCreacion = 'seleccion-tipo' | 'seleccion-mesa' | 'agregar-productos';
 
@@ -17,6 +19,7 @@ interface ItemCarrito {
 export default function CrearOrdenScreen() {
   const { ordenId } = useLocalSearchParams<{ ordenId?: string }>();
   const { productos, mesas, cargarProductos, cargarMesas, crearOrden, selectedMesa, seleccionarMesa } = usePos();
+  const {sucursalActual}=useSucursal();
   
   const [paso, setPaso] = useState<PasoCreacion>('seleccion-tipo');
   const [tipoOrden, setTipoOrden] = useState<TipoOrden | null>(null);
@@ -27,7 +30,7 @@ export default function CrearOrdenScreen() {
   const [modalProducto, setModalProducto] = useState<ProductosBySucursalResponse | null>(null);
   const [cantidadTemp, setCantidadTemp] = useState(1);
   const [observacionesTemp, setObservacionesTemp] = useState('');
-  const [extrasTemp, setExtrasTemp] = useState<any[]>([]);
+  const [extrasSeleccionados, setExtrasSeleccionados] = useState<Map<number, number>>(new Map());
   const [numeroPersonas, setNumeroPersonas] = useState(1);
   const [observacionesOrden, setObservacionesOrden] = useState('');
 
@@ -73,15 +76,66 @@ export default function CrearOrdenScreen() {
     setModalProducto(producto);
     setCantidadTemp(1);
     setObservacionesTemp('');
-    setExtrasTemp([]);
+    setExtrasSeleccionados(new Map());
   };
+
+  const actualizarCantidadExtra = (extraId: number, delta: number) => {
+    setExtrasSeleccionados(prev => {
+      const nuevo = new Map(prev);
+      const cantidadActual = nuevo.get(extraId) || 0;
+      const nuevaCantidad = Math.max(0, cantidadActual + delta);
+      
+      if (nuevaCantidad === 0) {
+        nuevo.delete(extraId);
+      } else {
+        nuevo.set(extraId, nuevaCantidad);
+      }
+      
+      return nuevo;
+    });
+  };
+
+  // Calcular totales del modal en tiempo real
+  const totalesModal = useMemo(() => {
+    if (!modalProducto) return { precioBase: 0, totalExtras: 0, precioFinal: 0 };
+
+    const precioBase = modalProducto.precioVenta;
+    let totalExtras = 0;
+
+    modalProducto.gruposExtra?.forEach(grupo => {
+      grupo.grupoExtra.opciones.forEach(opcion => {
+        const cantidad = extrasSeleccionados.get(opcion.id) || 0;
+        totalExtras += opcion.precio * cantidad;
+      });
+    });
+
+    const precioFinal = (precioBase + totalExtras) * cantidadTemp;
+
+    return { precioBase, totalExtras, precioFinal };
+  }, [modalProducto, extrasSeleccionados, cantidadTemp]);
 
   const agregarAlCarrito = () => {
     if (!modalProducto) return;
 
+    // Convertir extras seleccionados a array con información completa
+    const extrasArray: { id: number; nombre: string; precio: number; cantidad: number }[] = [];
+    modalProducto.gruposExtra?.forEach(grupo => {
+      grupo.grupoExtra.opciones.forEach(opcion => {
+        const cantidad = extrasSeleccionados.get(opcion.id) || 0;
+        if (cantidad > 0) {
+          extrasArray.push({
+            id: opcion.id,
+            nombre: opcion.nombre,
+            precio: opcion.precio,
+            cantidad
+          });
+        }
+      });
+    });
+
     const itemExistente = carrito.find(item => 
       item.producto.id === modalProducto.id &&
-      JSON.stringify(item.extras) === JSON.stringify(extrasTemp) &&
+      JSON.stringify(item.extras) === JSON.stringify(extrasArray) &&
       item.observaciones === observacionesTemp
     );
 
@@ -96,7 +150,7 @@ export default function CrearOrdenScreen() {
         producto: modalProducto,
         cantidad: cantidadTemp,
         observaciones: observacionesTemp,
-        extras: extrasTemp
+        extras: extrasArray
       }]);
     }
 
@@ -150,7 +204,7 @@ export default function CrearOrdenScreen() {
         subtotal: totales.subtotal,
         descuento: totales.descuento,
         total: totales.total,
-        sucursalId: 1, // Usar sucursal actual
+        sucursalId: sucursalActual?.id || 0, // Usar sucursal actual
         mesaId: mesaSeleccionada || 0,
         detallesDTO: detalles
       };
@@ -264,8 +318,8 @@ export default function CrearOrdenScreen() {
                 <POSIcon name="restaurant" size={40} color={COLORS.primary} />
                 <Text style={styles.mesaNombre}>{item.nombre}</Text>
                 <POSBadge
-                  label={item.estado}
-                  variant={item.estado === 'LIBRE' ? 'success' : 'warning'}
+                  label={item.estado.toString()}
+                  variant={item.estado === EstadoMesa.LIBRE ? 'success' : 'warning'}
                   size="small"
                 />
               </POSCard>
@@ -392,7 +446,7 @@ export default function CrearOrdenScreen() {
                   <Text style={styles.carritoItemNombre}>{item.producto.nombre}</Text>
                   {item.extras.length > 0 && (
                     <Text style={styles.carritoItemExtras}>
-                      {item.extras.map(e => e.nombre).join(', ')}
+                      {item.extras.map(e => `${e.nombre} x${e.cantidad}`).join(', ')}
                     </Text>
                   )}
                   {item.observaciones && (
@@ -496,6 +550,145 @@ export default function CrearOrdenScreen() {
                 </View>
               </View>
 
+              {/* Grupos de Extras */}
+              {modalProducto?.gruposExtra && modalProducto.gruposExtra.length > 0 && (
+                <View style={styles.modalSection}>
+                  <Text style={styles.modalSectionTitle}>Extras</Text>
+                  
+                  {modalProducto.gruposExtra.map((grupo, grupoIndex) => (
+                    <View key={grupoIndex} style={styles.grupoExtraContainer}>
+                      <View style={styles.grupoExtraHeader}>
+                        <Text style={styles.grupoExtraNombre}>{grupo.grupoExtra.nombre}</Text>
+                        {grupo.obligatorio && (
+                          <POSBadge label="Obligatorio" variant="warning" size="small" />
+                        )}
+                      </View>
+                      
+                      {grupo.grupoExtra.descripcion && (
+                        <Text style={styles.grupoExtraDescripcion}>{grupo.grupoExtra.descripcion}</Text>
+                      )}
+
+                      {grupo.minimo > 0 || grupo.maximo > 0 ? (
+                        <Text style={styles.grupoExtraLimites}>
+                          {grupo.minimo > 0 && grupo.maximo > 0 
+                            ? `Selecciona entre ${grupo.minimo} y ${grupo.maximo}`
+                            : grupo.minimo > 0 
+                            ? `M\u00ednimo ${grupo.minimo}`
+                            : `M\u00e1ximo ${grupo.maximo}`
+                          }
+                        </Text>
+                      ) : null}
+
+                      <View style={styles.opcionesContainer}>
+                        {grupo.grupoExtra.opciones
+                          .filter(opcion => opcion.activo)
+                          .map((opcion) => {
+                            const cantidadSeleccionada = extrasSeleccionados.get(opcion.id) || 0;
+                            const subtotalExtra = opcion.precio * cantidadSeleccionada;
+
+                            return (
+                              <View key={opcion.id} style={styles.opcionExtraItem}>
+                                <View style={styles.opcionExtraInfo}>
+                                  <Text style={styles.opcionExtraNombre}>{opcion.nombre}</Text>
+                                  <Text style={styles.opcionExtraPrecio}>
+                                    ${opcion.precio.toFixed(2)} c/u
+                                  </Text>
+                                  {cantidadSeleccionada > 0 && (
+                                    <Text style={styles.opcionExtraSubtotal}>
+                                      Subtotal: ${subtotalExtra.toFixed(2)}
+                                    </Text>
+                                  )}
+                                </View>
+
+                                <View style={styles.opcionExtraControles}>
+                                  <TouchableOpacity
+                                    style={styles.extraButton}
+                                    onPress={() => actualizarCantidadExtra(opcion.id, -1)}
+                                  >
+                                    <POSIcon name="remove" size={18} color={COLORS.white} />
+                                  </TouchableOpacity>
+                                  
+                                  <Text style={styles.extraCantidad}>{cantidadSeleccionada}</Text>
+                                  
+                                  <TouchableOpacity
+                                    style={styles.extraButton}
+                                    onPress={() => actualizarCantidadExtra(opcion.id, 1)}
+                                  >
+                                    <POSIcon name="add" size={18} color={COLORS.white} />
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+                            );
+                          })}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Resumen de Costos */}
+              {(totalesModal.totalExtras > 0 || cantidadTemp > 1) && (
+                <View style={styles.resumenModalContainer}>
+                  <Text style={styles.resumenModalTitle}>Resumen de Costos</Text>
+                  
+                  <View style={styles.resumenModalRow}>
+                    <Text style={styles.resumenModalLabel}>Producto Base</Text>
+                    <Text style={styles.resumenModalValue}>
+                      ${totalesModal.precioBase.toFixed(2)}
+                    </Text>
+                  </View>
+
+                  {totalesModal.totalExtras > 0 && (
+                    <>
+                      <View style={styles.resumenModalRow}>
+                        <Text style={styles.resumenModalLabel}>Total Extras</Text>
+                        <Text style={[styles.resumenModalValue, { color: COLORS.info }]}>
+                          +${totalesModal.totalExtras.toFixed(2)}
+                        </Text>
+                      </View>
+
+                      {/* Detalle de extras */}
+                      <View style={styles.resumenExtrasDetalle}>
+                        {modalProducto?.gruposExtra?.map(grupo => 
+                          grupo.grupoExtra.opciones
+                            .filter(opcion => (extrasSeleccionados.get(opcion.id) || 0) > 0)
+                            .map(opcion => {
+                              const cantidad = extrasSeleccionados.get(opcion.id) || 0;
+                              return (
+                                <View key={opcion.id} style={styles.extraDetalleRow}>
+                                  <POSIcon name="add-circle-outline" size={14} color={COLORS.info} />
+                                  <Text style={styles.extraDetalleText}>
+                                    {opcion.nombre} x{cantidad}
+                                  </Text>
+                                  <Text style={styles.extraDetalleValue}>
+                                    ${(opcion.precio * cantidad).toFixed(2)}
+                                  </Text>
+                                </View>
+                              );
+                            })
+                        )}
+                      </View>
+                    </>
+                  )}
+
+                  {cantidadTemp > 1 && (
+                    <View style={styles.resumenModalRow}>
+                      <Text style={styles.resumenModalLabel}>Cantidad</Text>
+                      <Text style={styles.resumenModalValue}>x{cantidadTemp}</Text>
+                    </View>
+                  )}
+
+                  <View style={styles.resumenModalDivider} />
+
+                  <View style={styles.resumenModalRow}>
+                    <Text style={styles.resumenModalTotalLabel}>Total Producto</Text>
+                    <Text style={styles.resumenModalTotalValue}>
+                      ${totalesModal.precioFinal.toFixed(2)}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
               {/* Observaciones */}
               <View style={styles.modalSection}>
                 <Text style={styles.modalSectionTitle}>Observaciones</Text>
@@ -514,7 +707,7 @@ export default function CrearOrdenScreen() {
             <TouchableOpacity style={styles.agregarButton} onPress={agregarAlCarrito}>
               <POSIcon name="cart" size={24} color={COLORS.white} />
               <Text style={styles.agregarButtonText}>
-                Agregar ${(modalProducto?.precioVenta || 0 * cantidadTemp).toFixed(2)}
+                Agregar ${totalesModal.precioFinal.toFixed(2)}
               </Text>
             </TouchableOpacity>
           </POSCard>
@@ -963,5 +1156,158 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: COLORS.white,
+  },
+
+  // Grupos de Extras
+  grupoExtraContainer: {
+    marginBottom: 24,
+    padding: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  grupoExtraHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  grupoExtraNombre: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    flex: 1,
+  },
+  grupoExtraDescripcion: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+    lineHeight: 18,
+  },
+  grupoExtraLimites: {
+    fontSize: 12,
+    color: COLORS.info,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  opcionesContainer: {
+    gap: 12,
+  },
+  opcionExtraItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  opcionExtraInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  opcionExtraNombre: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  opcionExtraPrecio: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+  opcionExtraSubtotal: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.info,
+  },
+  opcionExtraControles: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  extraButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  extraCantidad: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    minWidth: 24,
+    textAlign: 'center',
+  },
+
+  // Resumen Modal
+  resumenModalContainer: {
+    marginTop: 16,
+    marginBottom: 16,
+    padding: 16,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+  },
+  resumenModalTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 12,
+  },
+  resumenModalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  resumenModalLabel: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  resumenModalValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  resumenExtrasDetalle: {
+    marginLeft: 12,
+    marginTop: 4,
+    marginBottom: 8,
+    gap: 6,
+  },
+  extraDetalleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  extraDetalleText: {
+    flex: 1,
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  extraDetalleValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.info,
+  },
+  resumenModalDivider: {
+    height: 1,
+    backgroundColor: COLORS.primary,
+    marginVertical: 8,
+  },
+  resumenModalTotalLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  resumenModalTotalValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.success,
   },
 });

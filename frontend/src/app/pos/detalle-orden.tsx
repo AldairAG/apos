@@ -7,7 +7,7 @@ import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } fr
 
 export default function DetalleOrdenScreen() {
   const { ordenId } = useLocalSearchParams<{ ordenId: string }>();
-  const { getOrdenesBySucursal } = usePos();
+  const { ordenes } = usePos();
   const [orden, setOrden] = useState<OrdenResponseDTO | null>(null);
   const [mostrarAcciones, setMostrarAcciones] = useState(false);
 
@@ -17,7 +17,6 @@ export default function DetalleOrdenScreen() {
 
   const loadOrden = async () => {
     try {
-      const ordenes = await getOrdenesBySucursal(1); // Usar sucursal actual
       const ordenEncontrada = ordenes.find((o: OrdenResponseDTO) => o.id === Number(ordenId));
       setOrden(ordenEncontrada || null);
     } catch (error) {
@@ -241,13 +240,13 @@ export default function DetalleOrdenScreen() {
                       <Text style={styles.productoCantidadText}>{detalle.cantidad}x</Text>
                     </View>
                     <View style={styles.productoTexto}>
-                      <Text style={styles.productoNombre}>Producto {detalle.productoId}</Text>
+                      <Text style={styles.productoNombre}>Producto {detalle.id}</Text>
                       <Text style={styles.productoPrecio}>
                         ${detalle.precioUnitario.toFixed(2)} c/u
                       </Text>
                     </View>
                   </View>
-                  <Text style={styles.productoTotal}>${detalle.subtotal.toFixed(2)}</Text>
+                  <Text style={styles.productoTotal}>${detalle.total.toFixed(2)}</Text>
                 </View>
 
                 {/* Extras */}
@@ -257,11 +256,11 @@ export default function DetalleOrdenScreen() {
                       <View key={extraIndex} style={styles.extraItem}>
                         <POSIcon name="add-circle-outline" size={14} color={COLORS.info} />
                         <Text style={styles.extraNombre}>
-                          {extra.opcionExtra?.nombre || `Extra ${extra.opcionExtra.id}`}
+                          {extra.nombreExtra || `Extra ${extra.id}`}
                         </Text>
                         <Text style={styles.extraCantidad}>x{extra.cantidad}</Text>
                         <Text style={styles.extraPrecio}>
-                          +${extra.subtotal.toFixed(2)}
+                          +${extra.total.toFixed(2)}
                         </Text>
                       </View>
                     ))}

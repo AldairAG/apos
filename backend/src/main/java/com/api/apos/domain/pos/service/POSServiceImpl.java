@@ -1,6 +1,7 @@
 package com.api.apos.domain.pos.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,11 @@ import com.api.apos.domain.pos.dto.MesaResponseDTO;
 import com.api.apos.domain.pos.dto.OrdenResponseDTO;
 import com.api.apos.domain.pos.dto.ProductosBySucursalResponse;
 import com.api.apos.domain.pos.dto.CrearOrdenDTO.DetalleOrdenDTO;
+import com.api.apos.domain.pos.dto.OrdenResponseDTO.DetalleOrdenExtraResponseDTO;
+import com.api.apos.domain.pos.dto.OrdenResponseDTO.DetalleOrdenResponseDTO;
+import com.api.apos.domain.pos.dto.ProductosBySucursalResponse.GrupoExtraResponse;
+import com.api.apos.domain.pos.dto.ProductosBySucursalResponse.OpcionExtraResponse;
+import com.api.apos.domain.pos.dto.ProductosBySucursalResponse.ProductoGrupoExtraResponse;
 import com.api.apos.domain.producto.Producto;
 import com.api.apos.domain.producto.ProductoService;
 import com.api.apos.domain.sucursal.Sucursal;
@@ -54,7 +60,35 @@ public class POSServiceImpl implements POSService {
                     res.setDisponible(producto.getDisponible());
                     res.setDestacado(producto.getDestacado());
                     res.setCategoria(producto.getCategoria());
-                    res.setGruposExtra(producto.getGruposExtra());
+                    res.setGruposExtra(producto.getGruposExtra().stream()
+                            .map(grupoExtra -> {
+                                ProductoGrupoExtraResponse grupoExtraResponse = ProductoGrupoExtraResponse.builder()
+                                        .id(grupoExtra.getId())
+                                        .minimo(grupoExtra.getMinimo())
+                                        .maximo(grupoExtra.getMaximo())
+                                        .obligatorio(grupoExtra.getObligatorio())
+                                        .grupoExtra(GrupoExtraResponse.builder()
+                                                .id(grupoExtra.getGrupoExtra().getId())
+                                                .nombre(grupoExtra.getGrupoExtra().getNombre())
+                                                .descripcion(grupoExtra.getGrupoExtra().getDescripcion())
+                                                .activo(grupoExtra.getGrupoExtra().getActivo())
+                                                .opciones(grupoExtra.getGrupoExtra().getOpciones().stream()
+                                                        .map(opcion -> {
+                                                            OpcionExtraResponse opcionResponse = OpcionExtraResponse
+                                                                    .builder()
+                                                                    .id(opcion.getId())
+                                                                    .nombre(opcion.getNombre())
+                                                                    .precio(opcion.getPrecio())
+                                                                    .activo(opcion.getActivo())
+                                                                    .build();
+                                                            return opcionResponse;
+                                                        })
+                                                        .toList())
+                                                .build())
+                                        .build();
+                                return grupoExtraResponse;
+                            })
+                            .toList());
                     return res;
                 })
                 .toList();
@@ -67,10 +101,6 @@ public class POSServiceImpl implements POSService {
 
         Sucursal sucursal = sucursalService.obtenerSucursalPorId(crearOrdenDTO.getSucursalId());
 
-        if (crearOrdenDTO.getMesaId() == null) {
-
-        }
-
         Orden orden = Orden.builder()
                 .tipo(crearOrdenDTO.getTipo())
                 .numeroPersonas(crearOrdenDTO.getNumeroPersonas())
@@ -79,14 +109,32 @@ public class POSServiceImpl implements POSService {
                 .telefonoCliente(crearOrdenDTO.getTelefonoCliente())
                 .subtotal(crearOrdenDTO.getSubtotal())
                 .descuento(crearOrdenDTO.getDescuento())
-                .total(crearOrdenDTO.getTotal())
+                .total(crearOrdenDTO.getSubtotal())
                 .sucursal(sucursal)
-                .detalles(mapDetalleOrdenDTOToEntity(crearOrdenDTO.getDetallesDTO()))
                 .build();
 
-        orden = ordenService.crearOrden(orden);
+        List<DetalleOrden> detalles = mapDetalleOrdenDTOToEntity(crearOrdenDTO.getDetallesDTO());
 
-        return mapOrdenToResponseDTO(orden);
+        for (DetalleOrden detalle : detalles) {
+
+            detalle.setOrden(orden);
+
+            for (DetalleOrdenExtra extra : detalle.getExtras()) {
+                extra.setDetalleOrden(detalle);
+            }
+        }
+
+        orden.setDetalles(detalles);
+
+        Orden ordenGuardada = ordenService.crearOrden(orden);
+
+        if (crearOrdenDTO.getMesaId() != null) {
+            mesaService.asignarOrdenAMesa(crearOrdenDTO.getMesaId(), ordenGuardada.getId());
+        }
+
+
+
+        return mapOrdenToResponseDTO(ordenGuardada);
     }
 
     private List<DetalleOrden> mapDetalleOrdenDTOToEntity(List<DetalleOrdenDTO> detallesDTO) {
@@ -143,9 +191,36 @@ public class POSServiceImpl implements POSService {
         ordenResponseDTO.setHoraEntrega(orden.getHoraEntrega());
         ordenResponseDTO.setCreatedAt(orden.getCreatedAt());
         ordenResponseDTO.setMesa(orden.getMesa());
-        ordenResponseDTO.setDetalles(orden.getDetalles());
+        ordenResponseDTO.setDetalles(orden.getDetalles().stream()
+                .map(this::mapDetalleOrdenToResponseDTO)
+                .toList());
 
         return ordenResponseDTO;
+    }
+
+    private DetalleOrdenResponseDTO mapDetalleOrdenToResponseDTO(DetalleOrden detalleOrden) {
+        DetalleOrdenResponseDTO detalleResponseDTO = new DetalleOrdenResponseDTO();
+        detalleResponseDTO.setId(detalleOrden.getId());
+        detalleResponseDTO.setNombreProducto(detalleOrden.getProducto().getNombre());
+        detalleResponseDTO.setPrecioUnitario(detalleOrden.getPrecioUnitario());
+        detalleResponseDTO.setCantidad(detalleOrden.getCantidad());
+        detalleResponseDTO.setTotal(detalleOrden.getSubtotal());
+
+        List<DetalleOrdenExtraResponseDTO> extras = detalleOrden.getExtras().stream()
+                .map(extra -> {
+                    DetalleOrdenExtraResponseDTO extraResponseDTO = new DetalleOrdenExtraResponseDTO();
+                    extraResponseDTO.setId(extra.getId());
+                    extraResponseDTO.setNombreExtra(extra.getOpcionExtra().getNombre());
+                    extraResponseDTO.setPrecioExtra(extra.getOpcionExtra().getPrecio());
+                    extraResponseDTO.setCantidad(extra.getCantidad());
+                    extraResponseDTO.setTotal(extra.getSubtotal());
+                    return extraResponseDTO;
+                })
+                .toList();
+
+        detalleResponseDTO.setExtras(extras);
+
+        return detalleResponseDTO;
     }
 
     @Override
@@ -171,13 +246,18 @@ public class POSServiceImpl implements POSService {
         List<MesaResponseDTO> response = mesas.stream()
                 .map(mesa -> {
 
-                    Orden ordenActual = ordenService.obtenerOrdenPorId(mesa.getOrdenActual())
-                            .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
-
                     MesaResponseDTO res = new MesaResponseDTO();
                     res.setId(mesa.getId());
                     res.setNombre(mesa.getNombre());
-                    res.setOrdenActualDTO(mapOrdenToResponseDTO(ordenActual));
+                    res.setEstado(mesa.getEstado());
+                    res.setActiva(mesa.getActiva());
+
+                    Optional<Orden> ordenActual = ordenService.obtenerOrdenPorId(mesa.getOrdenActual());
+                    if (ordenActual.isPresent()) {
+                        res.setOrdenActualDTO(mapOrdenToResponseDTO(ordenActual.get()));
+                    } else {
+                        res.setOrdenActualDTO(null);
+                    }
                     return res;
                 })
                 .toList();

@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import com.api.apos.domain.material.Material;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -44,5 +45,6 @@ public class OpcionExtra {
     
     @ManyToOne
     @JoinColumn(name = "material_id")
+    @JsonIgnore
     private Material material;
 }

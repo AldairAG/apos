@@ -13,4 +13,6 @@ public interface MesaService {
     Mesa obtenerMesaPorId(Long id);
     List<Mesa> obtenerMesasPorSucursal(Long idSucursal);
     Mesa cambiarEstadoMesa(Long id, EstadoMesa nuevoEstado);
+    Mesa asignarOrdenAMesa(Long idMesa, Long idOrden);
+    Mesa liberarMesa(Long idMesa);
 }

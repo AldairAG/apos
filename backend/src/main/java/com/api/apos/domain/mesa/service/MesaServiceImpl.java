@@ -106,5 +106,21 @@ public class MesaServiceImpl implements MesaService {
         mesa.setEstado(nuevoEstado);
         return mesaRepository.save(mesa);
     }
+
+    @Override
+    public Mesa asignarOrdenAMesa(Long idMesa, Long idOrden) {
+        Mesa mesa = obtenerMesaPorId(idMesa);
+        mesa.setOrdenActual(idOrden);
+        mesa.setEstado(EstadoMesa.OCUPADA);
+        return mesaRepository.save(mesa);
+    }
+
+    @Override
+    public Mesa liberarMesa(Long idMesa) {
+        Mesa mesa = obtenerMesaPorId(idMesa);
+        mesa.setOrdenActual(null);
+        mesa.setEstado(EstadoMesa.LIBRE);
+        return mesaRepository.save(mesa);
+    }
     
 }

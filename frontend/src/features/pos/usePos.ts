@@ -8,7 +8,7 @@ import { useSucursal } from "../sucursal/useSucursal";
 
 const usePos = () => {
     const dispatch = useDispatch<AppDispatch>();
-    const { loading, error, productos, mesas, selectedMesa } = useSelector((state: RootState) => state.pos);
+    const { loading, error, productos, mesas, selectedMesa, ordenes } = useSelector((state: RootState) => state.pos);
     const { sucursalActual } = useSucursal();
 
     const cargarProductos = useCallback(() => {
@@ -74,6 +74,7 @@ const usePos = () => {
         loading,
         error,
         productos,
+        ordenes,
         crearOrden: createOrden,
         getOrdenesBySucursal: fetchOrdenesBySucursal,
         getProductosBySucursal: fetchProductosBySucursal,

@@ -10,23 +10,12 @@ export default function HomeScreen() {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const animacionMenu = useState(new Animated.Value(0))[0];
   
-  const { mesas, cargarMesas, cargarOrdenes, getOrdenesBySucursal } = usePos();
-  const [ordenes, setOrdenes] = useState<any[]>([]);
+  const { mesas, cargarMesas, cargarOrdenes, ordenes } = usePos();
 
   useEffect(() => {
     cargarMesas();
     cargarOrdenes();
-    loadOrdenes();
   }, []);
-
-  const loadOrdenes = async () => {
-    try {
-      const data = await getOrdenesBySucursal(1); // Usar sucursal actual
-      setOrdenes(data || []);
-    } catch (error) {
-      console.error('Error al cargar órdenes:', error);
-    }
-  };
 
   // Calcular estadísticas desde datos reales
   const mesasLibres = mesas.filter((m: any) => m.estado === EstadoMesa.LIBRE).length;
@@ -239,7 +228,7 @@ export default function HomeScreen() {
                     {orden.mesa && (
                       <View style={styles.actividadMesa}>
                         <POSIcon name="restaurant" size={14} color={COLORS.textSecondary} />
-                        <Text style={styles.actividadMesaText}>Mesa {orden.mesa.numero || orden.mesa.nombre}</Text>
+                        <Text style={styles.actividadMesaText}>Mesa {orden?.mesa?.numero || orden?.mesa?.nombre}</Text>
                       </View>
                     )}
                     {orden.tipo === 'PARA_LLEVAR' && (
