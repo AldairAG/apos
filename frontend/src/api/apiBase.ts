@@ -75,7 +75,8 @@ const storage = new WebSessionStorageWrapper();
 
 // Configuración base de la API
 //const API_BASE_URL = 'http://localhost:8080/api';
-const API_BASE_URL = 'http://192.168.1.4:8080/api';
+//const API_BASE_URL = 'http://192.168.1.4:8080/api';
+const API_BASE_URL = 'http://192.168.1.85:8080/api';
 //const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 // Rutas públicas que no requieren autenticación

@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/tool
 import { loadFromSessionStorage, removeFromSessionStorage, saveToSessionStorage } from './auth.helpers';
 import { login, registro } from './auth.thunk';
 
+
 interface AuthState {
     token: string | null;
     id: number | null | string;
@@ -35,15 +36,9 @@ const authSlice = createSlice({
             state.token = null;
             state.isAuthenticated = false;
             state.error = null;
-            // Limpiar sessionStorage
-            removeFromSessionStorage('auth_user');
-            removeFromSessionStorage('auth_token');
-            removeFromSessionStorage('auth_id');
         },
         setToken(state, action: PayloadAction<string>) {
             state.token = action.payload;
-            // Guardar en sessionStorage
-            saveToSessionStorage('auth_token', action.payload.toString());
         },
     },
     extraReducers: (builder) => {
@@ -56,11 +51,8 @@ const authSlice = createSlice({
                 state.loading = false;
                 state.token = action.payload.data.token;
                 state.isAuthenticated = true;
+                state.id = action.payload.data.id;
                 state.error = null;
-                // Guardar token y usuario en sessionStorage
-                saveToSessionStorage('auth_token', action.payload.data.token);
-                saveToSessionStorage('auth_user', action.payload.data.user);
-                saveToSessionStorage('auth_id', action.payload.data.user.id);
             })
             .addCase(registro.rejected, (state, action) => {
                 state.loading = false;
@@ -75,10 +67,7 @@ const authSlice = createSlice({
                 state.token = action.payload.data.token;
                 state.isAuthenticated = true;
                 state.error = null;
-                // Guardar token y usuario en sessionStorage
-                saveToSessionStorage('auth_token', action.payload.data.token);
-                saveToSessionStorage('auth_user', action.payload.data.user);
-                saveToSessionStorage('auth_id', action.payload.data.id);
+                state.id = action.payload.data.id;
             })
             .addCase(login.rejected, (state, action) => {
                 state.loading = false;

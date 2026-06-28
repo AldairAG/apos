@@ -61,3 +61,4 @@ export const obtenerRolDesdeToken = (token: string): string | null => {
 		return null;
 	}
 };
+

@@ -20,7 +20,7 @@ const login = async (loginRequest: AuthRequest): Promise<ApiResponse<JwtResponse
     // Guardar token automáticamente
     if (response.success && response.data.token) {
         await apiBase.setAuthToken(response.data.token);
-        await AsyncStorage.setItem('usuario', JSON.stringify(response.data.user));
+        //await AsyncStorage.setItem('usuario', JSON.stringify(response.data.user));
     }
     
     return response;

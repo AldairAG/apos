@@ -1,14 +1,10 @@
 import { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/store';
+import { AppDispatch, persistor, RootState } from '@/store';
 import { login, registro } from './auth.thunk';
 import { logout as logoutAction } from './auth.slice';
-import { Platform } from 'react-native';
-
-import type { AuthRequest, JwtPayload, RegistroRequestDTO } from './auth.types';
-import { loadFromSessionStorage, obtenerRutaSegunRol } from './auth.helpers';
-import { router } from 'expo-router';
-import { ROUTES } from '@/routes/routes';
+import type { AuthRequest, RegistroRequestDTO } from './auth.types';
+import {obtenerRutaSegunRol } from './auth.helpers';
 
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -43,24 +39,15 @@ export const useAuth = () => {
   );
 
   const verificarInicioSesion = useCallback(() => {
-    if (Platform.OS === 'web') {
-      //loadFromSessionStorage('auth_user');
-      const token = loadFromSessionStorage('auth_token');
-      if (token) {
-        return true;
-      }
-    } else {
-      // Android e iOS
-      //return sessionStorage.getItem('token');
-    }
-
-    return false;
-  }, []);
+    const isLoggedIn = !!token;
+    return isLoggedIn;
+  }, [token]);
 
 
   // Logout
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback(async () => {
     dispatch(logoutAction());
+      await persistor.purge();
   }, [dispatch]);
 
   return {

@@ -8,15 +8,12 @@ import { ROUTES, Rol } from '@/routes/routes';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  Dimensions,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-
-const { width } = Dimensions.get('window');
 
 interface Modulo {
   titulo: string;
@@ -84,7 +81,7 @@ const REPORTES: Modulo[] = [
 export default function DashboardScreen() {
   const router = useRouter();
   const { logout } = useAuth();
-  const { menu, rol } = useRoleBasedNavigation();
+  const { rol } = useRoleBasedNavigation();
   const { sucursalActual, recargarSucursales } = useSucursal();
   const [mostrarSelectorSucursal, setMostrarSelectorSucursal] = useState(false);
   const [moduloDestino, setModuloDestino] = useState<string | null>(null);

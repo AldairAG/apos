@@ -13,13 +13,6 @@ export const useSucursal = () => {
 
   const idUsuario = useSelector((state: RootState) => state.auth.id);
 
-  // Cargar sucursales al montar
-  useEffect(() => {
-    if (idUsuario) {
-      dispatch(fetchSucursales(Number(idUsuario)));
-    }
-  }, [dispatch]);
-
   // Seleccionar sucursal
   const seleccionarSucursal = useCallback(
     (sucursal: Sucursal) => {
