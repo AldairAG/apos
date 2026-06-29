@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import com.api.apos.domain.usuario.Usuario;
 import com.api.apos.domain.usuario.UsuarioRepository;
+import com.api.apos.domain.usuario.dto.ColaboradorDTO;
 import com.api.apos.dto.response.JwtResponse;
 import com.api.apos.enums.Rol;
 import com.api.apos.helpers.JwtHelper;
@@ -96,5 +97,69 @@ public class UsuarioServiceImpl implements UsuarioService {
                         throw new RuntimeException("No hay un usuario autenticado");
                 }
                 return (Usuario) authentication.getPrincipal();
+        }
+
+        @Override
+        public ColaboradorDTO agregarColaborador(ColaboradorDTO colaboradorDTO) {
+                // Validar si el usuario ya existe
+                if (usuarioRepository.findByEmail(colaboradorDTO.getEmail()).isPresent()) {
+                        throw new IllegalArgumentException("El email ya está registrado");
+                }
+
+                // Crear nuevo colaborador
+                Usuario nuevoColaborador = Usuario.builder()
+                                .nombre(colaboradorDTO.getNombre())
+                                .email(colaboradorDTO.getEmail())
+                                .password(passwordEncoder.encode(colaboradorDTO.getPassword()))
+                                .telefono(colaboradorDTO.getTelefono())
+                                .activo(true)
+                                .rol(colaboradorDTO.getRol()) // Asignar rol COLABORADOR
+                                .fechaRegistro(LocalDateTime.now())
+                                .createdAt(LocalDateTime.now())
+                                .build();
+
+                // Guardar colaborador
+                return mapUsuarioToColaboradorDTO(usuarioRepository.save(nuevoColaborador));
+        }
+
+        @Override
+        public void eliminarColaborador(Long id) {
+                Usuario colaborador = usuarioRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Colaborador no encontrado"));
+                usuarioRepository.delete(colaborador);
+        }
+
+        @Override
+        public Usuario obtenerColaboradorPorId(Long id) {
+                return usuarioRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Colaborador no encontrado"));
+        }
+
+        @Override
+        public Usuario actualizarColaborador(Long id, ColaboradorDTO colaboradorDTO) {
+                Usuario colaboradorExistente = usuarioRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Colaborador no encontrado"));
+
+                // Actualizar campos del colaborador
+                colaboradorExistente.setNombre(colaboradorDTO.getNombre());
+                colaboradorExistente.setEmail(colaboradorDTO.getEmail());
+                if (colaboradorDTO.getPassword() != null && !colaboradorDTO.getPassword().isEmpty()) {
+                        colaboradorExistente.setPassword(passwordEncoder.encode(colaboradorDTO.getPassword()));
+                }
+                colaboradorExistente.setTelefono(colaboradorDTO.getTelefono());
+                colaboradorExistente.setRol(colaboradorDTO.getRol());
+                colaboradorExistente.setUpdatedAt(LocalDateTime.now());
+
+                return usuarioRepository.save(colaboradorExistente);
+        }
+
+        private ColaboradorDTO mapUsuarioToColaboradorDTO(Usuario usuario) {
+                return ColaboradorDTO.builder()
+                                .id(usuario.getId())
+                                .nombre(usuario.getNombre())
+                                .email(usuario.getEmail())
+                                .telefono(usuario.getTelefono())
+                                .rol(usuario.getRol())
+                                .build();
         }
 }

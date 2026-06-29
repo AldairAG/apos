@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.api.apos.domain.sucursal.service.SucursalService;
 import com.api.apos.domain.usuario.Usuario;
+import com.api.apos.enums.Rol;
 import com.api.apos.helpers.ApiResponseWrapper;
 
 @RestController
@@ -48,6 +49,15 @@ public class SucursalController {
 	public ResponseEntity<ApiResponseWrapper<List<Sucursal>>> obtenerSucursalesPorUsuario(
 			@PathVariable Long idUsuario) {
 		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+			Rol rol = ((Usuario) authentication.getPrincipal()).getRol();
+
+			if(rol != Rol.ADMINISTRADOR) {
+				List<Sucursal> sucursalesColaborador = sucursalService.obtenerSucursalesParaColaborador(((Usuario) authentication.getPrincipal()).getId());
+				return ResponseEntity.status(403).body(new ApiResponseWrapper<>(false, sucursalesColaborador, "Sucursales de colaborador obtenidas"));
+			}
+
 			List<Sucursal> sucursales = sucursalService.obtenerSucursalesPorIdUsuario(idUsuario);
 			return ResponseEntity.ok(new ApiResponseWrapper<>(true, sucursales, null));
 		} catch (IllegalArgumentException e) {
@@ -82,4 +92,5 @@ public class SucursalController {
 			return ResponseEntity.badRequest().body(new ApiResponseWrapper<>(false, null, e.getMessage()));
 		}
 	}
+
 }

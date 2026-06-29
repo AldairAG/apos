@@ -10,4 +10,5 @@ public interface SucursalService {
     List<Sucursal> obtenerSucursalesPorIdUsuario(Long idUsuario);
     Sucursal actualizarSucursal(Sucursal sucursal);
     void eliminarSucursal(Long idSucursal);
+    List<Sucursal> obtenerSucursalesParaColaborador(Long colaboradorId);
 }

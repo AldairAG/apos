@@ -1,5 +1,7 @@
 package com.api.apos.domain.usuario;
 
+import com.api.apos.domain.categoria.entity.Categoria;
+import com.api.apos.domain.extra.entity.GrupoExtra;
 import com.api.apos.domain.material.Material;
 import com.api.apos.domain.receta.entity.Receta;
 import com.api.apos.domain.sucursal.Sucursal;
@@ -41,6 +43,8 @@ public class Usuario implements UserDetails {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    private Long sucursalId;
+
     @Enumerated(EnumType.STRING)
     private Rol rol;
 
@@ -55,10 +59,10 @@ public class Usuario implements UserDetails {
     private List<Sucursal> sucursales;
     
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<com.api.apos.domain.categoria.entity.Categoria> categorias;
+    private List<Categoria> categorias;
     
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<com.api.apos.domain.extra.entity.GrupoExtra> gruposExtra;
+    private List<GrupoExtra> gruposExtra;
 
 
     

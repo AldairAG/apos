@@ -10,17 +10,15 @@ import com.api.apos.domain.sucursal.SucursalRepository;
 import com.api.apos.domain.usuario.Usuario;
 import com.api.apos.domain.usuario.UsuarioRepository;
 
+import lombok.AllArgsConstructor;
+
 @Service
+@AllArgsConstructor
 public class SucursalServiceImpl implements SucursalService {
 
     private final SucursalRepository sucursalRepository;
 
     private final UsuarioRepository usuarioRepository;
-
-    public SucursalServiceImpl(SucursalRepository sucursalRepository, UsuarioRepository usuarioRepository) {
-        this.sucursalRepository = sucursalRepository;
-        this.usuarioRepository = usuarioRepository;
-    }
 
     @Override
     public Sucursal crearSucursal(Sucursal sucursal, Long idUsuario) {
@@ -106,5 +104,20 @@ public class SucursalServiceImpl implements SucursalService {
         return sucursalRepository.findById(idSucursal)
                 .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
     }
+
+    @Override
+    public List<Sucursal> obtenerSucursalesParaColaborador(Long colaboradorId) {
+        if (colaboradorId == null) {
+            throw new IllegalArgumentException("El id del colaborador es requerido");
+        }
+
+        Usuario colaborador = usuarioRepository.findById(colaboradorId)
+                .orElseThrow(() -> new RuntimeException("Colaborador no encontrado"));
+
+        return sucursalRepository.findByUsuarioId(colaborador.getSucursalId());
+    }
+
+
+
 
 }
