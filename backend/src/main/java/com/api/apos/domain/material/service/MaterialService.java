@@ -4,9 +4,10 @@ import java.util.List;
 import java.util.Optional;
 
 import com.api.apos.domain.material.Material;
+import com.api.apos.domain.material.dto.MaterialDTO;
 
 public interface MaterialService {
-    Material createMaterial(Material material);
+    MaterialDTO createMaterial(Material material);
     Material actualizarMaterial(Long id, Material material);
     void eliminarMaterial(Long id);
     Optional<Material> obtenerMaterialPorId(Long id);

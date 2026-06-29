@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.api.apos.domain.material.Material;
 import com.api.apos.domain.material.MaterialRepository;
+import com.api.apos.domain.material.dto.MaterialDTO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,14 +30,15 @@ public class MaterialServiceImpl implements MaterialService {
      * @return Material creado con timestamp
      */
     @Override
-    public Material createMaterial(Material material) {
+    public MaterialDTO createMaterial(Material material) {
         material.setCreatedAt(LocalDateTime.now());
         material.setUpdatedAt(LocalDateTime.now());
         if (material.getActivo() == null) {
             material.setActivo(true);
         }
-        return materialRepository.save(material);
-    }
+        materialRepository.save(material);
+        return mapMaterialToDTO(material);
+    } 
 
     /**
      * Actualizar un material existente
@@ -144,5 +146,24 @@ public class MaterialServiceImpl implements MaterialService {
                 .filter(m -> m.getNombre().toLowerCase().contains(termino.toLowerCase()) ||
                            (m.getDescripcion() != null && m.getDescripcion().toLowerCase().contains(termino.toLowerCase())))
                 .toList();
+    }
+
+    private MaterialDTO mapMaterialToDTO(Material material) {
+        return MaterialDTO.builder()
+                .id(material.getId())
+                .nombre(material.getNombre())
+                .descripcion(material.getDescripcion())
+                .proveedor(material.getProveedor())
+                .categoriaInventario(material.getCategoriaInventario())
+                .unidadMedida(material.getUnidadMedida())
+                .costoUnitario(material.getCostoUnitario())
+                .activo(material.getActivo())
+                .perecedero(material.getPerecedero())
+                .diasVencimiento(material.getDiasVencimiento())
+                .createdAt(material.getCreatedAt())
+                .updatedAt(material.getUpdatedAt())
+                .createdBy(material.getCreatedBy())
+                .updatedBy(material.getUpdatedBy())
+                .build();
     }
 }

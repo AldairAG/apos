@@ -43,6 +43,5 @@ public class ProductoGrupoExtra {
     
     @ManyToOne
     @JoinColumn(name = "grupo_extra_id")
-    @JsonBackReference
     private GrupoExtra grupoExtra;
 }

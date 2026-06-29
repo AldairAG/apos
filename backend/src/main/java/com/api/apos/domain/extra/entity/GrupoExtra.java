@@ -48,11 +48,9 @@ public class GrupoExtra {
     private Usuario usuario;
     
     @OneToMany(mappedBy = "grupoExtra", cascade = CascadeType.ALL)
-    @JsonManagedReference
     private List<OpcionExtra> opciones;
     
     @JsonIgnore
     @OneToMany(mappedBy = "grupoExtra", cascade = CascadeType.ALL)
-    @JsonManagedReference
     private List<ProductoGrupoExtra> productosGrupo;
 }

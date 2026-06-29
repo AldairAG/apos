@@ -40,7 +40,6 @@ public class OpcionExtra {
     
     @ManyToOne
     @JoinColumn(name = "grupo_extra_id")
-    @JsonBackReference
     private GrupoExtra grupoExtra;
     
     @ManyToOne

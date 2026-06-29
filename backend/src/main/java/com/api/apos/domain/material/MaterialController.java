@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.api.apos.domain.material.dto.MaterialDTO;
 import com.api.apos.domain.material.service.MaterialService;
 import com.api.apos.domain.usuario.Usuario;
 import com.api.apos.helpers.ApiResponseWrapper;
@@ -38,9 +39,9 @@ public class MaterialController {
      * POST /api/materiales
      */
     @PostMapping
-    public ResponseEntity<ApiResponseWrapper<Material>> crearMaterial(@RequestBody Material material) {
+    public ResponseEntity<ApiResponseWrapper<MaterialDTO>> crearMaterial(@RequestBody Material material) {
         try {
-            Material nuevoMaterial = materialService.createMaterial(material);
+            MaterialDTO nuevoMaterial = materialService.createMaterial(material);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new ApiResponseWrapper<>(true, nuevoMaterial, "Material creado exitosamente"));
         } catch (Exception e) {
