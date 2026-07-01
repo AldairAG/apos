@@ -1,12 +1,14 @@
-import { combineReducers, configureStore } from '@reduxjs/toolkit';
-import { apiBase } from '../api/apiBase';
-import {
-    persistStore,
-    persistReducer,
-} from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
+import {
+    persistReducer,
+    persistStore,
+} from 'redux-persist';
+import { apiBase } from '../api/apiBase';
 //slices
 import materialesReducer from '../features/inventario/materiales/materiales.slice';
+import mesaReducer from '../features/mesas/mesa.slice';
+import posReducer from '../features/pos/pos.slice';
 import categoriaReducer from '../features/producto/categoria/categoria.slice';
 import grupoExtraReducer from '../features/producto/grupoExtra/grupoExtra.slice';
 import productoReducer from '../features/producto/producto/producto.slice';
@@ -14,8 +16,6 @@ import recetaReducer from '../features/producto/receta/receta.slice';
 import sucursalReducer from '../features/sucursal/sucursal.slice';
 import authReducer from '../features/usuario/auth/auth.slice';
 import usuarioReducer from '../features/usuario/usuario/usuario.slice';
-import mesaReducer from '../features/mesas/mesa.slice';
-import posReducer from '../features/pos/pos.slice';
 
 const persistConfig = {
     key: 'root',
@@ -48,6 +48,8 @@ export const store = configureStore({
             serializableCheck: false,
         }),
 });
+
+apiBase.setStore(store);
 
 export const persistor = persistStore(store);
 

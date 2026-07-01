@@ -23,7 +23,7 @@ export default function RecetasScreen() {
     instrucciones: '',
   });
 
-  const { cargarRecetas, seleccionarReceta, crearReceta, limpiarRecetas, loading, recetas, recetaSeleccionada } = useRecetas();
+  const { cargarRecetas, seleccionarReceta, crearReceta, actualizarReceta, eliminarReceta, limpiarRecetas, loading, recetas, recetaSeleccionada } = useRecetas();
   const { materiales, cargarMateriales } = useMateriales();
 
   useEffect(() => {
@@ -77,13 +77,13 @@ export default function RecetasScreen() {
     receta.codigo.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const handleCrearReceta = () => {
+  const handleCrearReceta = async () => {
     if (!formData.nombre || !formData.codigo) {
       Alert.alert('Error', 'Por favor completa los campos requeridos');
       return;
     }
 
-    const nuevaReceta: CrearRecetaDTO = {
+    const payload: CrearRecetaDTO = {
       nombre: formData.nombre,
       descripcion: formData.descripcion,
       instrucciones: formData.instrucciones,
@@ -94,8 +94,30 @@ export default function RecetasScreen() {
       activa: true,
       detalles: materialesReceta,
     };
-    crearReceta(nuevaReceta);
-    handleCerrarModal();
+
+    let result;
+    if (recetaSeleccionada) {
+      result = await actualizarReceta(recetaSeleccionada.id, {
+        ...recetaSeleccionada,
+        ...payload,
+        id: recetaSeleccionada.id,
+        codigo: formData.codigo,
+        fechaCreacion: recetaSeleccionada.fechaCreacion,
+        createdAt: recetaSeleccionada.createdAt,
+        updatedAt: new Date(),
+        createdBy: recetaSeleccionada.createdBy,
+        updatedBy: recetaSeleccionada.updatedBy,
+      });
+    } else {
+      result = await crearReceta(payload);
+    }
+
+    if (result?.success) {
+      Alert.alert('Éxito', recetaSeleccionada ? 'Receta actualizada correctamente' : 'Receta creada correctamente');
+      handleCerrarModal();
+    } else {
+      Alert.alert('Error', result?.error || 'No se pudo guardar la receta');
+    }
   };
 
   const handleEditar = (receta: Receta) => {
@@ -114,7 +136,18 @@ export default function RecetasScreen() {
       `¿Estás seguro de eliminar "${receta.nombre}"?`,
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar', style: 'destructive', onPress: () => console.log('Eliminar receta:', receta.id) }
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            const result = await eliminarReceta(receta.id);
+            if (result.success) {
+              Alert.alert('Éxito', 'Receta eliminada correctamente');
+            } else {
+              Alert.alert('Error', result.error || 'No se pudo eliminar la receta');
+            }
+          },
+        },
       ]
     );
   };

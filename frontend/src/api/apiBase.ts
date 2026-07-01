@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import type { ApiResponse, RequestData, UploadProgressEvent } from './apiTypes';
 
@@ -74,8 +75,8 @@ class WebSessionStorageWrapper {
 const storage = new WebSessionStorageWrapper();
 
 // Configuración base de la API
-//const API_BASE_URL = 'http://localhost:8080/api';
-const API_BASE_URL = 'http://192.168.1.4:8080/api';
+const API_BASE_URL = 'http://localhost:8080/api';
+//const API_BASE_URL = 'http://192.168.1.4:8080/api';
 //const API_BASE_URL = 'http://192.168.1.85:8080/api';
 //const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
@@ -127,9 +128,9 @@ class ApiBase {
                         // 1. Prioridad: obtener token desde Redux
                         let token = this.getTokenFromRedux();
 
-                        // 2. Fallback: obtener desde storage si Redux no está disponible
+                        // 2. Fallback: obtener desde storage o AsyncStorage cuando Redux aún no está listo
                         if (!token) {
-                            token = JSON.parse(await storage.getItem('auth_token') || 'null');
+                            token = await this.getTokenFromStorage();
                         }
 
                         if (token) {
@@ -192,6 +193,26 @@ class ApiBase {
             return state?.auth?.token || null;
         } catch (error) {
             console.warn('No se pudo obtener token desde Redux:', error);
+            return null;
+        }
+    }
+
+    private async getTokenFromStorage(): Promise<string | null> {
+        try {
+            const tokenFromStorage = await storage.getItem('auth_token');
+            if (tokenFromStorage) {
+                return tokenFromStorage;
+            }
+
+            const tokenFromAsyncStorage = await AsyncStorage.getItem('auth_token');
+            if (tokenFromAsyncStorage) {
+                await storage.setItem('auth_token', tokenFromAsyncStorage);
+                return tokenFromAsyncStorage;
+            }
+
+            return null;
+        } catch (error) {
+            console.warn('No se pudo obtener token desde el almacenamiento:', error);
             return null;
         }
     }
@@ -321,8 +342,10 @@ class ApiBase {
     // Actualizar token manualmente
     async setAuthToken(token: string): Promise<void> {
         try {
-            await storage.setItem('auth_token', token);
-            this.axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            const normalizedToken = token.startsWith('Bearer ') ? token.replace(/^Bearer\s+/i, '') : token;
+            await storage.setItem('auth_token', normalizedToken);
+            await AsyncStorage.setItem('auth_token', normalizedToken);
+            this.axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${normalizedToken}`;
         } catch (error) {
             console.error('Error al establecer el token:', error);
         }
@@ -332,6 +355,7 @@ class ApiBase {
     async clearAuthToken(): Promise<void> {
         try {
             await storage.removeItem('auth_token');
+            await AsyncStorage.removeItem('auth_token');
             delete this.axiosInstance.defaults.headers.common['Authorization'];
         } catch (error) {
             console.error('Error al limpiar el token:', error);
@@ -421,7 +445,7 @@ export const apiBase = new ApiBase();
 
 // Exportar la clase para casos donde se necesite crear múltiples instancias
 // Exportar la clase para casos donde se necesite crear múltiples instancias
-export { ApiBase, API_BASE_URL };
+export { API_BASE_URL, ApiBase };
 
 // Helper functions para facilitar el uso
 export const api = {

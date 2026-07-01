@@ -1,3 +1,4 @@
+import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
 import { Material } from '@/features/inventario/materiales/materiales.types';
 import { useMateriales } from '@/features/inventario/materiales/useMateriales';
 import { useSucursal } from '@/features/sucursal/useSucursal';
@@ -34,7 +35,6 @@ export default function MaterialesScreen() {
   const [materialSeleccionado, setMaterialSeleccionado] = useState<Material | null>(null);
   const [mostrarUnidades, setMostrarUnidades] = useState(false);
 
-  // Estado del formulario
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
@@ -46,12 +46,10 @@ export default function MaterialesScreen() {
     diasVencimiento: '',
   });
 
-  // Cargar materiales al montar el componente
   useEffect(() => {
     cargarMateriales();
   }, [sucursalActual]);
 
-  // Mostrar errores
   useEffect(() => {
     if (error) {
       Alert.alert('Error', error, [{ text: 'OK', onPress: limpiarError }]);
@@ -113,7 +111,6 @@ export default function MaterialesScreen() {
   };
 
   const handleGuardar = async () => {
-    // Validaciones
     if (!formData.nombre.trim()) {
       Alert.alert('Error', 'El nombre es obligatorio');
       return;
@@ -137,10 +134,8 @@ export default function MaterialesScreen() {
 
     let result;
     if (materialSeleccionado) {
-      // Actualizar
       result = await actualizarMaterial(materialSeleccionado.id, data);
     } else {
-      // Crear
       result = await crearMaterial(data);
     }
 
@@ -172,14 +167,12 @@ export default function MaterialesScreen() {
 
   const renderMaterialItem = ({ item }: { item: Material }) => {
     return (
-      <View style={styles.materialCard}>
+      <POSCard style={styles.materialCard} variant="elevated">
         <View style={styles.materialInfo}>
           <View style={styles.materialHeader}>
             <Text style={styles.materialNombre}>{item.nombre}</Text>
             {item.perecedero && (
-              <View style={styles.alertaBadge}>
-                <Text style={styles.alertaTexto}>⏰ Perecedero</Text>
-              </View>
+              <POSBadge label="Perecedero" variant="warning" size="small" />
             )}
           </View>
           <Text style={styles.materialDescripcion}>
@@ -210,17 +203,19 @@ export default function MaterialesScreen() {
           <TouchableOpacity
             style={[styles.botonAccion, styles.botonEditar]}
             onPress={() => handleEditar(item)}
+            activeOpacity={0.8}
           >
-            <Text style={styles.iconoAccion}>✏️</Text>
+            <POSIcon name="create" size={20} color={COLORS.info} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.botonAccion, styles.botonEliminar]}
             onPress={() => handleEliminar(item)}
+            activeOpacity={0.8}
           >
-            <Text style={styles.iconoAccion}>🗑️</Text>
+            <POSIcon name="trash" size={20} color={COLORS.danger} />
           </TouchableOpacity>
         </View>
-      </View>
+      </POSCard>
     );
   };
 
@@ -228,25 +223,30 @@ export default function MaterialesScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitulo}>Materiales</Text>
-        <Text style={styles.headerSubtitulo}>
-          {materialesFiltrados.length} materiales encontrados
+        <View style={styles.headerTop}>
+          <Text style={styles.title}>Materiales</Text>
+          <POSBadge label={`${materialesFiltrados.length}`} variant="info" />
+        </View>
+        <Text style={styles.subtitle}>
+          {materialesFiltrados.length === 1
+            ? '1 material encontrado'
+            : `${materialesFiltrados.length} materiales encontrados`}
         </Text>
       </View>
 
       {/* Buscador */}
       <View style={styles.busquedaContainer}>
-        <Text style={styles.busquedaIcono}>🔍</Text>
+        <POSIcon name="search" size={20} color={COLORS.textSecondary} />
         <TextInput
           style={styles.busquedaInput}
           placeholder="Buscar material..."
-          placeholderTextColor="#999"
+          placeholderTextColor={COLORS.textSecondary}
           value={busqueda}
           onChangeText={setBusqueda}
         />
         {busqueda.length > 0 && (
           <TouchableOpacity onPress={() => setBusqueda('')}>
-            <Text style={styles.busquedaLimpiar}>✕</Text>
+            <POSIcon name="close-circle" size={20} color={COLORS.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -254,7 +254,7 @@ export default function MaterialesScreen() {
       {/* Loading */}
       {loading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2196F3" />
+          <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Cargando materiales...</Text>
         </View>
       )}
@@ -269,7 +269,7 @@ export default function MaterialesScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcono}>📦</Text>
+              <POSIcon name="cube-outline" size={64} color={COLORS.textSecondary} />
               <Text style={styles.emptyTexto}>No se encontraron materiales</Text>
               <Text style={styles.emptySubtexto}>
                 {busqueda ? 'Intenta con otra búsqueda' : 'Comienza agregando un material'}
@@ -280,8 +280,8 @@ export default function MaterialesScreen() {
       )}
 
       {/* Botón Flotante Agregar */}
-      <TouchableOpacity style={styles.botonFlotante} onPress={handleNuevo}>
-        <Text style={styles.botonFlotanteIcono}>+</Text>
+      <TouchableOpacity style={styles.botonFlotante} onPress={handleNuevo} activeOpacity={0.9}>
+        <POSIcon name="add" size={32} color={COLORS.white} />
       </TouchableOpacity>
 
       {/* Modal Crear/Editar Material */}
@@ -299,7 +299,7 @@ export default function MaterialesScreen() {
                 {materialSeleccionado ? 'Editar Material' : 'Nuevo Material'}
               </Text>
               <TouchableOpacity onPress={handleCerrarModal}>
-                <Text style={styles.modalCerrar}>✕</Text>
+                <POSIcon name="close" size={26} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -310,7 +310,7 @@ export default function MaterialesScreen() {
                 <TextInput
                   style={styles.formInput}
                   placeholder="Ej: Harina de trigo"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={COLORS.textSecondary}
                   value={formData.nombre}
                   onChangeText={(text) => setFormData({ ...formData, nombre: text })}
                 />
@@ -321,7 +321,7 @@ export default function MaterialesScreen() {
                 <TextInput
                   style={[styles.formInput, styles.formInputMultiline]}
                   placeholder="Descripción del material"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={COLORS.textSecondary}
                   multiline
                   numberOfLines={3}
                   value={formData.descripcion}
@@ -334,7 +334,7 @@ export default function MaterialesScreen() {
                 <TextInput
                   style={styles.formInput}
                   placeholder="Nombre del proveedor"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={COLORS.textSecondary}
                   value={formData.proveedor}
                   onChangeText={(text) => setFormData({ ...formData, proveedor: text })}
                 />
@@ -345,7 +345,7 @@ export default function MaterialesScreen() {
                 <TextInput
                   style={styles.formInput}
                   placeholder="Ej: Granos, Lácteos, etc."
-                  placeholderTextColor="#999"
+                  placeholderTextColor={COLORS.textSecondary}
                   value={formData.categoriaInventario}
                   onChangeText={(text) =>
                     setFormData({ ...formData, categoriaInventario: text })
@@ -354,32 +354,45 @@ export default function MaterialesScreen() {
               </View>
 
               <View style={[styles.formRow, { zIndex: mostrarUnidades ? 1000 : 1 }]}>
-                <View style={[styles.formGroup, styles.formGroupHalf,
-                { zIndex: mostrarUnidades ? 1001 : 1, elevation: mostrarUnidades ? 1001 : 1, }]}
+                <View
+                  style={[
+                    styles.formGroup,
+                    styles.formGroupHalf,
+                    { zIndex: mostrarUnidades ? 1001 : 1, elevation: mostrarUnidades ? 1001 : 1 },
+                  ]}
                 >
                   <Text style={styles.formLabel}>Unidad de Medida *</Text>
                   <TouchableOpacity
-                    style={styles.formInput}
+                    style={[styles.formInput, styles.dropdownTrigger]}
                     onPress={() => setMostrarUnidades(!mostrarUnidades)}
                   >
-                    <Text style={{ fontSize: 16, color: '#212121' }}>
-                      {formData.unidadMedida}
-                    </Text>
+                    <Text style={styles.dropdownTriggerText}>{formData.unidadMedida}</Text>
+                    <POSIcon
+                      name={mostrarUnidades ? 'chevron-up' : 'chevron-down'}
+                      size={18}
+                      color={COLORS.textSecondary}
+                    />
                   </TouchableOpacity>
                   {mostrarUnidades && (
                     <View style={styles.dropdownContainer}>
-                      {Object.values(Unidad).map((unidad) => (
-                        <TouchableOpacity
-                          key={unidad}
-                          style={styles.dropdownItem}
-                          onPress={() => {
-                            setFormData({ ...formData, unidadMedida: unidad });
-                            setMostrarUnidades(false);
-                          }}
-                        >
-                          <Text style={styles.dropdownItemText}>{unidad}</Text>
-                        </TouchableOpacity>
-                      ))}
+                      <ScrollView
+                        style={styles.dropdownList}
+                        nestedScrollEnabled
+                        showsVerticalScrollIndicator={true}
+                      >
+                        {Object.values(Unidad).map((unidad) => (
+                          <TouchableOpacity
+                            key={unidad}
+                            style={styles.dropdownItem}
+                            onPress={() => {
+                              setFormData({ ...formData, unidadMedida: unidad });
+                              setMostrarUnidades(false);
+                            }}
+                          >
+                            <Text style={styles.dropdownItemText}>{unidad}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
                     </View>
                   )}
                 </View>
@@ -389,7 +402,7 @@ export default function MaterialesScreen() {
                   <TextInput
                     style={styles.formInput}
                     placeholder="0.00"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={COLORS.textSecondary}
                     keyboardType="decimal-pad"
                     value={formData.costoUnitario}
                     onChangeText={(text) =>
@@ -411,8 +424,16 @@ export default function MaterialesScreen() {
                       setFormData({ ...formData, perecedero: !formData.perecedero })
                     }
                   >
-                    <Text style={styles.checkboxText}>
-                      {formData.perecedero ? '✓ Sí' : 'No'}
+                    {formData.perecedero && (
+                      <POSIcon name="checkmark" size={16} color={COLORS.primary} />
+                    )}
+                    <Text
+                      style={[
+                        styles.checkboxText,
+                        formData.perecedero && { color: COLORS.primary },
+                      ]}
+                    >
+                      {formData.perecedero ? 'Sí' : 'No'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -423,7 +444,7 @@ export default function MaterialesScreen() {
                     <TextInput
                       style={styles.formInput}
                       placeholder="0"
-                      placeholderTextColor="#999"
+                      placeholderTextColor={COLORS.textSecondary}
                       keyboardType="numeric"
                       value={formData.diasVencimiento}
                       onChangeText={(text) =>
@@ -441,6 +462,7 @@ export default function MaterialesScreen() {
                 style={[styles.botonModal, styles.botonCancelar]}
                 onPress={handleCerrarModal}
                 disabled={loading}
+                activeOpacity={0.8}
               >
                 <Text style={styles.botonCancelarTexto}>Cancelar</Text>
               </TouchableOpacity>
@@ -448,9 +470,10 @@ export default function MaterialesScreen() {
                 style={[styles.botonModal, styles.botonGuardar]}
                 onPress={handleGuardar}
                 disabled={loading}
+                activeOpacity={0.8}
               >
                 {loading ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={COLORS.white} />
                 ) : (
                   <Text style={styles.botonGuardarTexto}>
                     {materialSeleccionado ? 'Actualizar' : 'Crear'}
@@ -468,70 +491,62 @@ export default function MaterialesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#F5F5F5',
   },
-  // Header
+
+  // ── Header (igual que HomeScreen) ─────────────────────────────────────────
   header: {
-    backgroundColor: '#fff',
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    backgroundColor: COLORS.white,
+    padding: 20,
+    paddingTop: 60,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: COLORS.border,
   },
-  headerTitulo: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#212121',
-    marginBottom: 4,
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  headerSubtitulo: {
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  subtitle: {
     fontSize: 14,
-    color: '#757575',
+    color: COLORS.textSecondary,
   },
-  // Buscador
+
+  // ── Buscador ───────────────────────────────────────────────────────────────
   busquedaContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
-    marginVertical: 15,
-    paddingHorizontal: 15,
+    backgroundColor: COLORS.white,
+    marginHorizontal: 16,
+    marginVertical: 14,
+    paddingHorizontal: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    height: 50,
-  },
-  busquedaIcono: {
-    fontSize: 20,
-    marginRight: 10,
+    borderColor: COLORS.border,
+    height: 48,
+    gap: 10,
   },
   busquedaInput: {
     flex: 1,
     fontSize: 16,
-    color: '#212121',
+    color: COLORS.text,
   },
-  busquedaLimpiar: {
-    fontSize: 20,
-    color: '#757575',
-    padding: 5,
-  },
-  // Lista
+
+  // ── Lista ──────────────────────────────────────────────────────────────────
   listContainer: {
-    padding: 20,
+    paddingHorizontal: 16,
     paddingBottom: 100,
   },
   materialCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 15,
     flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    padding: 16,
+    marginBottom: 12,
   },
   materialInfo: {
     flex: 1,
@@ -542,27 +557,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 6,
     flexWrap: 'wrap',
+    gap: 8,
   },
   materialNombre: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#212121',
-    marginRight: 8,
-  },
-  alertaBadge: {
-    backgroundColor: '#FFF3E0',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  alertaTexto: {
-    fontSize: 11,
-    color: '#F57C00',
-    fontWeight: '600',
+    color: COLORS.text,
   },
   materialDescripcion: {
     fontSize: 14,
-    color: '#757575',
+    color: COLORS.textSecondary,
     marginBottom: 12,
   },
   materialDetalles: {
@@ -574,7 +578,7 @@ const styles = StyleSheet.create({
   },
   detalleLabel: {
     fontSize: 11,
-    color: '#9E9E9E',
+    color: COLORS.textSecondary,
     marginBottom: 2,
     textTransform: 'uppercase',
     fontWeight: '600',
@@ -582,20 +586,18 @@ const styles = StyleSheet.create({
   detalleValor: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#212121',
+    color: COLORS.text,
   },
-  detalleValorBajo: {
-    color: '#F44336',
-  },
-  // Acciones
+
+  // ── Acciones ───────────────────────────────────────────────────────────────
   materialAcciones: {
     justifyContent: 'center',
     gap: 8,
   },
   botonAccion: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -605,18 +607,16 @@ const styles = StyleSheet.create({
   botonEliminar: {
     backgroundColor: '#FFEBEE',
   },
-  iconoAccion: {
-    fontSize: 20,
-  },
-  // Botón Flotante
+
+  // ── Botón Flotante ────────────────────────────────────────────────────────
   botonFlotante: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 24,
     right: 20,
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#2196F3',
+    backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -625,12 +625,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  botonFlotanteIcono: {
-    fontSize: 32,
-    color: '#fff',
-    fontWeight: '300',
-  },
-  // Loading
+
+  // ── Loading ───────────────────────────────────────────────────────────────
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -640,36 +636,34 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#757575',
+    color: COLORS.textSecondary,
   },
-  // Empty State
+
+  // ── Empty State ───────────────────────────────────────────────────────────
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
-  },
-  emptyIcono: {
-    fontSize: 64,
-    marginBottom: 16,
+    gap: 6,
   },
   emptyTexto: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#757575',
-    marginBottom: 8,
+    color: COLORS.textSecondary,
   },
   emptySubtexto: {
     fontSize: 14,
-    color: '#9E9E9E',
+    color: COLORS.textSecondary,
   },
-  // Modal
+
+  // ── Modal ─────────────────────────────────────────────────────────────────
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '90%',
@@ -682,26 +676,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: COLORS.border,
   },
   modalTitulo: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#212121',
-  },
-  modalCerrar: {
-    fontSize: 28,
-    color: '#757575',
-    fontWeight: '300',
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.text,
   },
   modalContenido: {
     padding: 20,
     maxHeight: 500,
+    overflow: 'visible',
   },
-  // Formulario
+
+  // ── Formulario ────────────────────────────────────────────────────────────
   formGroup: {
     marginBottom: 20,
     position: 'relative',
+    zIndex: 1,
   },
   formGroupHalf: {
     flex: 1,
@@ -713,7 +705,7 @@ const styles = StyleSheet.create({
   formLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#212121',
+    color: COLORS.text,
     marginBottom: 8,
   },
   formInput: {
@@ -722,51 +714,69 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#212121',
+    color: COLORS.text,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: COLORS.border,
   },
   formInputMultiline: {
     minHeight: 80,
     textAlignVertical: 'top',
   },
-  // Checkbox
+  dropdownTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownTriggerText: {
+    fontSize: 16,
+    color: COLORS.text,
+  },
+
+  // ── Checkbox ──────────────────────────────────────────────────────────────
   checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     backgroundColor: '#F5F5F5',
     borderRadius: 12,
     paddingHorizontal: 15,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    justifyContent: 'center',
+    borderColor: COLORS.border,
   },
   checkboxContainerActive: {
     backgroundColor: '#E3F2FD',
-    borderColor: '#2196F3',
+    borderColor: COLORS.primary,
   },
   checkboxText: {
     fontSize: 16,
-    color: '#212121',
+    color: COLORS.text,
     fontWeight: '600',
   },
-  // Dropdown
+
+  // ── Dropdown ──────────────────────────────────────────────────────────────
   dropdownContainer: {
     position: 'absolute',
     top: '100%',
     left: 0,
     right: 0,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: COLORS.border,
     marginTop: 4,
-    maxHeight: 200,
+    maxHeight: 240,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 1002,
     zIndex: 1002,
+    overflow: 'hidden',
+  },
+  dropdownList: {
+    maxHeight: 240,
   },
   dropdownItem: {
     paddingHorizontal: 15,
@@ -775,13 +785,13 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F5F5F5',
     elevation: 1000,
     zIndex: 2000,
-
   },
   dropdownItemText: {
     fontSize: 16,
-    color: '#212121',
+    color: COLORS.text,
   },
-  // Botones Modal
+
+  // ── Botones Modal ─────────────────────────────────────────────────────────
   modalAcciones: {
     flexDirection: 'row',
     gap: 15,
@@ -800,14 +810,14 @@ const styles = StyleSheet.create({
   botonCancelarTexto: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#757575',
+    color: COLORS.textSecondary,
   },
   botonGuardar: {
-    backgroundColor: '#2196F3',
+    backgroundColor: COLORS.primary,
   },
   botonGuardarTexto: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#fff',
+    color: COLORS.white,
   },
 });

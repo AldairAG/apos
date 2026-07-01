@@ -41,6 +41,23 @@ export const useRecetas = () => {
         return { success: false, error: result.payload as string };
     }, [dispatch]);
 
+    // Actualizar receta
+    const actualizarReceta = useCallback(async (id: number, data: Receta) => {
+        const result = await dispatch(updateReceta({ id, data }));
+        if (updateReceta.fulfilled.match(result)) {
+            return { success: true, data: result.payload };
+        }
+        return { success: false, error: result.payload as string };
+    }, [dispatch]);
+
+    // Eliminar receta
+    const eliminarReceta = useCallback(async (id: number) => {
+        const result = await dispatch(deleteReceta(id));
+        if (deleteReceta.fulfilled.match(result)) {
+            return { success: true };
+        }
+        return { success: false, error: result.payload as string };
+    }, [dispatch]);
 
       // Limpiar recetas
       const limpiarRecetas = useCallback(() => {
@@ -62,6 +79,8 @@ export const useRecetas = () => {
         cargarRecetasBySucursal,
         seleccionarReceta,
         crearReceta,
+        actualizarReceta,
+        eliminarReceta,
         limpiarRecetas,
         limpiarError,
     };

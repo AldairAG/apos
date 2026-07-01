@@ -76,6 +76,43 @@ const recetasSlice = createSlice({
       state.error = action.payload as string;
     });
 
+    // Update receta
+    builder.addCase(updateReceta.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(updateReceta.fulfilled, (state, action) => {
+      state.loading = false;
+      const index = state.recetas.findIndex((receta) => receta.id === action.payload.id);
+      if (index !== -1) {
+        state.recetas[index] = action.payload;
+      }
+      if (state.recetaSeleccionada?.id === action.payload.id) {
+        state.recetaSeleccionada = action.payload;
+      }
+    });
+    builder.addCase(updateReceta.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Delete receta
+    builder.addCase(deleteReceta.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(deleteReceta.fulfilled, (state, action) => {
+      state.loading = false;
+      state.recetas = state.recetas.filter((receta) => receta.id !== action.payload);
+      if (state.recetaSeleccionada?.id === action.payload) {
+        state.recetaSeleccionada = null;
+      }
+    });
+    builder.addCase(deleteReceta.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
   },
 });
 

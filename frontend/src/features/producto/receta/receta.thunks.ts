@@ -66,12 +66,13 @@ export const updateReceta = createAsyncThunk<
 });
 
 export const deleteReceta = createAsyncThunk<
-    void,
+    number,
     number,
     { rejectValue: string }
 >('recetas/deleteReceta', async (id, { rejectWithValue }) => {
     try {
         await recetaService.delete(id);
+        return id;
     } catch (error: any) {
         return rejectWithValue(
             error.response?.data?.message || 'Error al eliminar la receta'
