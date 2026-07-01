@@ -5,8 +5,10 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.api.apos.domain.extra.entity.OpcionExtra;
-import com.api.apos.domain.extra.service.OpcionExtraService;
+import com.api.apos.domain.catalogo.extra.entity.OpcionExtra;
+import com.api.apos.domain.catalogo.extra.service.OpcionExtraService;
+import com.api.apos.domain.catalogo.producto.Producto;
+import com.api.apos.domain.catalogo.producto.ProductoService;
 import com.api.apos.domain.mesa.Mesa;
 import com.api.apos.domain.mesa.service.MesaService;
 import com.api.apos.domain.orden.entity.DetalleOrden;
@@ -23,8 +25,6 @@ import com.api.apos.domain.pos.dto.OrdenResponseDTO.DetalleOrdenResponseDTO;
 import com.api.apos.domain.pos.dto.ProductosBySucursalResponse.GrupoExtraResponse;
 import com.api.apos.domain.pos.dto.ProductosBySucursalResponse.OpcionExtraResponse;
 import com.api.apos.domain.pos.dto.ProductosBySucursalResponse.ProductoGrupoExtraResponse;
-import com.api.apos.domain.producto.Producto;
-import com.api.apos.domain.producto.ProductoService;
 import com.api.apos.domain.sucursal.Sucursal;
 import com.api.apos.domain.sucursal.service.SucursalService;
 

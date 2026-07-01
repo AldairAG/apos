@@ -3,7 +3,7 @@ package com.api.apos.domain.pos.dto;
 import java.math.BigDecimal;
 import java.util.List;
 
-import com.api.apos.domain.categoria.entity.Categoria;
+import com.api.apos.domain.catalogo.categoria.entity.Categoria;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,7 +17,7 @@ public class ProductosBySucursalResponse {
     private String nombre;
     private String descripcion;
 
-    private java.math.BigDecimal precioVenta;
+    private BigDecimal precioVenta;
 
     private Integer tiempoPreparacion;
 

@@ -5,10 +5,10 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.api.apos.domain.auth.usuario.Usuario;
+import com.api.apos.domain.auth.usuario.UsuarioRepository;
 import com.api.apos.domain.sucursal.Sucursal;
 import com.api.apos.domain.sucursal.SucursalRepository;
-import com.api.apos.domain.usuario.Usuario;
-import com.api.apos.domain.usuario.UsuarioRepository;
 
 import lombok.AllArgsConstructor;
 

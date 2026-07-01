@@ -8,8 +8,8 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.api.apos.domain.extra.entity.OpcionExtra;
-import com.api.apos.domain.extra.repository.OpcionExtraRepository;
+import com.api.apos.domain.catalogo.extra.entity.OpcionExtra;
+import com.api.apos.domain.catalogo.extra.repository.OpcionExtraRepository;
 import com.api.apos.domain.orden.entity.DetalleOrden;
 import com.api.apos.domain.orden.entity.DetalleOrdenExtra;
 import com.api.apos.domain.orden.repository.DetalleOrdenExtraRepository;

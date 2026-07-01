@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.api.apos.domain.empleado.entity.Empleado;
+import com.api.apos.domain.auth.empleado.entity.Empleado;
 import com.api.apos.domain.mesa.Mesa;
 import com.api.apos.domain.sucursal.Sucursal;
 import com.api.apos.enums.EstadoOrden;

@@ -34,16 +34,6 @@ export const productoService = {
   },
 
   /**
-   * Busca productos por nombre
-   */
-  search: async (sucursalId: number, query: string): Promise<Producto[]> => {
-    const response = await apiBase.get<Producto[]>(`${PRODUCTO_BASE_URL}/sucursal/${sucursalId}/buscar`, {
-      params: { q: query }
-    });
-    return response.data;
-  },
-
-  /**
    * Crea un nuevo producto desde una receta
    */
   create: async (data: createProductoDTO): Promise<Producto> => {
@@ -66,22 +56,4 @@ export const productoService = {
     await apiBase.delete(`${PRODUCTO_BASE_URL}/${id}`);
   },
 
-  /**
-   * Cambia el estado de disponibilidad de un producto
-   */
-  toggleDisponibilidad: async (id: number): Promise<Producto> => {
-    const response = await apiBase.patch<Producto>(`${PRODUCTO_BASE_URL}/${id}/disponibilidad`);
-    return response.data;
-  },
-
-  /**
-   * Asocia grupos extra a un producto
-   */
-  associateGruposExtra: async (productoId: number, gruposExtraIds: number[]): Promise<Producto> => {
-    const response = await apiBase.post<Producto>(
-      `${PRODUCTO_BASE_URL}/${productoId}/grupos-extra`,
-      { gruposExtraIds }
-    );
-    return response.data;
-  },
 };

@@ -5,13 +5,13 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.api.apos.domain.auth.usuario.Usuario;
+import com.api.apos.domain.auth.usuario.service.UsuarioService;
 import com.api.apos.domain.mesa.Mesa;
 import com.api.apos.domain.mesa.MesaRepository;
 import com.api.apos.domain.mesa.dto.CrearMesaDTO;
 import com.api.apos.domain.sucursal.Sucursal;
 import com.api.apos.domain.sucursal.service.SucursalService;
-import com.api.apos.domain.usuario.Usuario;
-import com.api.apos.domain.usuario.service.UsuarioService;
 import com.api.apos.enums.EstadoMesa;
 
 @Service

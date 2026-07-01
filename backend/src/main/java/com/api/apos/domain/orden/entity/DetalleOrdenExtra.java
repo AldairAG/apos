@@ -3,7 +3,7 @@ package com.api.apos.domain.orden.entity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.api.apos.domain.extra.entity.OpcionExtra;
+import com.api.apos.domain.catalogo.extra.entity.OpcionExtra;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;

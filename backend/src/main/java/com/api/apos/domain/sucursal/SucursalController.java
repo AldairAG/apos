@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.sucursal.service.SucursalService;
-import com.api.apos.domain.usuario.Usuario;
 import com.api.apos.enums.Rol;
 import com.api.apos.helpers.ApiResponseWrapper;
 

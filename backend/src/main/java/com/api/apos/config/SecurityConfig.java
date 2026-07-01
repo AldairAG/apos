@@ -19,7 +19,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.api.apos.domain.usuario.service.UsuarioService;
+import com.api.apos.domain.auth.usuario.service.UsuarioService;
 import com.api.apos.helpers.JwtHelper;
 import com.api.apos.security.JwtAuthenticationFilter;
 

@@ -2,7 +2,7 @@ package com.api.apos.domain.orden.entity;
 
 import java.time.LocalDateTime;
 
-import com.api.apos.domain.empleado.entity.Empleado;
+import com.api.apos.domain.auth.empleado.entity.Empleado;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
