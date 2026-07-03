@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.api.apos.domain.catalogo.extra.dto.CreateGrupoExtraDTO;
+import com.api.apos.domain.catalogo.extra.dto.GrupoExtraDTO.GrupoExtraResponse;
 import com.api.apos.domain.catalogo.extra.entity.GrupoExtra;
 import com.api.apos.domain.catalogo.extra.service.GrupoExtraService;
 import com.api.apos.helpers.ApiResponseWrapper;
@@ -97,27 +97,12 @@ public class GrupoExtraController {
      * GET /api/grupos-extras/usuario/{idUsuario}
      */
     @GetMapping
-    public ResponseEntity<ApiResponseWrapper<List<GrupoExtra>>> obtenerGruposExtraPorUsuario() {
+    public ResponseEntity<ApiResponseWrapper<List<GrupoExtraResponse>>> obtenerGruposExtraPorUsuario() {
         try {
 
             Long idUsuario = 1L; // Aquí deberías obtener el ID del usuario autenticado de tu contexto de seguridad
             
-            List<GrupoExtra> grupos = grupoExtraService.obtenerGruposExtraPorUsuario(idUsuario);
-            return ResponseEntity.ok(new ApiResponseWrapper<>(true, grupos, null));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponseWrapper<>(false, null, e.getMessage()));
-        }
-    }
-
-    /**
-     * Obtener grupos de extras activos de un usuario
-     * GET /api/grupos-extras/usuario/{idUsuario}/activos
-     */
-    @GetMapping("/usuario/{idUsuario}/activos")
-    public ResponseEntity<ApiResponseWrapper<List<GrupoExtra>>> obtenerGruposExtraActivos(@PathVariable Long idUsuario) {
-        try {
-            List<GrupoExtra> grupos = grupoExtraService.obtenerGruposExtraActivos(idUsuario);
+            List<GrupoExtraResponse> grupos = grupoExtraService.obtenerGruposExtraPorUsuario(idUsuario);
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, grupos, null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -140,20 +125,4 @@ public class GrupoExtraController {
         }
     }
 
-    /**
-     * Cambiar estado activo de un grupo de extras
-     * PUT /api/grupos-extras/{id}/estado?activo=true
-     */
-    @PutMapping("/{id}/estado")
-    public ResponseEntity<ApiResponseWrapper<GrupoExtra>> cambiarEstadoActivo(
-            @PathVariable Long id,
-            @RequestParam boolean activo) {
-        try {
-            GrupoExtra grupo = grupoExtraService.cambiarEstadoActivo(id, activo);
-            return ResponseEntity.ok(new ApiResponseWrapper<>(true, grupo, "Estado actualizado exitosamente"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiResponseWrapper<>(false, null, e.getMessage()));
-        }
-    }
 }

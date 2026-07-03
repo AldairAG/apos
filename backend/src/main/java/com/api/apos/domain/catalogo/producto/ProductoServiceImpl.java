@@ -8,6 +8,8 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.api.apos.domain.catalogo.producto.dto.ProductoDTO;
+import com.api.apos.domain.catalogo.producto.mapper.ProductoMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -105,9 +107,13 @@ public class ProductoServiceImpl implements ProductoService {
      */
     @Override
     @Transactional(readOnly = true)
-    public List<Producto> obtenerProductosPorSucursal(Long idSucursal) {
-        // Implementación básica - se puede mejorar con relación Producto-Sucursal
-        return productoRepository.findAll();
+    public List<ProductoDTO> obtenerProductosPorSucursal(Long idSucursal) {
+        
+        List<Producto> productos = productoRepository.findAll();
+        // Aquí puedes mapear los productos a DTOs si es necesario
+        return productos.stream()
+                .map(ProductoMapper::toDTO)
+                .toList();
     }
 
     /**

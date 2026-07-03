@@ -5,7 +5,6 @@ import java.util.List;
 
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.api.apos.domain.catalogo.categoria.entity.Categoria;
-import com.api.apos.domain.catalogo.extra.entity.ProductoGrupoExtra;
+import com.api.apos.domain.catalogo.extra.dto.GrupoExtraDTO.ProductoGrupoExtraResponse;
 import com.api.apos.domain.catalogo.receta.entity.Receta;
 
 import lombok.Data;
@@ -35,5 +35,5 @@ public class ProductoDTO {
     
     private Categoria categoria;
     
-    private List<ProductoGrupoExtra> gruposExtra;
+    private List<ProductoGrupoExtraResponse> gruposExtra;
 }

@@ -9,6 +9,7 @@ import com.api.apos.domain.catalogo.extra.entity.OpcionExtra;
 import com.api.apos.domain.catalogo.extra.service.OpcionExtraService;
 import com.api.apos.domain.catalogo.producto.Producto;
 import com.api.apos.domain.catalogo.producto.ProductoService;
+import com.api.apos.domain.catalogo.producto.dto.ProductoDTO;
 import com.api.apos.domain.mesa.Mesa;
 import com.api.apos.domain.mesa.service.MesaService;
 import com.api.apos.domain.orden.entity.DetalleOrden;
@@ -22,9 +23,6 @@ import com.api.apos.domain.pos.dto.ProductosBySucursalResponse;
 import com.api.apos.domain.pos.dto.CrearOrdenDTO.DetalleOrdenDTO;
 import com.api.apos.domain.pos.dto.OrdenResponseDTO.DetalleOrdenExtraResponseDTO;
 import com.api.apos.domain.pos.dto.OrdenResponseDTO.DetalleOrdenResponseDTO;
-import com.api.apos.domain.pos.dto.ProductosBySucursalResponse.GrupoExtraResponse;
-import com.api.apos.domain.pos.dto.ProductosBySucursalResponse.OpcionExtraResponse;
-import com.api.apos.domain.pos.dto.ProductosBySucursalResponse.ProductoGrupoExtraResponse;
 import com.api.apos.domain.sucursal.Sucursal;
 import com.api.apos.domain.sucursal.service.SucursalService;
 
@@ -46,7 +44,7 @@ public class POSServiceImpl implements POSService {
 
     @Override
     public List<ProductosBySucursalResponse> obtnerProdcutosBySucursal(Long sucursalId) {
-        List<Producto> productos = productoService.obtenerProductosPorSucursal(sucursalId);
+        List<ProductoDTO> productos = productoService.obtenerProductosPorSucursal(sucursalId);
 
         List<ProductosBySucursalResponse> response = productos.stream()
                 .map(producto -> {
@@ -60,35 +58,7 @@ public class POSServiceImpl implements POSService {
                     res.setDisponible(producto.getDisponible());
                     res.setDestacado(producto.getDestacado());
                     res.setCategoria(producto.getCategoria());
-                    res.setGruposExtra(producto.getGruposExtra().stream()
-                            .map(grupoExtra -> {
-                                ProductoGrupoExtraResponse grupoExtraResponse = ProductoGrupoExtraResponse.builder()
-                                        .id(grupoExtra.getId())
-                                        .minimo(grupoExtra.getMinimo())
-                                        .maximo(grupoExtra.getMaximo())
-                                        .obligatorio(grupoExtra.getObligatorio())
-                                        .grupoExtra(GrupoExtraResponse.builder()
-                                                .id(grupoExtra.getGrupoExtra().getId())
-                                                .nombre(grupoExtra.getGrupoExtra().getNombre())
-                                                .descripcion(grupoExtra.getGrupoExtra().getDescripcion())
-                                                .activo(grupoExtra.getGrupoExtra().getActivo())
-                                                .opciones(grupoExtra.getGrupoExtra().getOpciones().stream()
-                                                        .map(opcion -> {
-                                                            OpcionExtraResponse opcionResponse = OpcionExtraResponse
-                                                                    .builder()
-                                                                    .id(opcion.getId())
-                                                                    .nombre(opcion.getNombre())
-                                                                    .precio(opcion.getPrecio())
-                                                                    .activo(opcion.getActivo())
-                                                                    .build();
-                                                            return opcionResponse;
-                                                        })
-                                                        .toList())
-                                                .build())
-                                        .build();
-                                return grupoExtraResponse;
-                            })
-                            .toList());
+                    res.setGruposExtra(producto.getGruposExtra());
                     return res;
                 })
                 .toList();
@@ -128,7 +98,7 @@ public class POSServiceImpl implements POSService {
 
         Orden ordenGuardada = ordenService.crearOrden(orden);
 
-        if (crearOrdenDTO.getMesaId() != null) {
+        if (crearOrdenDTO.getMesaId() != null && crearOrdenDTO.getMesaId() > 0) {
             mesaService.asignarOrdenAMesa(crearOrdenDTO.getMesaId(), ordenGuardada.getId());
         }
 

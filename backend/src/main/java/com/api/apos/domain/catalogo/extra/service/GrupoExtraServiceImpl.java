@@ -10,8 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.auth.usuario.service.UsuarioService;
 import com.api.apos.domain.catalogo.extra.dto.CreateGrupoExtraDTO;
+import com.api.apos.domain.catalogo.extra.dto.GrupoExtraDTO.GrupoExtraResponse;
 import com.api.apos.domain.catalogo.extra.entity.GrupoExtra;
 import com.api.apos.domain.catalogo.extra.entity.OpcionExtra;
+import com.api.apos.domain.catalogo.extra.mapper.ExtraMapper;
 import com.api.apos.domain.catalogo.extra.repository.GrupoExtraRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -127,11 +129,12 @@ public class GrupoExtraServiceImpl implements GrupoExtraService {
      */
     @Override
     @Transactional(readOnly = true)
-    public List<GrupoExtra> obtenerGruposExtraPorUsuario(Long idUsuario) {
+    public List<GrupoExtraResponse> obtenerGruposExtraPorUsuario(Long idUsuario) {
 
         Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
 
-        return grupoExtraRepository.findByUsuario_Id(usuario.getId());
+        List<GrupoExtra> gruposExtra = grupoExtraRepository.findByUsuario_Id(usuario.getId());
+        return gruposExtra.stream().map(ExtraMapper::toDTO).toList();
     }
 
     /**

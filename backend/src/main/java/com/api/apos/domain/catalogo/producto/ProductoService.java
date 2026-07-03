@@ -3,6 +3,8 @@ package com.api.apos.domain.catalogo.producto;
 import java.util.List;
 import java.util.Optional;
 
+import com.api.apos.domain.catalogo.producto.dto.ProductoDTO;
+
 
 public interface ProductoService {
     
@@ -39,7 +41,7 @@ public interface ProductoService {
      * @param idSucursal ID de la sucursal
      * @return Lista de productos
      */
-    List<Producto> obtenerProductosPorSucursal(Long idSucursal);
+    List<ProductoDTO> obtenerProductosPorSucursal(Long idSucursal);
     
     /**
      * Obtener productos activos de una sucursal

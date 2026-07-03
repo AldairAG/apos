@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.api.apos.domain.catalogo.producto.dto.ProductoDTO;
 import com.api.apos.helpers.ApiResponseWrapper;
 
 import lombok.RequiredArgsConstructor;
@@ -93,9 +94,9 @@ public class ProductoController {
      * GET /api/productos/sucursal/{idSucursal}
      */
     @GetMapping("/sucursal/{idSucursal}")
-    public ResponseEntity<ApiResponseWrapper<List<Producto>>> obtenerProductosPorSucursal(@PathVariable Long idSucursal) {
+    public ResponseEntity<ApiResponseWrapper<List<ProductoDTO>>> obtenerProductosPorSucursal(@PathVariable Long idSucursal) {
         try {
-            List<Producto> productos = productoService.obtenerProductosPorSucursal(idSucursal);
+            List<ProductoDTO> productos = productoService.obtenerProductosPorSucursal(idSucursal);
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, productos, null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
