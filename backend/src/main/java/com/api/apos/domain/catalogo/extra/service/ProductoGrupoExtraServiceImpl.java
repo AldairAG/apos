@@ -27,6 +27,7 @@ public class ProductoGrupoExtraServiceImpl implements ProductoGrupoExtraService 
     private final ProductoGrupoExtraRepository productoGrupoExtraRepository;
 
     private final ProductoService productoService;
+    
 
     /**
      * Crear una nueva relación producto-grupo de extras
@@ -136,4 +137,5 @@ public class ProductoGrupoExtraServiceImpl implements ProductoGrupoExtraService 
             productoGrupoExtraRepository.save(relacion);
         }
     }
+
 }

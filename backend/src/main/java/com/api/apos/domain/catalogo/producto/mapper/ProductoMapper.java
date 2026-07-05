@@ -29,9 +29,15 @@ public class ProductoMapper {
         dto.setUpdatedBy(producto.getUpdatedBy());
         dto.setReceta(producto.getReceta());
         dto.setCategoria(producto.getCategoria());
-        dto.setGruposExtra(producto.getGruposExtra().isEmpty() ? List.of() : producto.getGruposExtra().stream()
-                .map(ExtraMapper::toDTO)
-                .toList());
+
+        if(producto.getGruposExtra() != null) {
+            dto.setGruposExtra(producto.getGruposExtra().isEmpty() ? List.of() : producto.getGruposExtra().stream()
+                    .map(ExtraMapper::toDTO)
+                    .toList());
+        } else {
+            dto.setGruposExtra(List.of());
+        }
+
         return dto;
     }
 }

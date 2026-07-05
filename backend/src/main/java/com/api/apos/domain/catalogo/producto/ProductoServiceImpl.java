@@ -1,5 +1,7 @@
 package com.api.apos.domain.catalogo.producto;
 
+import com.api.apos.domain.catalogo.extra.service.ProductoGrupoExtraService;
+import com.api.apos.domain.catalogo.extra.service.ProductoGrupoExtraServiceImpl;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -8,7 +10,6 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.api.apos.domain.catalogo.categoria.entity.Categoria;
 import com.api.apos.domain.catalogo.categoria.repository.CategoriaRepository;
 import com.api.apos.domain.catalogo.producto.dto.CreateProductoDTO;
 import com.api.apos.domain.catalogo.producto.dto.ProductoDTO;
@@ -25,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional
 public class ProductoServiceImpl implements ProductoService {
-    
+
     private final ProductoRepository productoRepository;
 
     private final CategoriaRepository categoriaRepository;
@@ -51,7 +52,7 @@ public class ProductoServiceImpl implements ProductoService {
                 .categoria(categoriaRepository.findById(productoDto.getCategoriaId()).orElse(null))
                 .receta(productoDto.getRecetaId() != null ? recetaService.obtenerRecetaPorId(productoDto.getRecetaId()).get() : null) // Asignar receta si es necesario
                 .createdAt(LocalDateTime.now())
-                .build();
+                .build(); 
 
         Producto nuevoProducto = productoRepository.save(producto);
         return ProductoMapper.toDTO(nuevoProducto);

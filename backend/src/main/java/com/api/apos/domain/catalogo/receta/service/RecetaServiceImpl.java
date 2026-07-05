@@ -130,7 +130,7 @@ public class RecetaServiceImpl implements RecetaService {
     @Override
     @Transactional(readOnly = true)
     public Optional<Receta> obtenerRecetaPorId(Long id) {
-        return recetaRepository.findById(id);
+         return Optional.of(recetaRepository.findById(id).orElseThrow(() -> new RuntimeException("Receta no encontrada con ID: " + id)));
     }
 
     /**

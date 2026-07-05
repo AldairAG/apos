@@ -28,4 +28,5 @@ public interface ProductoGrupoExtraService {
      * @param grupoExtra   Grupo de extras a asociar
      */
     void asociarGrupoExtraAProductos(List<Long> productosIds, GrupoExtra grupoExtra);
+
 }

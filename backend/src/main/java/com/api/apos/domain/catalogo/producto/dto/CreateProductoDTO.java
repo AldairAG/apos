@@ -1,5 +1,7 @@
 package com.api.apos.domain.catalogo.producto.dto;
 
+import java.util.List;
+
 import lombok.Data;
 
 @Data
@@ -14,7 +16,7 @@ public class CreateProductoDTO {
     private boolean destacado;
     private Long categoriaId;
     private Long recetaId;
-    //private ProductoGrupoExtra[] gruposExtra;
+    private List<Long> gruposExtra;
 
     
 }
