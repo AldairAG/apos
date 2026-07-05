@@ -7,7 +7,7 @@ import { Receta } from '@/features/producto/receta/receta.types';
 import { useRecetas } from '@/features/producto/receta/useReceta';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 type FiltroTipo = 'todos' | 'activos' | 'inactivos' | 'destacados';
 
@@ -40,6 +40,7 @@ export default function ProductosScreen() {
 
   const [costoPersonalizado, setCostoPersonalizado] = useState(false);
   const [extrasSeleccionados, setExtrasSeleccionados] = useState<number[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     cargarProductos();
@@ -191,6 +192,7 @@ export default function ProductosScreen() {
   }, [productos, busqueda, filtroActivo]);
 
   const handleNuevo = () => {
+    resetFormData();
     setProductoEditando(null);
     setModalVisible(true);
   };
@@ -214,9 +216,15 @@ export default function ProductosScreen() {
   const handleCerrarModal = () => {
     setModalVisible(false);
     setProductoEditando(null);
+    setModalRecetaVisible(false);
+    setModalExtrasVisible(false);
   };
 
-  const handleGuardar = () => {
+  const handleGuardar = async () => {
+    if (isSaving) {
+      return;
+    }
+
     if (!formData.nombre.trim()) {
       Alert.alert('Error', 'El nombre del producto es requerido');
       return;
@@ -232,13 +240,22 @@ export default function ProductosScreen() {
       return;
     }
 
+    setIsSaving(true);
+
     const dataToSave: createProductoDTO = {
       ...formData,
       gruposExtra: undefined,
     };
 
-    saveProducto(dataToSave);
-    handleCerrarModal();
+    const creado = await saveProducto(dataToSave);
+    setIsSaving(false);
+
+    if (creado) {
+      handleCerrarModal();
+      await cargarProductos();
+    } else {
+      Alert.alert('Error', 'No se pudo crear el producto. Revisa los datos e intenta nuevamente.');
+    }
   };
 
   const handleToggleExtra = (grupoId: number) => {
@@ -452,9 +469,13 @@ export default function ProductosScreen() {
       />
 
       {/* FAB Button */}
-      <TouchableOpacity style={styles.fabButton} onPress={handleNuevo}>
+      <Pressable
+        style={({ pressed }) => [styles.fabButton, pressed && styles.fabButtonPressed]}
+        onPress={handleNuevo}
+        hitSlop={12}
+      >
         <POSIcon name="add" size={32} color={COLORS.white} />
-      </TouchableOpacity>
+      </Pressable>
 
       {/* Modal Crear/Editar Producto */}
       <Modal
@@ -791,20 +812,21 @@ export default function ProductosScreen() {
 
             {/* Botones de Acción */}
             <View style={styles.modalAcciones}>
-              <TouchableOpacity
+              <Pressable
                 style={[styles.botonModal, styles.botonCancelar]}
                 onPress={handleCerrarModal}
               >
                 <Text style={styles.botonCancelarTexto}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.botonModal, styles.botonGuardar]}
+              </Pressable>
+              <Pressable
+                style={[styles.botonModal, styles.botonGuardar, isSaving && styles.botonGuardarDisabled]}
                 onPress={handleGuardar}
+                disabled={isSaving}
               >
                 <Text style={styles.botonGuardarTexto}>
-                  {productoEditando ? 'Actualizar' : 'Crear Producto'}
+                  {isSaving ? 'Guardando...' : productoEditando ? 'Actualizar' : 'Crear Producto'}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         </View>
@@ -1192,6 +1214,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    zIndex: 10,
+  },
+  fabButtonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.97 }],
   },
 
   // Empty State
@@ -1572,6 +1599,10 @@ const styles = StyleSheet.create({
   },
   botonGuardar: {
     backgroundColor: COLORS.primary,
+  },
+  botonGuardarDisabled: {
+    backgroundColor: COLORS.textSecondary,
+    opacity: 0.8,
   },
   botonGuardarTexto: {
     fontSize: 16,

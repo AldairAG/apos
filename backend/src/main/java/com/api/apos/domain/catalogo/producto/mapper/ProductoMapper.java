@@ -1,5 +1,7 @@
 package com.api.apos.domain.catalogo.producto.mapper;
 
+import java.util.List;
+
 import com.api.apos.domain.catalogo.extra.mapper.ExtraMapper;
 import com.api.apos.domain.catalogo.producto.Producto;
 import com.api.apos.domain.catalogo.producto.dto.ProductoDTO;
@@ -27,7 +29,7 @@ public class ProductoMapper {
         dto.setUpdatedBy(producto.getUpdatedBy());
         dto.setReceta(producto.getReceta());
         dto.setCategoria(producto.getCategoria());
-        dto.setGruposExtra(producto.getGruposExtra().stream()
+        dto.setGruposExtra(producto.getGruposExtra().isEmpty() ? List.of() : producto.getGruposExtra().stream()
                 .map(ExtraMapper::toDTO)
                 .toList());
         return dto;

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.api.apos.domain.catalogo.producto.dto.CreateProductoDTO;
 import com.api.apos.domain.catalogo.producto.dto.ProductoDTO;
 import com.api.apos.helpers.ApiResponseWrapper;
 
@@ -34,9 +35,9 @@ public class ProductoController {
      * POST /api/productos
      */
     @PostMapping
-    public ResponseEntity<ApiResponseWrapper<Producto>> crearProducto(@RequestBody Producto producto) {
+    public ResponseEntity<ApiResponseWrapper<ProductoDTO>> crearProducto(@RequestBody CreateProductoDTO producto) {
         try {
-            Producto nuevoProducto = productoService.crearProducto(producto);
+            ProductoDTO nuevoProducto = productoService.crearProducto(producto);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new ApiResponseWrapper<>(true, nuevoProducto, "Producto creado exitosamente"));
         } catch (Exception e) {

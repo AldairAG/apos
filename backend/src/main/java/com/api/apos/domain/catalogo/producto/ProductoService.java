@@ -3,6 +3,7 @@ package com.api.apos.domain.catalogo.producto;
 import java.util.List;
 import java.util.Optional;
 
+import com.api.apos.domain.catalogo.producto.dto.CreateProductoDTO;
 import com.api.apos.domain.catalogo.producto.dto.ProductoDTO;
 
 
@@ -13,7 +14,7 @@ public interface ProductoService {
      * @param producto Producto a crear
      * @return Producto creado
      */
-    Producto crearProducto(Producto producto);
+    ProductoDTO crearProducto(CreateProductoDTO producto);
     
     /**
      * Actualizar un producto existente

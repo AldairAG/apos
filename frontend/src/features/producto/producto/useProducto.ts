@@ -1,10 +1,9 @@
+import { useSucursal } from "@/features/sucursal/useSucursal";
 import { AppDispatch, RootState } from "@/store";
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createProducto, fetchProductosBySucursal } from "./producto.thunk";
-import { useSucursal } from "@/features/sucursal/useSucursal";
 import { Categoria, createProductoDTO } from "./producto.types";
-import { useCategoria } from "../categoria/useCategoria";
 
 export const useProducto=()=>{
      const dispatch = useDispatch<AppDispatch>();
@@ -18,7 +17,8 @@ export const useProducto=()=>{
     }, [dispatch, sucursalActual]);
 
     const handleSaveProducto = async (data: createProductoDTO) => {
-        dispatch(createProducto(data));
+        const resultAction = await dispatch(createProducto(data));
+        return resultAction.meta.requestStatus === 'fulfilled';
     };
 
     const obtenerCategoriasDeProductos = useCallback(() => {
