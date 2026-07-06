@@ -16,7 +16,14 @@ public class CreateProductoDTO {
     private boolean destacado;
     private Long categoriaId;
     private Long recetaId;
-    private List<Long> gruposExtra;
+    private List<ExtraAsociadoDto> gruposExtra;
 
-    
+    @Data
+    public static class ExtraAsociadoDto {
+        private Integer minimo;
+        private Integer maximo;
+        private Boolean obligatorio;
+        private Long grupoExtraId;
+    }
+
 }

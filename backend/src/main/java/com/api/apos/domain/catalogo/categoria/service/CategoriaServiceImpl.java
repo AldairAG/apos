@@ -88,7 +88,7 @@ public class CategoriaServiceImpl implements CategoriaService {
     @Override
     @Transactional(readOnly = true)
     public Optional<Categoria> obtenerCategoriaPorId(Long id) {
-        return categoriaRepository.findById(id);
+         return Optional.of(categoriaRepository.findById(id).orElseThrow(()-> new RuntimeException("La categoria no fue encontrada con ID: " + id)));
     }
 
     /**

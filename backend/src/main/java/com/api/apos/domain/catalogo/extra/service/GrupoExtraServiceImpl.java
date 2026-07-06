@@ -118,7 +118,7 @@ public class GrupoExtraServiceImpl implements GrupoExtraService {
     @Override
     @Transactional(readOnly = true)
     public Optional<GrupoExtra> obtenerGrupoExtraPorId(Long id) {
-        return grupoExtraRepository.findById(id);
+        return Optional.of(grupoExtraRepository.findById(id).orElseThrow(() -> new RuntimeException("Grupo de extras no encontrado con ID: " + id)));
     }
 
     /**

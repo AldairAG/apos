@@ -1,46 +1,59 @@
 package com.api.apos.domain.catalogo.producto;
 
-import com.api.apos.domain.catalogo.extra.service.ProductoGrupoExtraService;
-import com.api.apos.domain.catalogo.extra.service.ProductoGrupoExtraServiceImpl;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.api.apos.domain.catalogo.categoria.repository.CategoriaRepository;
+import com.api.apos.domain.catalogo.categoria.service.CategoriaService;
+import com.api.apos.domain.catalogo.extra.entity.GrupoExtra;
+import com.api.apos.domain.catalogo.extra.entity.ProductoGrupoExtra;
+import com.api.apos.domain.catalogo.extra.service.GrupoExtraService;
 import com.api.apos.domain.catalogo.producto.dto.CreateProductoDTO;
 import com.api.apos.domain.catalogo.producto.dto.ProductoDTO;
 import com.api.apos.domain.catalogo.producto.mapper.ProductoMapper;
 import com.api.apos.domain.catalogo.receta.service.RecetaService;
-
-import lombok.RequiredArgsConstructor;
 
 /**
  * Implementación del servicio de gestión de productos
  * Maneja el catálogo completo de productos para el POS
  */
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class ProductoServiceImpl implements ProductoService {
 
     private final ProductoRepository productoRepository;
 
-    private final CategoriaRepository categoriaRepository;
+    private final CategoriaService categoriaService;
 
     private final RecetaService recetaService;
 
+    private final GrupoExtraService grupoExtraService;
+
+    public ProductoServiceImpl(
+            ProductoRepository productoRepository,
+            CategoriaService categoriaService,
+            RecetaService recetaService,
+            @Lazy GrupoExtraService grupoExtraService) {
+        this.productoRepository = productoRepository;
+        this.categoriaService = categoriaService;
+        this.recetaService = recetaService;
+        this.grupoExtraService = grupoExtraService;
+    }
+
     /**
      * Crear un nuevo producto
+     * 
      * @param producto Producto a crear
      * @return Producto creado con timestamp
      */
     @Override
     public ProductoDTO crearProducto(CreateProductoDTO productoDto) {
-        Producto producto =  Producto.builder()
+        Producto producto = Producto.builder()
                 .nombre(productoDto.getNombre())
                 .descripcion(productoDto.getDescripcion())
                 .precioVenta(BigDecimal.valueOf(productoDto.getPrecioVenta()))
@@ -49,10 +62,31 @@ public class ProductoServiceImpl implements ProductoService {
                 .tiempoPreparacion(productoDto.getTiempoPreparacion())
                 .activo(productoDto.isActivo())
                 .destacado(productoDto.isDestacado())
-                .categoria(categoriaRepository.findById(productoDto.getCategoriaId()).orElse(null))
-                .receta(productoDto.getRecetaId() != null ? recetaService.obtenerRecetaPorId(productoDto.getRecetaId()).get() : null) // Asignar receta si es necesario
                 .createdAt(LocalDateTime.now())
-                .build(); 
+                .build();
+
+        recetaService.obtenerRecetaPorId(productoDto.getRecetaId()).ifPresent(producto::setReceta);
+        categoriaService.obtenerCategoriaPorId(productoDto.getCategoriaId()).ifPresent(producto::setCategoria);
+
+        // Relacionar los grupos de extras con el producto
+        if (productoDto.getGruposExtra() != null) {
+            List<ProductoGrupoExtra> productosGrupoExtra = productoDto.getGruposExtra().stream()
+                    .map(extraDto -> {
+                        GrupoExtra grupoExtra = grupoExtraService.obtenerGrupoExtraPorId(extraDto.getGrupoExtraId())
+                                .get();
+
+                        ProductoGrupoExtra productoGrupoExtra = ProductoGrupoExtra.builder()
+                                .producto(producto)
+                                .grupoExtra(grupoExtra)
+                                .minimo(extraDto.getMinimo())
+                                .maximo(extraDto.getMaximo())
+                                .obligatorio(extraDto.getObligatorio())
+                                .build();
+                        return productoGrupoExtra;
+                    }).toList();
+
+            producto.setGruposExtra(productosGrupoExtra);
+        }
 
         Producto nuevoProducto = productoRepository.save(producto);
         return ProductoMapper.toDTO(nuevoProducto);
@@ -60,7 +94,8 @@ public class ProductoServiceImpl implements ProductoService {
 
     /**
      * Actualizar un producto existente
-     * @param id ID del producto
+     * 
+     * @param id       ID del producto
      * @param producto Datos actualizados del producto
      * @return Producto actualizado
      * @throws RuntimeException si el producto no existe
@@ -69,7 +104,7 @@ public class ProductoServiceImpl implements ProductoService {
     public Producto actualizarProducto(Long id, Producto producto) {
         Producto productoExistente = productoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + id));
-        
+
         productoExistente.setNombre(producto.getNombre());
         productoExistente.setCodigo(producto.getCodigo());
         productoExistente.setSku(producto.getSku());
@@ -84,12 +119,13 @@ public class ProductoServiceImpl implements ProductoService {
         productoExistente.setReceta(producto.getReceta());
         productoExistente.setUpdatedAt(LocalDateTime.now());
         productoExistente.setUpdatedBy(producto.getUpdatedBy());
-        
+
         return productoRepository.save(productoExistente);
     }
 
     /**
      * Eliminar un producto (borrado lógico)
+     * 
      * @param id ID del producto a eliminar
      * @throws RuntimeException si el producto no existe
      */
@@ -104,6 +140,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     /**
      * Obtener un producto por ID
+     * 
      * @param id ID del producto
      * @return Optional con el producto si existe
      */
@@ -115,13 +152,14 @@ public class ProductoServiceImpl implements ProductoService {
 
     /**
      * Obtener todos los productos de una sucursal
+     * 
      * @param idSucursal ID de la sucursal
      * @return Lista de productos
      */
     @Override
     @Transactional(readOnly = true)
     public List<ProductoDTO> obtenerProductosPorSucursal(Long idSucursal) {
-        
+
         List<Producto> productos = productoRepository.findAll();
         // Aquí puedes mapear los productos a DTOs si es necesario
         return productos.stream()
@@ -132,6 +170,7 @@ public class ProductoServiceImpl implements ProductoService {
     /**
      * Obtener productos activos de una sucursal
      * Filtra productos que están activos y disponibles para venta
+     * 
      * @param idSucursal ID de la sucursal
      * @return Lista de productos activos
      */
@@ -139,14 +178,15 @@ public class ProductoServiceImpl implements ProductoService {
     @Transactional(readOnly = true)
     public List<Producto> obtenerProductosActivos(Long idSucursal) {
         return productoRepository.findAll().stream()
-                .filter(p -> Boolean.TRUE.equals(p.getActivo()) && 
-                           Boolean.TRUE.equals(p.getDisponible()))
+                .filter(p -> Boolean.TRUE.equals(p.getActivo()) &&
+                        Boolean.TRUE.equals(p.getDisponible()))
                 .toList();
     }
 
     /**
      * Activar o desactivar un producto
-     * @param id ID del producto
+     * 
+     * @param id     ID del producto
      * @param activo Estado activo/inactivo
      * @return Producto actualizado
      * @throws RuntimeException si el producto no existe
@@ -163,7 +203,8 @@ public class ProductoServiceImpl implements ProductoService {
     /**
      * Marcar producto como agotado o disponible
      * Útil para gestionar inventario en tiempo real
-     * @param id ID del producto
+     * 
+     * @param id      ID del producto
      * @param agotado Estado agotado/disponible
      * @return Producto actualizado
      * @throws RuntimeException si el producto no existe
@@ -179,6 +220,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     /**
      * Obtener productos asociados a una receta
+     * 
      * @param idReceta ID de la receta
      * @return Lista de productos
      */
@@ -190,7 +232,8 @@ public class ProductoServiceImpl implements ProductoService {
 
     /**
      * Actualizar precio de un producto
-     * @param id ID del producto
+     * 
+     * @param id     ID del producto
      * @param precio Nuevo precio
      * @return Producto actualizado
      * @throws RuntimeException si el producto no existe
@@ -207,8 +250,9 @@ public class ProductoServiceImpl implements ProductoService {
     /**
      * Buscar productos por nombre, código o SKU
      * Permite búsqueda rápida en el POS
+     * 
      * @param idSucursal ID de la sucursal
-     * @param termino Término de búsqueda
+     * @param termino    Término de búsqueda
      * @return Lista de productos que coinciden
      */
     @Override
@@ -219,6 +263,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     /**
      * Obtener productos por categoría
+     * 
      * @param idCategoria ID de la categoría
      * @return Lista de productos de la categoría
      */
@@ -231,6 +276,7 @@ public class ProductoServiceImpl implements ProductoService {
     /**
      * Obtener productos destacados
      * Útil para mostrar promociones o productos especiales
+     * 
      * @param idSucursal ID de la sucursal
      * @return Lista de productos destacados
      */
@@ -242,7 +288,8 @@ public class ProductoServiceImpl implements ProductoService {
 
     /**
      * Marcar producto como destacado
-     * @param id ID del producto
+     * 
+     * @param id        ID del producto
      * @param destacado Estado destacado
      * @return Producto actualizado
      * @throws RuntimeException si el producto no existe
@@ -259,7 +306,8 @@ public class ProductoServiceImpl implements ProductoService {
     /**
      * Actualizar orden de visualización
      * Define el orden en que aparecen los productos en el menú
-     * @param id ID del producto
+     * 
+     * @param id    ID del producto
      * @param orden Nuevo orden
      * @return Producto actualizado
      * @throws RuntimeException si el producto no existe
@@ -276,6 +324,7 @@ public class ProductoServiceImpl implements ProductoService {
     /**
      * Obtener producto por código
      * Búsqueda por el código único del producto
+     * 
      * @param codigo Código del producto
      * @return Optional con el producto si existe
      */
@@ -288,6 +337,7 @@ public class ProductoServiceImpl implements ProductoService {
     /**
      * Obtener producto por SKU
      * Búsqueda por el SKU único del producto
+     * 
      * @param sku SKU del producto
      * @return Optional con el producto si existe
      */
