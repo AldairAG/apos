@@ -8,6 +8,7 @@ import com.api.apos.domain.pos.dto.MesaResponseDTO;
 import com.api.apos.domain.pos.dto.OrdenResponseDTO;
 import com.api.apos.domain.pos.dto.ProductosBySucursalResponse;
 import com.api.apos.domain.pos.service.POSService;
+import com.api.apos.domain.pos.useCase.CrearOrdenUseCase;
 import com.api.apos.helpers.ApiResponseWrapper;
 
 import lombok.RequiredArgsConstructor;
@@ -28,10 +29,12 @@ public class POSController {
 
     private final POSService posService;
 
+    private final CrearOrdenUseCase crearOrdenUseCase;
+
     @PostMapping("/crear-orden")
     public ResponseEntity<ApiResponseWrapper<OrdenResponseDTO>> crearOrden(@RequestBody CrearOrdenDTO crearOrdenDTO) {
         try {
-            OrdenResponseDTO ordenResponseDTO = posService.crearOrden(crearOrdenDTO);
+            OrdenResponseDTO ordenResponseDTO = crearOrdenUseCase.crearOrden(crearOrdenDTO);
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, ordenResponseDTO, null));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ApiResponseWrapper<>(false, null, e.getMessage()));

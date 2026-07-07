@@ -8,6 +8,7 @@ import com.api.apos.domain.auth.empleado.entity.Empleado;
 import com.api.apos.domain.mesa.Mesa;
 import com.api.apos.domain.sucursal.Sucursal;
 import com.api.apos.enums.EstadoOrden;
+import com.api.apos.enums.EstadoPago;
 import com.api.apos.enums.TipoOrden;
 
 import jakarta.persistence.CascadeType;
@@ -45,6 +46,9 @@ public class Orden {
     
     @Enumerated(EnumType.STRING)
     private EstadoOrden estado;
+
+    @Enumerated(EnumType.STRING)
+    private EstadoPago estadoPago;
     
     private Integer numeroPersonas;
     private Integer tiempoPreparacion;

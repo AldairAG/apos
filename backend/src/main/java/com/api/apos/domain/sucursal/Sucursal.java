@@ -6,10 +6,10 @@ import com.api.apos.domain.auth.empleado.entity.Empleado;
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.caja.caja.Caja;
 import com.api.apos.domain.caja.gasto.entity.Gasto;
-import com.api.apos.domain.inventario.compra.entity.CompraInventario;
-import com.api.apos.domain.inventario.existencias.entity.ExistenciaMaterial;
 import com.api.apos.domain.mesa.Mesa;
 import com.api.apos.domain.orden.entity.Orden;
+import com.api.apos.domain.stock.compra.entity.CompraInventario;
+import com.api.apos.domain.stock.existencias.entity.ExistenciaMaterial;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
