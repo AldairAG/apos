@@ -1,10 +1,10 @@
-package com.api.apos.domain.caja.service;
+package com.api.apos.domain.caja.corte.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.api.apos.domain.caja.entity.CorteCaja;
+import com.api.apos.domain.caja.corte.CorteCaja;
 
 public interface CorteCajaService {
     CorteCaja abrirCorteCaja(Long idCaja, Long idEmpleado, BigDecimal montoInicial);

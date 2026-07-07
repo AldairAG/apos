@@ -1,9 +1,9 @@
-package com.api.apos.domain.caja.service;
+package com.api.apos.domain.caja.movimeinto.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.api.apos.domain.caja.entity.MovimientoCaja;
+import com.api.apos.domain.caja.movimeinto.MovimientoCaja;
 import com.api.apos.enums.MetodoPago;
 import com.api.apos.enums.TipoMovimientoCaja;
 

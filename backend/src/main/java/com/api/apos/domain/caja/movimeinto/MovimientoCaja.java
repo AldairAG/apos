@@ -1,9 +1,10 @@
-package com.api.apos.domain.caja.entity;
+package com.api.apos.domain.caja.movimeinto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.api.apos.domain.auth.empleado.entity.Empleado;
+import com.api.apos.domain.caja.caja.Caja;
 import com.api.apos.domain.orden.entity.Orden;
 import com.api.apos.enums.MetodoPago;
 import com.api.apos.enums.TipoMovimientoCaja;

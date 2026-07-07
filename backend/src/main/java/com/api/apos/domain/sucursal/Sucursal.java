@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.api.apos.domain.auth.empleado.entity.Empleado;
 import com.api.apos.domain.auth.usuario.Usuario;
-import com.api.apos.domain.caja.entity.Caja;
+import com.api.apos.domain.caja.caja.Caja;
 import com.api.apos.domain.caja.gasto.entity.Gasto;
 import com.api.apos.domain.inventario.compra.entity.CompraInventario;
 import com.api.apos.domain.inventario.existencias.entity.ExistenciaMaterial;

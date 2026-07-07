@@ -1,8 +1,10 @@
-package com.api.apos.domain.caja.entity;
+package com.api.apos.domain.caja.caja;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.api.apos.domain.caja.corte.CorteCaja;
+import com.api.apos.domain.caja.movimeinto.MovimientoCaja;
 import com.api.apos.domain.sucursal.Sucursal;
 
 import jakarta.persistence.CascadeType;

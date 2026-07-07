@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.api.apos.domain.auth.empleado.entity.Empleado;
-import com.api.apos.domain.caja.entity.MovimientoCaja;
+import com.api.apos.domain.caja.movimeinto.MovimientoCaja;
 import com.api.apos.domain.sucursal.Sucursal;
 import com.api.apos.enums.EstadoCompra;
 
