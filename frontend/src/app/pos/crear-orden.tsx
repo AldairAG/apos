@@ -24,7 +24,7 @@ export default function CrearOrdenScreen() {
   const [paso, setPaso] = useState<PasoCreacion>('seleccion');
   const [tipoOrden, setTipoOrden] = useState<TipoOrden | null>(null);
   const [mesaSeleccionada, setMesaSeleccionada] = useState<number | null>(null);
-  const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
+  const [carrito, setCarrito] = useState<DetalleOrdenDTO[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState<number | null>(null);
   const [modalProducto, setModalProducto] = useState<ProductosBySucursalResponse | null>(null);
@@ -45,10 +45,8 @@ export default function CrearOrdenScreen() {
     let cantidadTotal = 0;
 
     carrito.forEach(item => {
-      const precioProducto = item.producto.precioVenta * item.cantidad;
-      const precioExtras = item.extras.reduce((sum, extra) => sum + (extra.precio * extra.cantidad), 0);
-      subtotal += precioProducto + precioExtras;
-      cantidadTotal += item.cantidad;
+      subtotal += item.subtotal;
+      cantidadTotal += item.subtotal;
     });
 
     const descuento = 0; // Aquí se podría calcular descuentos
@@ -163,9 +161,9 @@ export default function CrearOrdenScreen() {
     });
 
     const itemExistente = carrito.find(item => 
-      item.producto.id === modalProducto.id &&
-      JSON.stringify(item.extras) === JSON.stringify(extrasArray) &&
-      item.observaciones === observacionesTemp
+      item.productoId === modalProducto.id &&
+      JSON.stringify(item.extras) === JSON.stringify(extrasArray) 
+      //item.observaciones === observacionesTemp
     );
 
     if (itemExistente) {
@@ -175,12 +173,20 @@ export default function CrearOrdenScreen() {
           : item
       ));
     } else {
-      setCarrito([...carrito, {
-        producto: modalProducto,
+      const nuevoCarritoItem: DetalleOrdenDTO = {
         cantidad: cantidadTemp,
-        observaciones: observacionesTemp,
-        extras: extrasArray
-      }]);
+        precioUnitario: modalProducto.precioVenta,
+        subtotal: modalProducto.precioVenta * cantidadTemp+(extrasArray.reduce((sum, extra) => sum + (extra.precio * extra.cantidad), 0) * cantidadTemp),
+        extras: extrasArray.map(extra => ({
+          opcionExtraId: extra.id,
+          cantidad: extra.cantidad,
+          precioUnitario: extra.precio,
+          subtotal: extra.precio * extra.cantidad
+        })),
+        productoId: modalProducto.id
+      };
+
+      setCarrito([...carrito, nuevoCarritoItem]);
     }
 
     setModalProducto(null);
@@ -191,6 +197,7 @@ export default function CrearOrdenScreen() {
       eliminarDelCarrito(index);
       return;
     }
+
     setCarrito(carrito.map((item, i) => i === index ? { ...item, cantidad: nuevaCantidad } : item));
   };
 
@@ -215,15 +222,15 @@ export default function CrearOrdenScreen() {
 
     try {
       const detalles: DetalleOrdenDTO[] = carrito.map(item => ({
-        productoId: item.producto.id,
+        productoId: item.productoId,
         cantidad: item.cantidad,
-        precioUnitario: item.producto.precioVenta,
-        subtotal: item.producto.precioVenta * item.cantidad,
+        precioUnitario: item.precioUnitario,
+        subtotal: item.subtotal,
         extras: item.extras.map(extra => ({
-          opcionExtraId: extra.id,
+          opcionExtraId: extra.opcionExtraId,
           cantidad: extra.cantidad,
-          precioUnitario: extra.precio,
-          subtotal: extra.precio * extra.cantidad
+          precioUnitario: extra.precioUnitario,
+          subtotal: extra.subtotal
         }))
       }));
 
@@ -465,17 +472,17 @@ export default function CrearOrdenScreen() {
             </View>
 
             {carrito.map((item, index) => (
-              <View key={`${item.producto.id}-${index}`} style={styles.carritoItem}>
+              <View key={`${item.productoId}-${index}`} style={styles.carritoItem}>
                 <View style={styles.carritoItemInfo}>
-                  <Text style={styles.carritoItemNombre}>{item.producto.nombre}</Text>
+                  <Text style={styles.carritoItemNombre}>{productos.find(p => p.id === item.productoId)?.nombre}</Text>
                   {item.extras.length > 0 ? (
                     <Text style={styles.carritoItemExtras}>
-                      {item.extras.map(e => `${e.nombre} x${e.cantidad}`).join(', ')}
+                      {item.extras.map(e => `${productos.find(p => p.id === e.opcionExtraId)?.nombre} x${e.cantidad}`).join(', ')}
                     </Text>
                   ) : null}
-                  {item.observaciones ? (
+                  {/*item.observaciones ? (
                     <Text style={styles.carritoItemObs}>{item.observaciones}</Text>
-                  ) : null}
+                  ) : null*/}
                 </View>
 
                 <View style={styles.carritoItemControls}>
