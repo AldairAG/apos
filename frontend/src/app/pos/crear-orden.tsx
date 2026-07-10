@@ -1,13 +1,13 @@
 import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
-import { CrearOrdenDTO, DetalleOrdenDTO, OpcionExtraResponse, ProductosBySucursalResponse, TipoOrden } from '@/features/pos/pos.types';
-import usePos from '@/features/pos/usePos';
 import { EstadoMesa } from '@/features/mesas/mesas.types';
+import { CrearOrdenDTO, DetalleOrdenDTO, ProductosBySucursalResponse, TipoOrden } from '@/features/pos/pos.types';
+import usePos from '@/features/pos/usePos';
+import { useSucursal } from '@/features/sucursal/useSucursal';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useSucursal } from '@/features/sucursal/useSucursal';
 
-type PasoCreacion = 'seleccion-tipo' | 'seleccion-mesa' | 'agregar-productos';
+type PasoCreacion = 'seleccion' | 'agregar-productos';
 
 interface ItemCarrito {
   producto: ProductosBySucursalResponse;
@@ -18,10 +18,10 @@ interface ItemCarrito {
 
 export default function CrearOrdenScreen() {
   const { ordenId } = useLocalSearchParams<{ ordenId?: string }>();
-  const { productos, mesas, cargarProductos, cargarMesas, crearOrden, selectedMesa, seleccionarMesa } = usePos();
+  const { productos, mesas, cargarProductos, cargarMesas, cargarOrdenes, crearOrden, seleccionarMesa } = usePos();
   const {sucursalActual}=useSucursal();
   
-  const [paso, setPaso] = useState<PasoCreacion>('seleccion-tipo');
+  const [paso, setPaso] = useState<PasoCreacion>('seleccion');
   const [tipoOrden, setTipoOrden] = useState<TipoOrden | null>(null);
   const [mesaSeleccionada, setMesaSeleccionada] = useState<number | null>(null);
   const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
@@ -37,7 +37,7 @@ export default function CrearOrdenScreen() {
   useEffect(() => {
     cargarProductos();
     cargarMesas();
-  }, []);
+  }, [cargarProductos, cargarMesas]);
 
   // Calcular totales en tiempo real
   const totales = useMemo(() => {
@@ -57,19 +57,48 @@ export default function CrearOrdenScreen() {
     return { subtotal, descuento, total, cantidadTotal };
   }, [carrito]);
 
-  const seleccionarTipo = (tipo: TipoOrden) => {
+  const mesasDisponibles = useMemo(() => {
+    return mesas.filter((m: any) => m.activa && m.estado !== EstadoMesa.OCUPADA && !m.ordenActualDTO);
+  }, [mesas]);
+
+  const iniciarOrden = (tipo: TipoOrden) => {
     setTipoOrden(tipo);
-    if (tipo === TipoOrden.EN_MESA) {
-      setPaso('seleccion-mesa');
-    } else {
-      setPaso('agregar-productos');
-    }
+    setMesaSeleccionada(null);
+    setPaso('agregar-productos');
   };
 
   const seleccionarMesaYContinuar = (mesaId: number) => {
+    const mesa = mesas.find((m: any) => m.id === mesaId);
+
+    if (!mesa?.activa || mesa.estado === EstadoMesa.OCUPADA || Boolean(mesa.ordenActualDTO)) {
+      Alert.alert('Mesa no disponible', 'La mesa seleccionada ya está ocupada o no está disponible.');
+      return;
+    }
+
     setMesaSeleccionada(mesaId);
     seleccionarMesa(mesaId);
+    setTipoOrden(TipoOrden.EN_MESA);
     setPaso('agregar-productos');
+  };
+
+  const validarMesaAntesDeCrear = () => {
+    if (tipoOrden !== TipoOrden.EN_MESA) {
+      return true;
+    }
+
+    if (!mesaSeleccionada) {
+      Alert.alert('Error', 'Selecciona una mesa para la orden.');
+      return false;
+    }
+
+    const mesa = mesas.find((m: any) => m.id === mesaSeleccionada);
+
+    if (!mesa?.activa || mesa.estado === EstadoMesa.OCUPADA || Boolean(mesa.ordenActualDTO)) {
+      Alert.alert('Mesa ocupada', 'La mesa ya no está disponible para una nueva orden.');
+      return false;
+    }
+
+    return true;
   };
 
   const abrirModalProducto = (producto: ProductosBySucursalResponse) => {
@@ -180,6 +209,10 @@ export default function CrearOrdenScreen() {
       return;
     }
 
+    if (!validarMesaAntesDeCrear()) {
+      return;
+    }
+
     try {
       const detalles: DetalleOrdenDTO[] = carrito.map(item => ({
         productoId: item.producto.id,
@@ -210,6 +243,8 @@ export default function CrearOrdenScreen() {
       };
 
       await crearOrden(ordenDTO);
+      await cargarMesas();
+      await cargarOrdenes();
       Alert.alert('Éxito', 'Orden creada correctamente', [
         { text: 'OK', onPress: () => router.back() }
       ]);
@@ -245,8 +280,7 @@ export default function CrearOrdenScreen() {
     return cats;
   }, [productos]);
 
-  // PASO 1: Selección de Tipo
-  if (paso === 'seleccion-tipo') {
+  if (paso === 'seleccion') {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -257,57 +291,46 @@ export default function CrearOrdenScreen() {
           <View style={{ width: 40 }} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.seleccionTipoContainer}>
-          <Text style={styles.seleccionTipoTitle}>¿Qué tipo de orden deseas crear?</Text>
-
-          <TouchableOpacity
-            style={styles.tipoCard}
-            onPress={() => seleccionarTipo(TipoOrden.EN_MESA)}
-            activeOpacity={0.8}
-          >
-            <POSCard variant="elevated" style={styles.tipoCardInner}>
-              <POSIcon name="restaurant" size={64} color={COLORS.primary} />
-              <Text style={styles.tipoCardTitle}>Orden en Mesa</Text>
-              <Text style={styles.tipoCardSubtitle}>Servicio en restaurante</Text>
-            </POSCard>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.tipoCard}
-            onPress={() => seleccionarTipo(TipoOrden.PARA_LLEVAR)}
-            activeOpacity={0.8}
-          >
-            <POSCard variant="elevated" style={styles.tipoCardInner}>
-              <POSIcon name="bag-handle" size={64} color={COLORS.success} />
-              <Text style={styles.tipoCardTitle}>Orden Rápida</Text>
-              <Text style={styles.tipoCardSubtitle}>Para llevar o recoger</Text>
-            </POSCard>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-    );
-  }
-
-  // PASO 2: Selección de Mesa
-  if (paso === 'seleccion-mesa') {
-    const mesasDisponibles = mesas.filter((m: any) => m.activa);
-
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => setPaso('seleccion-tipo')}>
-            <POSIcon name="arrow-back" size={24} color={COLORS.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Seleccionar Mesa</Text>
-          <View style={{ width: 40 }} />
-        </View>
-
         <FlatList
           data={mesasDisponibles}
           keyExtractor={(item) => item.id.toString()}
           numColumns={2}
           contentContainerStyle={styles.mesasGrid}
           columnWrapperStyle={styles.columnWrapper}
+          ListHeaderComponent={(
+            <View style={styles.seleccionTipoContainer}>
+              <Text style={styles.seleccionTipoTitle}>Selecciona una mesa libre o inicia una orden directa</Text>
+              <Text style={styles.seleccionTipoSubtitle}>Las mesas ocupadas quedan bloqueadas para evitar duplicar órdenes.</Text>
+
+              <View style={styles.quickActions}>
+                <TouchableOpacity
+                  style={[styles.tipoCard, styles.quickActionButton, styles.quickActionSecondary]}
+                  onPress={() => iniciarOrden(TipoOrden.PARA_LLEVAR)}
+                  activeOpacity={0.8}
+                >
+                  <POSIcon name="bag-handle" size={24} color={COLORS.success} />
+                  <Text style={styles.quickActionText}>Orden para llevar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.tipoCard, styles.quickActionButton, styles.quickActionPrimary]}
+                  onPress={() => iniciarOrden(TipoOrden.RECOGER)}
+                  activeOpacity={0.8}
+                >
+                  <POSIcon name="flash" size={24} color={COLORS.primary} />
+                  <Text style={styles.quickActionText}>Orden rápida</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.mesasTitle}>Mesas disponibles</Text>
+            </View>
+          )}
+          ListEmptyComponent={(
+            <View style={styles.emptyState}>
+              <POSIcon name="grid-outline" size={56} color={COLORS.border} />
+              <Text style={styles.emptyStateText}>No hay mesas libres disponibles</Text>
+            </View>
+          )}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.mesaCard}
@@ -317,11 +340,7 @@ export default function CrearOrdenScreen() {
               <POSCard variant="elevated" style={styles.mesaCardInner}>
                 <POSIcon name="restaurant" size={40} color={COLORS.primary} />
                 <Text style={styles.mesaNombre}>{item.nombre}</Text>
-                <POSBadge
-                  label={item.estado.toString()}
-                  variant={item.estado === EstadoMesa.LIBRE ? 'success' : 'warning'}
-                  size="small"
-                />
+                <POSBadge label="LIBRE" variant="success" size="small" />
               </POSCard>
             </TouchableOpacity>
           )}
@@ -330,14 +349,19 @@ export default function CrearOrdenScreen() {
     );
   }
 
-  // PASO 3: Agregar Productos
+  // PASO 2: Agregar Productos
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton} 
-          onPress={() => tipoOrden === TipoOrden.EN_MESA ? setPaso('seleccion-mesa') : setPaso('seleccion-tipo')}
+          onPress={() => {
+            setPaso('seleccion');
+            setTipoOrden(null);
+            setMesaSeleccionada(null);
+            setCarrito([]);
+          }}
         >
           <POSIcon name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
@@ -441,17 +465,17 @@ export default function CrearOrdenScreen() {
             </View>
 
             {carrito.map((item, index) => (
-              <View key={index} style={styles.carritoItem}>
+              <View key={`${item.producto.id}-${index}`} style={styles.carritoItem}>
                 <View style={styles.carritoItemInfo}>
                   <Text style={styles.carritoItemNombre}>{item.producto.nombre}</Text>
-                  {item.extras.length > 0 && (
+                  {item.extras.length > 0 ? (
                     <Text style={styles.carritoItemExtras}>
                       {item.extras.map(e => `${e.nombre} x${e.cantidad}`).join(', ')}
                     </Text>
-                  )}
-                  {item.observaciones && (
+                  ) : null}
+                  {item.observaciones ? (
                     <Text style={styles.carritoItemObs}>{item.observaciones}</Text>
-                  )}
+                  ) : null}
                 </View>
 
                 <View style={styles.carritoItemControls}>
@@ -781,20 +805,58 @@ const styles = StyleSheet.create({
   // Selección Tipo
   seleccionTipoContainer: {
     padding: 20,
-    gap: 20,
+    gap: 16,
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: 20,
+    paddingBottom: 8,
   },
   seleccionTipoTitle: {
     fontSize: 22,
     fontWeight: 'bold',
     color: COLORS.text,
     textAlign: 'center',
-    marginBottom: 20,
+  },
+  seleccionTipoSubtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  quickActions: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
   },
   tipoCard: {
     width: '100%',
     maxWidth: 350,
+  },
+  quickActionButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  quickActionPrimary: {
+    backgroundColor: '#E3F2FD',
+  },
+  quickActionSecondary: {
+    backgroundColor: '#E8F5E9',
+  },
+  quickActionText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  mesasTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginTop: 8,
+    alignSelf: 'flex-start',
   },
   tipoCardInner: {
     padding: 40,
@@ -827,6 +889,17 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     gap: 12,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    gap: 12,
+  },
+  emptyStateText: {
+    fontSize: 15,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
   mesaNombre: {
     fontSize: 16,

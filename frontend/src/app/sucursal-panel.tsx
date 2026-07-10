@@ -1,5 +1,6 @@
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { SucursalRequiredRoute } from '@/components/SucursalRequiredRoute';
+import { SucursalSelector } from '@/components/SucursalSelector';
 import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
 import { useSucursal } from '@/features/sucursal/useSucursal';
 import { ROUTES } from '@/routes/routes';
@@ -81,6 +82,7 @@ export default function SucursalPanelScreen() {
   // En tablet/desktop: el sidebar siempre está visible, este estado no se usa.
   const [drawerAbierto, setDrawerAbierto] = useState(false);
   const [activeOption, setActiveOption] = useState<string | null>(null);
+  const [mostrarSelectorSucursal, setMostrarSelectorSucursal] = useState(false);
 
   const handleMenuClick = (option: MenuOption) => {
     setActiveOption(option.id);
@@ -91,6 +93,10 @@ export default function SucursalPanelScreen() {
 
   const handleBackToDashboard = () => {
     router.back();
+  };
+
+  const handleSucursalSeleccionada = () => {
+    setMostrarSelectorSucursal(false);
   };
 
   const renderSidebarContent = () => (
@@ -219,7 +225,14 @@ export default function SucursalPanelScreen() {
                 <View style={styles.headerSpacer} />
               )}
               <Text style={styles.contentTitle}>Panel de Sucursal</Text>
-              <View style={styles.headerSpacer} />
+              <TouchableOpacity
+                style={styles.changeSucursalButton}
+                onPress={() => setMostrarSelectorSucursal(true)}
+                activeOpacity={0.8}
+              >
+                <POSIcon name="swap-horizontal" size={18} color={COLORS.primary} />
+                <Text style={styles.changeSucursalText}>Cambiar</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Estado vacío + accesos rápidos */}
@@ -266,6 +279,12 @@ export default function SucursalPanelScreen() {
 
           </View>
         </View>
+
+        <SucursalSelector
+          visible={mostrarSelectorSucursal}
+          onClose={() => setMostrarSelectorSucursal(false)}
+          onSelect={handleSucursalSeleccionada}
+        />
       </SucursalRequiredRoute>
     </ProtectedRoute>
   );
@@ -458,8 +477,21 @@ const styles = StyleSheet.create({
   // Spacer invisible para centrar el título cuando no hay botón
   headerSpacer: {
     width: 44,
+  },  changeSucursalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: '#E3F2FD',
+    marginLeft: 8,
   },
-
+  changeSucursalText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
   // ── Scroll ────────────────────────────────────────────────────────────────
   scrollView: {
     flex: 1,

@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { CrearOrdenDTO, MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from "./pos.types";
+import { CrearOrdenDTO, EstadoOrden, MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from "./pos.types";
 import { posService } from "./pos.service";
 
 export const createOrdenThunk = createAsyncThunk<
@@ -58,6 +58,36 @@ export const fetchMesasBySucursalThunk = createAsyncThunk<
     } catch (error: any) {
         return rejectWithValue(
             error.response?.data?.message || 'Error al cargar las mesas'
+        );
+    }
+});
+
+export const updateOrdenEstadoThunk = createAsyncThunk<
+    OrdenResponseDTO,
+    { ordenId: number; estado: EstadoOrden },
+    { rejectValue: string }
+>('pos/updateOrdenEstado', async ({ ordenId, estado }, { rejectWithValue }) => {
+    try {
+        const orden = await posService.updateOrdenEstado(ordenId, estado);
+        return orden;
+    } catch (error: any) {
+        return rejectWithValue(
+            error.response?.data?.message || 'Error al actualizar la orden'
+        );
+    }
+});
+
+export const cancelOrdenThunk = createAsyncThunk<
+    number,
+    { ordenId: number; motivo?: string },
+    { rejectValue: string }
+>('pos/cancelOrden', async ({ ordenId, motivo }, { rejectWithValue }) => {
+    try {
+        await posService.cancelarOrden(ordenId, motivo);
+        return ordenId;
+    } catch (error: any) {
+        return rejectWithValue(
+            error.response?.data?.message || 'Error al cancelar la orden'
         );
     }
 });

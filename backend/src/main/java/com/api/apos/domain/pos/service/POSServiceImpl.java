@@ -17,14 +17,15 @@ import com.api.apos.domain.orden.entity.DetalleOrdenExtra;
 import com.api.apos.domain.orden.entity.Orden;
 import com.api.apos.domain.orden.service.OrdenService;
 import com.api.apos.domain.pos.dto.CrearOrdenDTO;
+import com.api.apos.domain.pos.dto.CrearOrdenDTO.DetalleOrdenDTO;
 import com.api.apos.domain.pos.dto.MesaResponseDTO;
 import com.api.apos.domain.pos.dto.OrdenResponseDTO;
-import com.api.apos.domain.pos.dto.ProductosBySucursalResponse;
-import com.api.apos.domain.pos.dto.CrearOrdenDTO.DetalleOrdenDTO;
 import com.api.apos.domain.pos.dto.OrdenResponseDTO.DetalleOrdenExtraResponseDTO;
 import com.api.apos.domain.pos.dto.OrdenResponseDTO.DetalleOrdenResponseDTO;
+import com.api.apos.domain.pos.dto.ProductosBySucursalResponse;
 import com.api.apos.domain.sucursal.Sucursal;
 import com.api.apos.domain.sucursal.service.SucursalService;
+import com.api.apos.enums.EstadoMesa;
 
 import lombok.AllArgsConstructor;
 
@@ -70,6 +71,19 @@ public class POSServiceImpl implements POSService {
     public OrdenResponseDTO crearOrden(CrearOrdenDTO crearOrdenDTO) {
 
         Sucursal sucursal = sucursalService.obtenerSucursalPorId(crearOrdenDTO.getSucursalId());
+        Mesa mesaAsignada = null;
+
+        if (crearOrdenDTO.getMesaId() != null && crearOrdenDTO.getMesaId() > 0) {
+            mesaAsignada = mesaService.obtenerMesaPorId(crearOrdenDTO.getMesaId());
+
+            if (!Boolean.TRUE.equals(mesaAsignada.getActiva())) {
+                throw new IllegalStateException("La mesa seleccionada no está activa");
+            }
+
+            if (mesaAsignada.getEstado() == EstadoMesa.OCUPADA || mesaAsignada.getOrdenActual() != null) {
+                throw new IllegalStateException("La mesa seleccionada ya está ocupada");
+            }
+        }
 
         Orden orden = Orden.builder()
                 .tipo(crearOrdenDTO.getTipo())
@@ -81,6 +95,7 @@ public class POSServiceImpl implements POSService {
                 .descuento(crearOrdenDTO.getDescuento())
                 .total(crearOrdenDTO.getSubtotal())
                 .sucursal(sucursal)
+                .mesa(mesaAsignada)
                 .build();
 
         List<DetalleOrden> detalles = mapDetalleOrdenDTOToEntity(crearOrdenDTO.getDetallesDTO());
@@ -98,13 +113,53 @@ public class POSServiceImpl implements POSService {
 
         Orden ordenGuardada = ordenService.crearOrden(orden);
 
-        if (crearOrdenDTO.getMesaId() != null && crearOrdenDTO.getMesaId() > 0) {
-            mesaService.asignarOrdenAMesa(crearOrdenDTO.getMesaId(), ordenGuardada.getId());
+        if (mesaAsignada != null) {
+            mesaService.asignarOrdenAMesa(mesaAsignada.getId(), ordenGuardada.getId());
         }
 
-
-
         return mapOrdenToResponseDTO(ordenGuardada);
+    }
+
+    @Override
+    public Mesa cambiarEstadoMesa(Long mesaId, Boolean disponible) {
+        return null;
+    }
+
+    @Override
+    public List<OrdenResponseDTO> obtenerOrdenesPorSucursal(Long sucursalId) {
+        List<Orden> ordenes = ordenService.obtenerOrdenesPorSucursal(sucursalId);
+
+        List<OrdenResponseDTO> response = ordenes.stream()
+                .map(this::mapOrdenToResponseDTO)
+                .toList();
+
+        return response;
+    }
+
+    @Override
+    public List<MesaResponseDTO> obtenerMesasPorSucursal(Long sucursalId) {
+        List<Mesa> mesas = mesaService.obtenerMesasPorSucursal(sucursalId);
+
+        List<MesaResponseDTO> response = mesas.stream()
+                .map(mesa -> {
+
+                    MesaResponseDTO res = new MesaResponseDTO();
+                    res.setId(mesa.getId());
+                    res.setNombre(mesa.getNombre());
+                    res.setEstado(mesa.getEstado());
+                    res.setActiva(mesa.getActiva());
+
+                    Optional<Orden> ordenActual = ordenService.obtenerOrdenPorId(mesa.getOrdenActual());
+                    if (ordenActual.isPresent()) {
+                        res.setOrdenActualDTO(mapOrdenToResponseDTO(ordenActual.get()));
+                    } else {
+                        res.setOrdenActualDTO(null);
+                    }
+                    return res;
+                })
+                .toList();
+
+        return response;
     }
 
     private List<DetalleOrden> mapDetalleOrdenDTOToEntity(List<DetalleOrdenDTO> detallesDTO) {
@@ -191,48 +246,6 @@ public class POSServiceImpl implements POSService {
         detalleResponseDTO.setExtras(extras);
 
         return detalleResponseDTO;
-    }
-
-    @Override
-    public Mesa cambiarEstadoMesa(Long mesaId, Boolean disponible) {
-        return null;
-    }
-
-    @Override
-    public List<OrdenResponseDTO> obtenerOrdenesPorSucursal(Long sucursalId) {
-        List<Orden> ordenes = ordenService.obtenerOrdenesPorSucursal(sucursalId);
-
-        List<OrdenResponseDTO> response = ordenes.stream()
-                .map(this::mapOrdenToResponseDTO)
-                .toList();
-
-        return response;
-    }
-
-    @Override
-    public List<MesaResponseDTO> obtenerMesasPorSucursal(Long sucursalId) {
-        List<Mesa> mesas = mesaService.obtenerMesasPorSucursal(sucursalId);
-
-        List<MesaResponseDTO> response = mesas.stream()
-                .map(mesa -> {
-
-                    MesaResponseDTO res = new MesaResponseDTO();
-                    res.setId(mesa.getId());
-                    res.setNombre(mesa.getNombre());
-                    res.setEstado(mesa.getEstado());
-                    res.setActiva(mesa.getActiva());
-
-                    Optional<Orden> ordenActual = ordenService.obtenerOrdenPorId(mesa.getOrdenActual());
-                    if (ordenActual.isPresent()) {
-                        res.setOrdenActualDTO(mapOrdenToResponseDTO(ordenActual.get()));
-                    } else {
-                        res.setOrdenActualDTO(null);
-                    }
-                    return res;
-                })
-                .toList();
-
-        return response;
     }
 
 }

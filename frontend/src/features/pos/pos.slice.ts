@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from "./pos.types";
-import { createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk } from "./pos.thunks";
+import { cancelOrdenThunk, createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk, updateOrdenEstadoThunk } from "./pos.thunks";
 
 interface POSState {
     productos: ProductosBySucursalResponse[];
@@ -98,6 +98,38 @@ const posSlice = createSlice({
                 state.mesas = action.payload;
             })
             .addCase(fetchMesasBySucursalThunk.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            });
+        builder
+            .addCase(updateOrdenEstadoThunk.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateOrdenEstadoThunk.fulfilled, (state, action) => {
+                state.loading = false;
+                state.ordenes = state.ordenes.map((orden) =>
+                    orden.id === action.payload.id ? action.payload : orden
+                );
+            })
+            .addCase(updateOrdenEstadoThunk.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            });
+        builder
+            .addCase(cancelOrdenThunk.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(cancelOrdenThunk.fulfilled, (state, action) => {
+                state.loading = false;
+                state.ordenes = state.ordenes.map((orden) =>
+                    orden.id === action.payload
+                        ? { ...orden, estado: 'CANCELADA' }
+                        : orden
+                );
+            })
+            .addCase(cancelOrdenThunk.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             });
