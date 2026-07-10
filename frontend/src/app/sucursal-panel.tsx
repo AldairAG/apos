@@ -7,14 +7,14 @@ import { ROUTES } from '@/routes/routes';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  Dimensions,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');

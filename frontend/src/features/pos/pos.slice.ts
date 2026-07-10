@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from "./pos.types";
 import { cancelOrdenThunk, createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk, updateOrdenEstadoThunk } from "./pos.thunks";
+import { MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from "./pos.types";
 
 interface POSState {
     productos: ProductosBySucursalResponse[];

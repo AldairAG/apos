@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { CrearOrdenDTO, EstadoOrden, MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from "./pos.types";
 import { posService } from "./pos.service";
+import { CrearOrdenDTO, EstadoOrden, MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from "./pos.types";
 
 export const createOrdenThunk = createAsyncThunk<
     OrdenResponseDTO,
