@@ -5,15 +5,19 @@ import java.util.List;
 
 import com.api.apos.domain.stock.existencias.entity.ExistenciaMaterial;
 
-public interface InventarioService {
+public interface ExistenciaService {
     // Consultas
     ExistenciaMaterial obtenerPorId(Long id);
+
+    List<ExistenciaMaterial> obtenerPorIds(List<Long> materialIds, Long sucursalId);
 
     ExistenciaMaterial obtenerExistencia(Long sucursalId,Long materialId);
 
     List<ExistenciaMaterial> obtenerInventarioSucursal(Long sucursalId);
 
     List<ExistenciaMaterial> obtenerStockBajo(Long sucursalId);
+
+    List<ExistenciaMaterial> guardarExistencias(List<ExistenciaMaterial> existencias);
 
     // Movimientos
     ExistenciaMaterial agregarStock(Long sucursalId,Long materialId,BigDecimal cantidad);
@@ -22,9 +26,4 @@ public interface InventarioService {
 
     ExistenciaMaterial ajustarStock(Long sucursalId,Long materialId,BigDecimal nuevaCantidad);
 
-    // Configuración
-    ExistenciaMaterial actualizarStockMinimo(Long sucursalId,Long materialId,BigDecimal stockMinimo);
-
-    // Transferencias
-    void transferirStock(Long sucursalOrigenId,Long sucursalDestinoId,Long materialId,BigDecimal cantidad);
 }

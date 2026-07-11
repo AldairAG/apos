@@ -16,6 +16,7 @@ public class CreateProductoDTO {
     private boolean destacado;
     private Long categoriaId;
     private Long recetaId;
+    private Long sucursalId;
     private List<ExtraAsociadoDto> gruposExtra;
 
     @Data

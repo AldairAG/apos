@@ -1,5 +1,6 @@
 package com.api.apos.domain.stock.existencias.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.api.apos.domain.stock.material.Material;
@@ -21,9 +22,9 @@ public class ExistenciaMaterial {
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
     private Long id;
 
-    private java.math.BigDecimal stockActual;
-    private java.math.BigDecimal stockMinimo;
-    private java.math.BigDecimal stockMaximo;
+    private BigDecimal stockActual;
+    private BigDecimal stockMinimo;
+    private BigDecimal stockMaximo;
     
     private String ubicacion;
     private String lote;
