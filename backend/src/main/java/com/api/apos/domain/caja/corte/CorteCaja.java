@@ -3,7 +3,6 @@ package com.api.apos.domain.caja.corte;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.api.apos.domain.auth.empleado.entity.Empleado;
 import com.api.apos.domain.caja.caja.Caja;
 
 import jakarta.persistence.Entity;
@@ -56,7 +55,4 @@ public class CorteCaja {
     @JoinColumn(name = "caja_id")
     private Caja caja;
     
-    @ManyToOne
-    @JoinColumn(name = "empleado_id")
-    private Empleado empleado;
 }

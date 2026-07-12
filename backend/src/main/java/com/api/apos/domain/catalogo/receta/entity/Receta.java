@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.catalogo.producto.Producto;
-import com.api.apos.domain.stock.produccion.entity.Produccion;
+import com.api.apos.domain.inventario.produccion.entity.Produccion;
 import com.api.apos.enums.Unidad;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 

@@ -2,7 +2,7 @@ package com.api.apos.domain.catalogo.receta.entity;
 
 import java.math.BigDecimal;
 
-import com.api.apos.domain.stock.material.Material;
+import com.api.apos.domain.inventario.material.Material;
 import com.api.apos.enums.Unidad;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 

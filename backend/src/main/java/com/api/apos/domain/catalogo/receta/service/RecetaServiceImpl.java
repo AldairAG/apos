@@ -14,8 +14,8 @@ import com.api.apos.domain.catalogo.receta.dto.CrearRecetaDTO;
 import com.api.apos.domain.catalogo.receta.entity.DetalleReceta;
 import com.api.apos.domain.catalogo.receta.entity.Receta;
 import com.api.apos.domain.catalogo.receta.repository.RecetaRepository;
-import com.api.apos.domain.stock.material.Material;
-import com.api.apos.domain.stock.material.service.MaterialService;
+import com.api.apos.domain.inventario.material.Material;
+import com.api.apos.domain.inventario.material.service.MaterialService;
 
 import lombok.RequiredArgsConstructor;
 

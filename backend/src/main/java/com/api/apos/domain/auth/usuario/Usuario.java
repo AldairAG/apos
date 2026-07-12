@@ -3,7 +3,7 @@ package com.api.apos.domain.auth.usuario;
 import com.api.apos.domain.catalogo.categoria.entity.Categoria;
 import com.api.apos.domain.catalogo.extra.entity.GrupoExtra;
 import com.api.apos.domain.catalogo.receta.entity.Receta;
-import com.api.apos.domain.stock.material.Material;
+import com.api.apos.domain.inventario.material.Material;
 import com.api.apos.domain.sucursal.Sucursal;
 import com.api.apos.enums.Rol;
 import jakarta.persistence.*;

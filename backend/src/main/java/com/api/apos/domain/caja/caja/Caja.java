@@ -1,11 +1,13 @@
 package com.api.apos.domain.caja.caja;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import com.api.apos.domain.caja.corte.CorteCaja;
 import com.api.apos.domain.caja.movimeinto.MovimientoCaja;
 import com.api.apos.domain.sucursal.Sucursal;
+import com.api.apos.enums.EstadoCaja;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -35,6 +37,8 @@ public class Caja {
     
     private String nombre;
     private Boolean activa;
+    private EstadoCaja estado;
+    private BigDecimal montoActual;
     
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

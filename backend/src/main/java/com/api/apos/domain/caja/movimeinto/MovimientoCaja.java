@@ -7,6 +7,7 @@ import com.api.apos.domain.auth.empleado.entity.Empleado;
 import com.api.apos.domain.caja.caja.Caja;
 import com.api.apos.domain.orden.entity.Orden;
 import com.api.apos.enums.MetodoPago;
+import com.api.apos.enums.TipoConceptoMovimiento;
 import com.api.apos.enums.TipoMovimientoCaja;
 
 import jakarta.persistence.Entity;
@@ -37,10 +38,14 @@ public class MovimientoCaja {
     private Long id;
     
     @Enumerated(EnumType.STRING)
-    private TipoMovimientoCaja tipo;
+    private TipoMovimientoCaja tipoMovimiento;
     
     @Enumerated(EnumType.STRING)
     private MetodoPago metodoPago;
+
+    @Enumerated(EnumType.STRING)
+    private TipoConceptoMovimiento conceptoMovimiento;
+
     
     private String concepto;
     private String referencia;

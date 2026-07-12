@@ -12,4 +12,5 @@ public interface CajaService {
     void eliminarCaja(Long id);
     Caja obtenerCajaPorId(Long id); 
     List<CajaDTO> obtenerCajasPorSucursal(Long idSucursal);
+
 }
