@@ -2,19 +2,30 @@ package com.api.apos.features.inventario.useCase;
 
 import java.util.List;
 
-import com.api.apos.features.inventario.dto.MaterialDTO;
+import org.springframework.stereotype.Service;
 
+import com.api.apos.domain.inventario.existencias.entity.ExistenciaMaterial;
+import com.api.apos.domain.inventario.existencias.service.ExistenciaService;
+import com.api.apos.features.inventario.dto.MaterialDTO;
+import com.api.apos.features.inventario.mapper.MaterialMapper;
+
+import lombok.AllArgsConstructor;
+
+@Service
+@AllArgsConstructor
 public class ObtenerExistenciasPorSucursalUseCase {
 
-    public List<MaterialDTO> execute(Long sucursalId) {
-        // Lógica para obtener las existencias por sucursal
-        // Aquí deberías llamar a tu servicio o repositorio para obtener los datos
-        // Por ejemplo:
-        // List<MaterialDTO> existencias = existenciaService.obtenerExistenciasPorSucursal(sucursalId);
-        // return existencias;
+    private final ExistenciaService existenciaService;
 
-        // Por ahora, devolvemos una lista vacía como ejemplo
-        return List.of();
+    public List<MaterialDTO> execute(Long sucursalId) {
+
+        List<ExistenciaMaterial> existencias = existenciaService.obtenerInventarioSucursal(sucursalId);
+
+        List<MaterialDTO> materialesDTO = existencias.stream()
+                .map(existencia -> MaterialMapper.toDTO(existencia.getMaterial(), sucursalId))
+                .toList();
+
+        return materialesDTO;
     }
 
 }

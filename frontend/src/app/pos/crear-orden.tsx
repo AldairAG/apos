@@ -1,11 +1,12 @@
 import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
-import { CrearOrdenDTO, DetalleOrdenDTO, OpcionExtraResponse, ProductosBySucursalResponse, TipoOrden } from '@/features/pos/pos.types';
+import { CrearOrdenDTO, DetalleOrdenDTO, MesaPosResponseDTO, OpcionExtraResponse, ProductosBySucursalResponse, TipoOrden } from '@/features/pos/pos.types';
 import usePos from '@/features/pos/usePos';
 import { EstadoMesa } from '@/features/mesas/mesas.types';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSucursal } from '@/features/sucursal/useSucursal';
+import { Mesa } from '@/types/pos.types';
 
 type PasoCreacion = 'seleccion-tipo' | 'seleccion-mesa' | 'agregar-productos';
 
@@ -290,7 +291,7 @@ export default function CrearOrdenScreen() {
 
   // PASO 2: Selección de Mesa
   if (paso === 'seleccion-mesa') {
-    const mesasDisponibles = mesas.filter((m: any) => m.activa);
+    const mesasDisponibles = mesas.filter((m: MesaPosResponseDTO) => m.estado === EstadoMesa.LIBRE);
 
     return (
       <View style={styles.container}>

@@ -35,8 +35,7 @@ public class ExistenciaServiceImpl implements ExistenciaService {
 
     @Override
     public List<ExistenciaMaterial> obtenerInventarioSucursal(Long sucursalId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'obtenerInventarioSucursal'");
+        return existenciaRepository.findBySucursal_Id(sucursalId);
     }
 
     @Override
