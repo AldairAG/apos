@@ -1,8 +1,10 @@
 package com.api.apos.domain.caja.caja.service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.api.apos.domain.caja.caja.Caja;
 import com.api.apos.domain.caja.caja.CajaRepository;
@@ -66,6 +68,22 @@ public class CajaServiceImpl implements CajaService {
         return cajas.stream()
                 .map(CajaMapper::toDTO)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public Caja modificarSaldo(Long id, BigDecimal monto) {
+        Caja caja = cajaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Caja no encontrada con ID: " + id));
+
+        if (caja.getMontoActual() == null) {
+            caja.setMontoActual(BigDecimal.ZERO);
+        }
+
+        BigDecimal nuevoSaldo = caja.getMontoActual().add(monto);
+        caja.setMontoActual(nuevoSaldo);
+
+        return cajaRepository.save(caja);
     }
     
     

@@ -12,4 +12,5 @@ public interface CorteCajaService {
     List<CorteCaja> obtenerCortesPorEmpleado(Long idEmpleado);
     List<CorteCaja> obtenerCortesPorFecha(Long idCaja, LocalDateTime fechaInicio, LocalDateTime fechaFin);
     CorteCaja guardarCorteCaja(CorteCaja corteCaja);
+    CorteCaja obtenerCorteCajaActual(Long idCaja);
 }

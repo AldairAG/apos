@@ -39,6 +39,7 @@ public class Caja {
     private Boolean activa;
     private EstadoCaja estado;
     private BigDecimal montoActual;
+    private Long corteActualId;
     
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
