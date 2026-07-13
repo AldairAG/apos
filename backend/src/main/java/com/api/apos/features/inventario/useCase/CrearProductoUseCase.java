@@ -46,7 +46,7 @@ public class CrearProductoUseCase {
      * @param productoDto DTO del producto a crear
      * @return Producto creado con timestamp
      */
-    public ProductoDTO crearProducto(CreateProductoDTO productoDto) {
+    public ProductoDTO execute(CreateProductoDTO productoDto) {
 
         // Crear un nuevo producto a partir del DTO recibido
         Producto producto = Producto.builder()

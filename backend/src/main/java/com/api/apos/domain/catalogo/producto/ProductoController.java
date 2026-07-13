@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.api.apos.domain.catalogo.producto.dto.CreateProductoDTO;
 import com.api.apos.domain.catalogo.producto.dto.ProductoDTO;
+import com.api.apos.features.inventario.useCase.CrearProductoUseCase;
 import com.api.apos.helpers.ApiResponseWrapper;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,8 @@ public class ProductoController {
 
     private final ProductoService productoService;
 
+    private final CrearProductoUseCase crearProductoUseCase;
+
     /**
      * Crear un nuevo producto
      * POST /api/productos
@@ -37,7 +40,7 @@ public class ProductoController {
     @PostMapping
     public ResponseEntity<ApiResponseWrapper<ProductoDTO>> crearProducto(@RequestBody CreateProductoDTO producto) {
         try {
-            ProductoDTO nuevoProducto = productoService.crearProducto(producto);
+            ProductoDTO nuevoProducto = crearProductoUseCase.execute(producto);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new ApiResponseWrapper<>(true, nuevoProducto, "Producto creado exitosamente"));
         } catch (Exception e) {
