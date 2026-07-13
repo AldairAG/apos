@@ -8,9 +8,9 @@ export interface Mesa {
 }
 
 export enum EstadoMesa {
-    LIBRE,
-    OCUPADA,
-    RESERVADA
+    LIBRE="LIBRE",
+    OCUPADA="OCUPADA",
+    RESERVADA="RESERVADA"
 }
 
 export interface CrearMesaDTO {
