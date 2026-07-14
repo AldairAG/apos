@@ -373,4 +373,9 @@ public class OrdenServiceImpl implements OrdenService {
         
         return orden;
     }
+
+    @Override
+    public List<Orden> obtenerOrdenesPorSucursalYEstados(Long idSucursal, List<EstadoOrden> estados) {
+        return ordenRepository.findOrdenesPorSucursalYEstados(idSucursal, estados);
+    }
 }
