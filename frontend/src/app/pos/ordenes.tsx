@@ -8,23 +8,21 @@ import { FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, Vi
 type FiltroTipo = 'todas' | 'mesas' | 'llevar' | 'entregadas';
 
 export default function OrdenesScreen() {
-  const { getOrdenesBySucursal, loading } = usePos();
-  const [ordenes, setOrdenes] = useState<OrdenResponseDTO[]>([]);
+  const { ordenes, cargarOrdenes, loading } = usePos();
   const [filtroActivo, setFiltroActivo] = useState<FiltroTipo>('todas');
   const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
-    loadOrdenes();
-  }, []);
+    const loadOrdenes = async () => {
+      try {
+        await cargarOrdenes();
+      } catch (error) {
+        console.error('Error al cargar órdenes:', error);
+      }
+    };
 
-  const loadOrdenes = async () => {
-    try {
-      const data = await getOrdenesBySucursal(1); // Usar sucursal actual
-      setOrdenes(data || []);
-    } catch (error) {
-      console.error('Error al cargar órdenes:', error);
-    }
-  };
+    loadOrdenes();
+  }, [cargarOrdenes]);
 
   const obtenerColorEstado = (estado: EstadoOrden) => {
     switch (estado) {

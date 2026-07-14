@@ -15,7 +15,7 @@ export default function HomeScreen() {
   useEffect(() => {
     cargarMesas();
     cargarOrdenes();
-  }, []);
+  }, [cargarMesas, cargarOrdenes]);
 
   // Calcular estadísticas desde datos reales
   const mesasLibres = mesas.filter((m: any) => m.estado === EstadoMesa.LIBRE).length;

@@ -22,6 +22,13 @@ export const posService = {
     },
 
     /**
+     * Cancela una orden
+     */
+    cancelOrden: async (ordenId: number, motivo: string): Promise<void> => {
+        await apiBase.patch<void>(`/ordenes/${ordenId}/cancelar?motivo=${encodeURIComponent(motivo)}`);
+    },
+
+    /**
      * Obtiene todos los productos de una sucursal
      */
     getProductosBySucursal: async (sucursalId: number): Promise<ProductosBySucursalResponse[]> => {

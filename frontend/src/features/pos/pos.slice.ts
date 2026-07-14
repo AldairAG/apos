@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from "./pos.types";
-import { createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk } from "./pos.thunks";
+import { cancelOrdenThunk, createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk } from "./pos.thunks";
+import { EstadoOrden, MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from "./pos.types";
 
 interface POSState {
     productos: ProductosBySucursalResponse[];
@@ -85,6 +85,23 @@ const posSlice = createSlice({
                 state.ordenes = [...state.ordenes, action.payload];
             })
             .addCase(createOrdenThunk.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            });
+        builder
+            .addCase(cancelOrdenThunk.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(cancelOrdenThunk.fulfilled, (state, action) => {
+                state.loading = false;
+                state.ordenes = state.ordenes.map((orden) =>
+                    orden.id === action.payload.id
+                        ? { ...orden, estado: EstadoOrden.CANCELADA }
+                        : orden
+                );
+            })
+            .addCase(cancelOrdenThunk.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             });

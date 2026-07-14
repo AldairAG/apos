@@ -7,13 +7,13 @@ import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } fr
 
 export default function DetalleOrdenScreen() {
   const { ordenId } = useLocalSearchParams<{ ordenId: string }>();
-  const { ordenes } = usePos();
+  const { ordenes, cancelOrden } = usePos();
   const [orden, setOrden] = useState<OrdenResponseDTO | null>(null);
   const [mostrarAcciones, setMostrarAcciones] = useState(false);
 
   useEffect(() => {
     loadOrden();
-  }, [ordenId]);
+  }, [ordenId, ordenes]);
 
   const loadOrden = async () => {
     try {
@@ -72,7 +72,18 @@ export default function DetalleOrdenScreen() {
       `¿Estás seguro de cancelar la orden ${orden.folio}?`,
       [
         { text: 'No', style: 'cancel' },
-        { text: 'Sí, Cancelar', style: 'destructive', onPress: () => console.log('Cancelado') }
+        {
+          text: 'Sí, Cancelar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await cancelOrden(orden.id, 'Cancelada desde la app');
+              setOrden({ ...orden, estado: EstadoOrden.CANCELADA });
+            } catch (error) {
+              Alert.alert('Error', 'No se pudo cancelar la orden. Intenta de nuevo más tarde.');
+            }
+          }
+        }
       ]
     );
   };
@@ -88,7 +99,7 @@ export default function DetalleOrdenScreen() {
   const tiempoTranscurrido = calcularTiempoTranscurrido();
   const puedeEditar = orden.estado === EstadoOrden.PENDIENTE || orden.estado === EstadoOrden.EN_PREPARACION;
   const puedeCobrar = orden.estado === EstadoOrden.LISTA;
-  const puedeEnviarCocina = orden.estado === EstadoOrden.PENDIENTE;
+  const puedeCancelar = orden.estado !== EstadoOrden.CANCELADA && orden.estado !== EstadoOrden.ENTREGADA;
 
   return (
     <View style={styles.container}>
@@ -313,13 +324,13 @@ export default function DetalleOrdenScreen() {
 
       {/* Acciones Fijas en el Bottom */}
       <View style={styles.bottomActions}>
-        {puedeEnviarCocina && (
+        {puedeCancelar && (
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: COLORS.info, flex: 1 }]}
-            onPress={enviarACocina}
+            style={[styles.actionButton, { backgroundColor: COLORS.danger, flex: 1 }]}
+            onPress={cancelarOrden}
           >
-            <POSIcon name="send" size={20} color={COLORS.white} />
-            <Text style={styles.actionButtonText}>Enviar a Cocina</Text>
+            <POSIcon name="close-circle" size={20} color={COLORS.white} />
+            <Text style={styles.actionButtonText}>Cancelar Orden</Text>
           </TouchableOpacity>
         )}
 
