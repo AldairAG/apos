@@ -15,6 +15,7 @@ import com.api.apos.domain.orden.entity.Orden;
 import com.api.apos.domain.orden.service.OrdenService;
 import com.api.apos.domain.sucursal.Sucursal;
 import com.api.apos.domain.sucursal.service.SucursalService;
+import com.api.apos.features.cocina.CocinaWebSocketService;
 import com.api.apos.features.pos.dto.CrearOrdenDTO;
 import com.api.apos.features.pos.dto.OrdenResponseDTO;
 import com.api.apos.features.pos.dto.CrearOrdenDTO.DetalleOrdenDTO;
@@ -31,6 +32,7 @@ public class CrearOrdenUseCase {
     private final ProductoService productoService;
     private final OpcionExtraService opcionExtraService;
     private final MesaService mesaService;
+    private final CocinaWebSocketService cocinaWebSocketService;
 
     public OrdenResponseDTO crearOrden(CrearOrdenDTO crearOrdenDTO) {
 
@@ -66,6 +68,8 @@ public class CrearOrdenUseCase {
         if (crearOrdenDTO.getMesaId() != null && crearOrdenDTO.getMesaId() > 0) {
             mesaService.asignarOrdenAMesa(crearOrdenDTO.getMesaId(), ordenGuardada.getId());
         }
+
+        cocinaWebSocketService.notificarOrdenCreada(orden);
 
         return PosMapper.mapOrdenToResponseDTO(ordenGuardada);
     }

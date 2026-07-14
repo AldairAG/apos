@@ -1,5 +1,11 @@
 package com.api.apos.features.inventario.useCase;
 
+import org.springframework.stereotype.Service;
+
+import lombok.AllArgsConstructor;
+
+@Service
+@AllArgsConstructor
 public class HacerProduccionUseCase {
     public void execute(String materialId, int cantidad) {
         // Lógica para hacer producción de un producto intermedio

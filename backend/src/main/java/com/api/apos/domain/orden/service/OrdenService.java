@@ -31,4 +31,5 @@ public interface OrdenService {
     Orden cerrarOrden(Long id);
     Orden completarOrden(Long id, Long idEmpleado);
     BigDecimal calcularTotalOrden(Long id);
+    List<Orden> obtenerOrdenesPorSucursalYEstados(Long idSucursal, List<EstadoOrden> estados);
 }
