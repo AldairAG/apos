@@ -16,7 +16,7 @@ export interface OrdenResponseDTO {
     total: number;
     fecha: Date;
     horaEntrega: Date;
-    createdAt: Date;
+    createdAt: string;
     mesa: Mesa;
     detalles: DetalleOrdenResponseDTO[];
 }

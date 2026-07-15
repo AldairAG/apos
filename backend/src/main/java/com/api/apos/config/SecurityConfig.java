@@ -65,6 +65,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                     // Endpoints públicos de autenticación
                     .requestMatchers("/api/usuarios/**").permitAll()
+                    .requestMatchers("/ws/**").permitAll()
 
                         // Swagger y documentación
                         //.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()

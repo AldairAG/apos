@@ -46,6 +46,15 @@ const posSlice = createSlice({
             state.productos = [];
             state.selectedProducto = null;
         },
+        agregarOrden: (state, action: PayloadAction<OrdenResponseDTO>) => {
+            state.ordenes.push(action.payload);
+        },
+        actualizarOrden: (state, action: PayloadAction<OrdenResponseDTO>) => {
+            const index =state.ordenes.findIndex(o => o.id === action.payload.id);
+            if (index >= 0) {
+                state.ordenes[index] =action.payload;
+            }
+        }
     },
     extraReducers: (builder) => {
         // Fetch productos by sucursal
@@ -121,5 +130,5 @@ const posSlice = createSlice({
 
     }
 })
-export const { setSearchQuery,setSelectedMesa,clearError,clearProductos,setSelectedProducto  } = posSlice.actions;
+export const { setSearchQuery, setSelectedMesa, clearError, clearProductos, setSelectedProducto, agregarOrden, actualizarOrden } = posSlice.actions;
 export default posSlice.reducer;

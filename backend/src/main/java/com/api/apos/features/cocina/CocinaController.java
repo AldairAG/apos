@@ -20,22 +20,23 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class CocinaController {
 
-    private final OrdenService ordenService;
+        private final OrdenService ordenService;
 
-    private static final List<EstadoOrden> ESTADOS_COCINA = List.of(
-            EstadoOrden.PENDIENTE,
-            EstadoOrden.EN_PREPARACION,
-            EstadoOrden.LISTA);
-@GetMapping("/sucursales/{sucursalId}/ordenes")
-public ApiResponseWrapper<List<OrdenResponseDTO>> obtenerOrdenesPendientes(
-        @PathVariable Long sucursalId) {
+        private static final List<EstadoOrden> ESTADOS_COCINA = List.of(
+                        EstadoOrden.PENDIENTE,
+                        EstadoOrden.EN_PREPARACION,
+                        EstadoOrden.LISTA);
 
-    List<OrdenResponseDTO> ordenes = ordenService
-            .obtenerOrdenesPorSucursalYEstados(sucursalId, ESTADOS_COCINA)
-            .stream()
-            .map(PosMapper::mapOrdenToResponseDTO)
-            .toList();
+        @GetMapping("/sucursales/{sucursalId}/ordenes")
+        public ApiResponseWrapper<List<OrdenResponseDTO>> obtenerOrdenesPendientes(
+                        @PathVariable Long sucursalId) {
 
-    return new ApiResponseWrapper<>(true, ordenes, null);
-}
+                List<OrdenResponseDTO> ordenes = ordenService
+                                .obtenerOrdenesPorSucursalYEstados(sucursalId, ESTADOS_COCINA)
+                                .stream()
+                                .map(PosMapper::mapOrdenToResponseDTO)
+                                .toList();
+
+                return new ApiResponseWrapper<>(true, ordenes, null);
+        }
 }

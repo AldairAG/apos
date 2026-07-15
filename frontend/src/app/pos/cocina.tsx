@@ -1,16 +1,36 @@
 import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { MOCK_ORDENES } from '@/data/posMockData';
+import { useCocina } from '@/features/cocina/useCocina';
+import { EstadoOrden, OrdenResponseDTO } from '@/features/pos/pos.types';
+import usePos from '@/features/pos/usePos';
 import { ROUTES } from '@/routes/routes';
-import { EstadoOrden, Orden } from '@/types/pos.types';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type ColumnaKDS = 'pendiente' | 'preparando' | 'lista';
 
 export default function CocinaScreen() {
-  const [ordenes, setOrdenes] = useState(MOCK_ORDENES);
+  const { ordenes } = usePos();
+  const { cargarOrdenes } = useCocina();
   const [tiempos, setTiempos] = useState<{ [key: number]: number }>({});
+
+  useEffect(() => {
+    cargarOrdenes();
+  }, []);
+
+  const minutosDesde = (fecha: string): number => {
+
+    const fechaNormalizada = fecha.replace(
+      /(\.\d{3})\d*/,
+      "$1"
+    );
+
+    const inicio = new Date(fechaNormalizada);
+
+    return Math.floor(
+      (Date.now() - inicio.getTime()) / 60000
+    );
+  };
 
   // Simulación de actualización de tiempos cada minuto
   useEffect(() => {
@@ -18,7 +38,7 @@ export default function CocinaScreen() {
       setTiempos(prev => {
         const nuevo = { ...prev };
         ordenes.forEach(orden => {
-          nuevo[orden.id] = (orden.tiempoTranscurrido || 0) + 1;
+          nuevo[orden.id] = (orden.createdAt ? minutosDesde(orden.createdAt) : 0) + 1;
         });
         return nuevo;
       });
@@ -27,7 +47,7 @@ export default function CocinaScreen() {
     // Inicializar tiempos
     const tiemposIniciales: { [key: number]: number } = {};
     ordenes.forEach(orden => {
-      tiemposIniciales[orden.id] = orden.tiempoTranscurrido || 0;
+      tiemposIniciales[orden.id] = (orden.createdAt ? minutosDesde(orden.createdAt) : 0);
     });
     setTiempos(tiemposIniciales);
 
@@ -35,11 +55,7 @@ export default function CocinaScreen() {
   }, [ordenes]);
 
   const cambiarEstado = (ordenId: number, nuevoEstado: EstadoOrden) => {
-    setOrdenes(ordenes.map(orden => 
-      orden.id === ordenId 
-        ? { ...orden, estado: nuevoEstado }
-        : orden
-    ));
+
   };
 
   const obtenerColorTiempo = (minutos: number) => {
@@ -52,8 +68,8 @@ export default function CocinaScreen() {
     return ordenes.filter(orden => orden.estado === estado);
   };
 
-  const renderOrdenCard = (orden: Orden, columna: ColumnaKDS) => {
-    const tiempo = tiempos[orden.id] || orden.tiempoTranscurrido || 0;
+  const renderOrdenCard = (orden: OrdenResponseDTO, columna: ColumnaKDS) => {
+    const tiempo = tiempos[orden.id] || (orden.createdAt ? minutosDesde(orden.createdAt) : 0);
     const colorTiempo = obtenerColorTiempo(tiempo);
 
     return (
@@ -61,14 +77,14 @@ export default function CocinaScreen() {
         {/* Header */}
         <View style={styles.ordenHeader}>
           <View style={styles.ordenHeaderLeft}>
-            <Text style={styles.ordenNumero}>{orden.numero}</Text>
-            {orden.mesaId && (
+            <Text style={styles.ordenNumero}>{orden.id}</Text>
+            {orden?.mesa?.nombre && (
               <View style={styles.mesaTag}>
                 <POSIcon name="restaurant" size={12} color={COLORS.white} />
-                <Text style={styles.mesaTagText}>Mesa {orden.mesaId}</Text>
+                <Text style={styles.mesaTagText}>Mesa {orden.mesa.nombre}</Text>
               </View>
             )}
-            {orden.paraLlevar && (
+            {!orden.mesa && (
               <POSBadge label="LLEVAR" variant="info" size="small" />
             )}
           </View>
@@ -79,28 +95,28 @@ export default function CocinaScreen() {
 
         {/* Items */}
         <View style={styles.ordenItems}>
-          {orden.items.map((item, index) => (
+          {orden.detalles.map((item, index) => (
             <View key={item.id} style={styles.ordenItem}>
               <View style={styles.itemCantidadBadge}>
                 <Text style={styles.itemCantidadTexto}>{item.cantidad}</Text>
               </View>
               <View style={styles.itemInfo}>
                 <Text style={styles.itemNombre} numberOfLines={1}>
-                  {item.producto.nombre}
+                  {item.nombreProducto}
                 </Text>
                 {item.extras.length > 0 && (
                   <View style={styles.itemExtras}>
                     {item.extras.map(extra => (
                       <Text key={extra.id} style={styles.itemExtra}>
-                        + {extra.nombre}
+                        + {extra.nombreExtra}
                       </Text>
                     ))}
                   </View>
                 )}
-                {item.notas && (
+                {orden.observaciones && (
                   <View style={styles.itemNotasContainer}>
                     <POSIcon name="alert-circle" size={12} color={COLORS.danger} />
-                    <Text style={styles.itemNotas}>{item.notas}</Text>
+                    <Text style={styles.itemNotas}>{orden.observaciones}</Text>
                   </View>
                 )}
               </View>
@@ -113,17 +129,17 @@ export default function CocinaScreen() {
           {columna === 'pendiente' && (
             <TouchableOpacity
               style={[styles.accionButton, styles.accionIniciar]}
-              onPress={() => cambiarEstado(orden.id, 'preparando')}
+              onPress={() => cambiarEstado(orden.id, EstadoOrden.EN_PREPARACION)}
             >
               <POSIcon name="play" size={18} color={COLORS.white} />
               <Text style={styles.accionButtonText}>Iniciar</Text>
             </TouchableOpacity>
           )}
-          
+
           {columna === 'preparando' && (
             <TouchableOpacity
               style={[styles.accionButton, styles.accionCompletar]}
-              onPress={() => cambiarEstado(orden.id, 'lista')}
+              onPress={() => cambiarEstado(orden.id, EstadoOrden.LISTA)}
             >
               <POSIcon name="checkmark" size={18} color={COLORS.white} />
               <Text style={styles.accionButtonText}>Completar</Text>
@@ -133,7 +149,7 @@ export default function CocinaScreen() {
           {columna === 'lista' && (
             <TouchableOpacity
               style={[styles.accionButton, styles.accionServido]}
-              onPress={() => console.log('Orden servida:', orden.numero)}
+              onPress={() => console.log('Orden servida:', orden.id)}
             >
               <POSIcon name="checkmark-done" size={18} color={COLORS.white} />
               <Text style={styles.accionButtonText}>Servido</Text>
@@ -155,7 +171,7 @@ export default function CocinaScreen() {
             <Text style={styles.columnaContadorTexto}>{ordenesColumna.length}</Text>
           </View>
         </View>
-        <ScrollView 
+        <ScrollView
           style={styles.columnaScroll}
           contentContainerStyle={styles.columnaContent}
           showsVerticalScrollIndicator={false}
@@ -181,9 +197,9 @@ export default function CocinaScreen() {
           <View style={styles.headerTop}>
             <Text style={styles.title}>Pantalla de Cocina</Text>
             <View style={styles.headerBadges}>
-              <POSBadge 
-                label={`${ordenes.length} ÓRDENES`} 
-                variant="info" 
+              <POSBadge
+                label={`${ordenes.length} ÓRDENES`}
+                variant="info"
               />
             </View>
           </View>
@@ -205,9 +221,9 @@ export default function CocinaScreen() {
 
         {/* Columnas KDS */}
         <View style={styles.columnasContainer}>
-          {renderColumna('Pendiente', 'pendiente', 'pendiente', '#FFC107')}
-          {renderColumna('Preparando', 'preparando', 'preparando', '#17A2B8')}
-          {renderColumna('Listo', 'lista', 'lista', '#28A745')}
+          {renderColumna('Pendiente', EstadoOrden.PENDIENTE, 'pendiente', '#FFC107')}
+          {renderColumna('Preparando', EstadoOrden.EN_PREPARACION, 'preparando', '#17A2B8')}
+          {renderColumna('Listo', EstadoOrden.LISTA, 'lista', '#28A745')}
         </View>
       </View>
     </ProtectedRoute>
