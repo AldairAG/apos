@@ -40,7 +40,7 @@ const MENU_OPTIONS: MenuOption[] = [
     id: 'inventario',
     titulo: 'Inventario',
     icono: 'cube',
-    ruta: ROUTES.INVENTARIO.MATERIALES,
+    ruta: ROUTES.INVENTARIO.EXISTENCIAS,
     color: COLORS.info,
   },
   {

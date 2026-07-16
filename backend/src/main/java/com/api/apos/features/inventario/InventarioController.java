@@ -49,9 +49,6 @@ public class InventarioController {
         }
     }
 
-
-
-
     /**
      * Hacer produccion de un producto intermedio, es decir, 
      * consumir los productos que lo componen y
@@ -75,9 +72,10 @@ public class InventarioController {
      * Obtener el inventario de una sucursal.
      * @return List<MaterialDTO> - Lista de materiales con sus existencias en la sucursal.
      * @param sucursalId - ID de la sucursal para la cual se desea obtener el inventario.
+     * Endpoint: GET /api/inventario/getBySucursalId/{sucursalId}
      */
     @GetMapping("/getBySucursalId/{sucursalId}")
-    public ResponseEntity<ApiResponseWrapper<List<MaterialDTO>>> getMethodName(@PathVariable Long sucursalId) {
+    public ResponseEntity<ApiResponseWrapper<List<MaterialDTO>>> getBySucursalId(@PathVariable Long sucursalId) {
         try {
             // Lógica para obtener el inventario de la sucursal
             List<MaterialDTO> inventario = obtenerExistenciasPorSucursalUseCase.execute(sucursalId);

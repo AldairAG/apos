@@ -48,6 +48,10 @@ public class CrearProductoUseCase {
      */
     public ProductoDTO execute(CreateProductoDTO productoDto) {
 
+        if(productoDto.getSucursalId() == null) {
+            throw new IllegalArgumentException("El ID de la sucursal no puede ser nulo");
+        }
+
         // Crear un nuevo producto a partir del DTO recibido
         Producto producto = Producto.builder()
                 .nombre(productoDto.getNombre())

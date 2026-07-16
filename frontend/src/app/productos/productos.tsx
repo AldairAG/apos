@@ -5,6 +5,7 @@ import { createProductoDTO, Producto } from '@/features/producto/producto/produc
 import { useProducto } from '@/features/producto/producto/useProducto';
 import { Receta } from '@/features/producto/receta/receta.types';
 import { useRecetas } from '@/features/producto/receta/useReceta';
+import { useSucursal } from '@/features/sucursal/useSucursal';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -16,6 +17,7 @@ export default function ProductosScreen() {
   const { categorias, cargarCategorias } = useCategoria();
   const { recetas, cargarRecetas } = useRecetas();
   const { grupos, cargarGrupos } = useExtra();
+  const { sucursalActual } = useSucursal();
 
   const [busqueda, setBusqueda] = useState('');
   const [filtroActivo, setFiltroActivo] = useState<FiltroTipo>('todos');
@@ -36,6 +38,7 @@ export default function ProductosScreen() {
     categoriaId: 0,
     recetaId: 0,
     gruposExtra: undefined,
+    sucursalId: sucursalActual?.id ?? 0,
   });
 
   const [costoPersonalizado, setCostoPersonalizado] = useState(false);
@@ -63,6 +66,7 @@ export default function ProductosScreen() {
         categoriaId: productoEditando.categoria.id,
         recetaId: 0,
         gruposExtra: undefined,
+        sucursalId: sucursalActual?.id ?? 0,
       });
       setExtrasSeleccionados(productoEditando.gruposExtra.map((ge) => ge.id));
     } else {
@@ -83,6 +87,7 @@ export default function ProductosScreen() {
       categoriaId: 0,
       recetaId: 0,
       gruposExtra: undefined,
+      sucursalId: sucursalActual?.id ?? 0,
     });
     setCostoPersonalizado(false);
     setExtrasSeleccionados([]);

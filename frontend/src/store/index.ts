@@ -16,6 +16,7 @@ import recetaReducer from '../features/producto/receta/receta.slice';
 import sucursalReducer from '../features/sucursal/sucursal.slice';
 import authReducer from '../features/usuario/auth/auth.slice';
 import usuarioReducer from '../features/usuario/usuario/usuario.slice';
+import inventarioReducer from '../features/inventario/inventario/inventario.slice';
 
 const persistConfig = {
     key: 'root',
@@ -34,6 +35,7 @@ const rootReducer = combineReducers({
     gruposExtra: grupoExtraReducer,
     mesas: mesaReducer,
     pos: posReducer,
+    inventario: inventarioReducer,
 });
 
 const persistedReducer = persistReducer(

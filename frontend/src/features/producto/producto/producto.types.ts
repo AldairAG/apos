@@ -82,4 +82,5 @@ export interface createProductoDTO {
     categoriaId: number;
     recetaId?: number;
     gruposExtra?: ProductoGrupoExtra[];
+    sucursalId: number;
 }

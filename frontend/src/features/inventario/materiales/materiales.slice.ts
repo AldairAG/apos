@@ -1,10 +1,10 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import {
-    createMaterial,
-    deleteMaterial,
-    fetchMateriales,
-    fetchMaterialesBySucursal,
-    updateMaterial,
+  createMaterial,
+  deleteMaterial,
+  fetchMateriales,
+  fetchMaterialesBySucursal,
+  updateMaterial,
 } from './materiales.thunk';
 import { Material, MaterialState } from './materiales.types';
 
