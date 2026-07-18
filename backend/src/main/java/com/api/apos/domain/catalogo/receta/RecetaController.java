@@ -1,6 +1,5 @@
 package com.api.apos.domain.catalogo.receta;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -136,36 +135,6 @@ public class RecetaController {
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, recetas, null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(new ApiResponseWrapper<>(false, null, e.getMessage()));
-        }
-    }
-
-    /**
-     * Calcular costo de una receta
-     * GET /api/recetas/{id}/costo
-     */
-    @GetMapping("/{id}/costo")
-    public ResponseEntity<ApiResponseWrapper<BigDecimal>> calcularCostoReceta(@PathVariable Long id) {
-        try {
-            BigDecimal costo = recetaService.calcularCostoReceta(id);
-            return ResponseEntity.ok(new ApiResponseWrapper<>(true, costo, "Costo calculado exitosamente"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiResponseWrapper<>(false, null, e.getMessage()));
-        }
-    }
-
-    /**
-     * Recalcular y actualizar el costo total de una receta
-     * PUT /api/recetas/{id}/recalcular-costo
-     */
-    @PutMapping("/{id}/recalcular-costo")
-    public ResponseEntity<ApiResponseWrapper<Receta>> recalcularCostoTotal(@PathVariable Long id) {
-        try {
-            Receta receta = recetaService.recalcularCostoTotal(id);
-            return ResponseEntity.ok(new ApiResponseWrapper<>(true, receta, "Costo recalculado exitosamente"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ApiResponseWrapper<>(false, null, e.getMessage()));
         }
     }

@@ -112,6 +112,11 @@ export default function DashboardScreen() {
     }
   };
 
+  const handleCambiarSucursal = (event?: any) => {
+    event?.stopPropagation?.();
+    setMostrarSelectorSucursal(true);
+  };
+
   const handleSucursalSeleccionada = () => {
     if (moduloDestino) {
       router.push(moduloDestino as any);
@@ -222,11 +227,21 @@ export default function DashboardScreen() {
                     )}
                   </View>
 
-                  <POSIcon
-                    name="chevron-forward"
-                    size={24}
-                    color={sucursalActual ? COLORS.success : COLORS.danger}
-                  />
+                  <View style={styles.sucursalActions}>
+                    <TouchableOpacity
+                      style={styles.changeSucursalButton}
+                      onPress={handleCambiarSucursal}
+                      activeOpacity={0.8}
+                    >
+                      <POSIcon name="swap-horizontal" size={18} color={COLORS.primary} />
+                      <Text style={styles.changeSucursalText}>Cambiar</Text>
+                    </TouchableOpacity>
+                    <POSIcon
+                      name="chevron-forward"
+                      size={24}
+                      color={sucursalActual ? COLORS.success : COLORS.danger}
+                    />
+                  </View>
                 </View>
               </POSCard>
             </TouchableOpacity>
@@ -354,6 +369,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
+  },
+  sucursalActions: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  changeSucursalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: '#E3F2FD',
+  },
+  changeSucursalText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
   sucursalIconContainer: {
     width: 56,

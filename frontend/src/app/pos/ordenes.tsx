@@ -1,18 +1,26 @@
 import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
 import { EstadoOrden, OrdenResponseDTO, TipoOrden } from '@/features/pos/pos.types';
 import usePos from '@/features/pos/usePos';
+import { useSucursal } from '@/features/sucursal/useSucursal';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 type FiltroTipo = 'todas' | 'mesas' | 'llevar' | 'entregadas';
 
 export default function OrdenesScreen() {
+<<<<<<< HEAD
   const { ordenes, cargarOrdenes, loading } = usePos();
+=======
+  const { getOrdenesBySucursal, actualizarEstadoOrden, cancelarOrden, loading } = usePos();
+  const { sucursalActual } = useSucursal();
+  const [ordenes, setOrdenes] = useState<OrdenResponseDTO[]>([]);
+>>>>>>> 98d90cdc3691886b5de74b80a90685c782aba913
   const [filtroActivo, setFiltroActivo] = useState<FiltroTipo>('todas');
   const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
+<<<<<<< HEAD
     const loadOrdenes = async () => {
       try {
         await cargarOrdenes();
@@ -23,6 +31,26 @@ export default function OrdenesScreen() {
 
     loadOrdenes();
   }, [cargarOrdenes]);
+=======
+    if (!sucursalActual?.id) {
+      setOrdenes([]);
+      return;
+    }
+
+    loadOrdenes();
+  }, [sucursalActual?.id]);
+
+  const loadOrdenes = async () => {
+    if (!sucursalActual?.id) return;
+
+    try {
+      const data = await getOrdenesBySucursal(sucursalActual.id);
+      setOrdenes(data || []);
+    } catch (error) {
+      console.error('Error al cargar órdenes:', error);
+    }
+  };
+>>>>>>> 98d90cdc3691886b5de74b80a90685c782aba913
 
   const obtenerColorEstado = (estado: EstadoOrden) => {
     switch (estado) {
@@ -41,21 +69,19 @@ export default function OrdenesScreen() {
     }
   };
 
-  const filtrarOrdenes = () => {
+  const filtrarOrdenes = useMemo(() => {
     let ordenesFiltradas = ordenes;
 
-    // Filtrar por tipo
     if (filtroActivo === 'mesas') {
       ordenesFiltradas = ordenesFiltradas.filter(o => o.tipo === TipoOrden.EN_MESA);
     } else if (filtroActivo === 'llevar') {
-      ordenesFiltradas = ordenesFiltradas.filter(o => 
+      ordenesFiltradas = ordenesFiltradas.filter(o =>
         o.tipo === TipoOrden.PARA_LLEVAR || o.tipo === TipoOrden.DELIVERY
       );
     } else if (filtroActivo === 'entregadas') {
       ordenesFiltradas = ordenesFiltradas.filter(o => o.estado === EstadoOrden.ENTREGADA);
     }
 
-    // Filtrar por búsqueda
     if (busqueda.trim()) {
       const searchLower = busqueda.toLowerCase();
       ordenesFiltradas = ordenesFiltradas.filter(o =>
@@ -65,25 +91,47 @@ export default function OrdenesScreen() {
     }
 
     return ordenesFiltradas;
-  };
+  }, [ordenes, filtroActivo, busqueda]);
 
-  const enviarACocina = (orden: OrdenResponseDTO) => {
-    console.log('Enviar a cocina:', orden.folio);
-    // Aquí iría la lógica
+  const enviarACocina = async (orden: OrdenResponseDTO) => {
+    try {
+      await actualizarEstadoOrden(orden.id, EstadoOrden.EN_PREPARACION);
+      await loadOrdenes();
+      Alert.alert('Éxito', `La orden ${orden.folio} se envió a cocina.`);
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo enviar la orden a cocina.');
+    }
   };
 
   const cobrarOrden = (orden: OrdenResponseDTO) => {
-    console.log('Cobrar orden:', orden.folio);
-    // Aquí iría la lógica de cobro
+    router.push(`/pos/cobro?ordenId=${orden.id}` as any);
   };
 
   const continuarOrden = (orden: OrdenResponseDTO) => {
     router.push(`/pos/detalle-orden?ordenId=${orden.id}`);
   };
 
-  const cancelarOrden = (orden: OrdenResponseDTO) => {
-    console.log('Cancelar orden:', orden.folio);
-    // Aquí iría la lógica de cancelación
+  const cancelarOrdenActual = (orden: OrdenResponseDTO) => {
+    Alert.alert(
+      'Cancelar orden',
+      `¿Deseas cancelar la orden ${orden.folio}?`,
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Sí, cancelar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await cancelarOrden(orden.id, 'Cancelada desde la vista de órdenes');
+              await loadOrdenes();
+              Alert.alert('Listo', 'La orden fue cancelada.');
+            } catch (error) {
+              Alert.alert('Error', 'No se pudo cancelar la orden.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const formatearFecha = (fecha: Date) => {
@@ -152,7 +200,7 @@ export default function OrdenesScreen() {
               <View key={index} style={styles.ordenItem}>
                 <Text style={styles.ordenItemCantidad}>{detalle.cantidad}x</Text>
                 <Text style={styles.ordenItemNombre} numberOfLines={1}>
-                  Producto {detalle.productoId}
+                  {detalle.nombreProducto || `Producto ${detalle.id}`}
                 </Text>
               </View>
             ))}
@@ -218,7 +266,7 @@ export default function OrdenesScreen() {
                 {orden.estado !== EstadoOrden.CANCELADA && orden.estado !== EstadoOrden.ENTREGADA && (
                   <TouchableOpacity
                     style={[styles.accionButton, { backgroundColor: COLORS.danger }]}
-                    onPress={() => cancelarOrden(orden)}
+                    onPress={() => cancelarOrdenActual(orden)}
                   >
                     <POSIcon name="close" size={18} color={COLORS.white} />
                   </TouchableOpacity>
@@ -231,14 +279,21 @@ export default function OrdenesScreen() {
     );
   };
 
-  const ordenesFiltradas = filtrarOrdenes();
+  const ordenesFiltradas = filtrarOrdenes;
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.title}>Órdenes</Text>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.title}>Órdenes</Text>
+            {sucursalActual ? (
+              <Text style={styles.sucursalText}>{sucursalActual.nombre}</Text>
+            ) : (
+              <Text style={styles.sucursalText}>Sin sucursal</Text>
+            )}
+          </View>
           <POSBadge 
             label={`${ordenesFiltradas.length}`} 
             variant="info" 
@@ -400,10 +455,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  headerTitleContainer: {
+    flex: 1,
+    gap: 2,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.text,
+  },
+  sucursalText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
   },
 
   // Search

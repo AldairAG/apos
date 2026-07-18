@@ -2,7 +2,11 @@ import { AppDispatch, RootState } from "@/store";
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSucursal } from "../sucursal/useSucursal";
+<<<<<<< HEAD
 import { cancelOrdenThunk, createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk } from "./pos.thunks";
+=======
+import { cancelOrdenThunk, createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk, updateOrdenEstadoThunk } from "./pos.thunks";
+>>>>>>> 98d90cdc3691886b5de74b80a90685c782aba913
 import { CrearOrdenDTO, MesaPosResponseDTO } from "./pos.types";
 
 
@@ -76,6 +80,26 @@ const usePos = () => {
         }
     };
 
+    const actualizarEstadoOrden = async (ordenId: number, estado: "PENDIENTE" | "EN_PREPARACION" | "LISTA" | "ENTREGADA" | "CANCELADA") => {
+        try {
+            const orden = await dispatch(updateOrdenEstadoThunk({ ordenId, estado })).unwrap();
+            return orden;
+        } catch (error) {
+            console.error('Error al actualizar el estado de la orden:', error);
+            throw error;
+        }
+    };
+
+    const cancelarOrden = async (ordenId: number, motivo?: string) => {
+        try {
+            await dispatch(cancelOrdenThunk({ ordenId, motivo })).unwrap();
+            return true;
+        } catch (error) {
+            console.error('Error al cancelar la orden:', error);
+            throw error;
+        }
+    };
+
     const selectMesa = (mesaId: number) => {
         const mesa = mesas.find((m: MesaPosResponseDTO) => m.id === mesaId) || null;
         dispatch({ type: 'pos/setSelectedMesa', payload: mesa });
@@ -98,6 +122,8 @@ const usePos = () => {
         cargarMesas,
         seleccionarMesa: selectMesa,
         getMesasBySucursal: fetchMesasBySucursal,
+        actualizarEstadoOrden,
+        cancelarOrden,
     };
 };
 

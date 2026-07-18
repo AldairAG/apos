@@ -149,7 +149,7 @@ export default function ProductosScreen() {
     const receta = recetas.find((r: Receta) => r.id === recetaId);
     if (receta && !costoPersonalizado) {
       // Mock: calcular costo por unidad de receta
-      const costoTotal = 50; // Mock
+      const costoTotal = receta.costoTotal || 0; // Mock
       const rendimiento = receta.rendimiento || 1;
       const costoPorUnidad = costoTotal / rendimiento;
       
@@ -651,14 +651,14 @@ export default function ProductosScreen() {
                       <View style={styles.resumenRecetaItem}>
                         <Text style={styles.resumenRecetaLabel}>Costo Total</Text>
                         <Text style={[styles.resumenRecetaValor, { color: COLORS.danger }]}>
-                          $50.00
+                          ${recetaSeleccionada.costoTotal.toFixed(2)}
                         </Text>
                       </View>
 
                       <View style={styles.resumenRecetaItem}>
                         <Text style={styles.resumenRecetaLabel}>Costo x Unidad</Text>
                         <Text style={[styles.resumenRecetaValor, { color: COLORS.success }]}>
-                          ${(50 / (recetaSeleccionada.rendimiento || 1)).toFixed(2)}
+                          ${(recetaSeleccionada.costoTotal / (recetaSeleccionada.rendimiento || 1)).toFixed(2)}
                         </Text>
                       </View>
                     </View>
