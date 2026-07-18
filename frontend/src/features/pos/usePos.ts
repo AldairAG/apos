@@ -2,11 +2,7 @@ import { AppDispatch, RootState } from "@/store";
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSucursal } from "../sucursal/useSucursal";
-<<<<<<< HEAD
-import { cancelOrdenThunk, createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk } from "./pos.thunks";
-=======
 import { cancelOrdenThunk, createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk, updateOrdenEstadoThunk } from "./pos.thunks";
->>>>>>> 98d90cdc3691886b5de74b80a90685c782aba913
 import { CrearOrdenDTO, MesaPosResponseDTO } from "./pos.types";
 
 

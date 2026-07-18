@@ -21,7 +21,7 @@ import inventarioReducer from '../features/inventario/inventario/inventario.slic
 const persistConfig = {
     key: 'root',
     storage: AsyncStorage,
-    whitelist: ['auth', 'sucursal','usuario'], // solo persistir estos slices
+    whitelist: ['auth','usuario'], // solo persistir estos slices
 };
 
 const rootReducer = combineReducers({

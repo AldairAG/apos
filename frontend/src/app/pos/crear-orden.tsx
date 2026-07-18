@@ -1,9 +1,4 @@
 import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
-<<<<<<< HEAD
-import { CrearOrdenDTO, DetalleOrdenDTO, MesaPosResponseDTO, OpcionExtraResponse, ProductosBySucursalResponse, TipoOrden } from '@/features/pos/pos.types';
-import usePos from '@/features/pos/usePos';
-=======
->>>>>>> 98d90cdc3691886b5de74b80a90685c782aba913
 import { EstadoMesa } from '@/features/mesas/mesas.types';
 import { CrearOrdenDTO, DetalleOrdenDTO, ProductosBySucursalResponse, TipoOrden } from '@/features/pos/pos.types';
 import usePos from '@/features/pos/usePos';
@@ -11,11 +6,7 @@ import { useSucursal } from '@/features/sucursal/useSucursal';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-<<<<<<< HEAD
-import { useSucursal } from '@/features/sucursal/useSucursal';
 import { Mesa } from '@/types/pos.types';
-=======
->>>>>>> 98d90cdc3691886b5de74b80a90685c782aba913
 
 type PasoCreacion = 'seleccion' | 'agregar-productos';
 
@@ -308,54 +299,6 @@ export default function CrearOrdenScreen() {
           <View style={{ width: 40 }} />
         </View>
 
-<<<<<<< HEAD
-        <ScrollView contentContainerStyle={styles.seleccionTipoContainer}>
-          <Text style={styles.seleccionTipoTitle}>¿Qué tipo de orden deseas crear?</Text>
-
-          <TouchableOpacity
-            style={styles.tipoCard}
-            onPress={() => seleccionarTipo(TipoOrden.EN_MESA)}
-            activeOpacity={0.8}
-          >
-            <POSCard variant="elevated" style={styles.tipoCardInner}>
-              <POSIcon name="restaurant" size={64} color={COLORS.primary} />
-              <Text style={styles.tipoCardTitle}>Orden en Mesa</Text>
-              <Text style={styles.tipoCardSubtitle}>Servicio en restaurante</Text>
-            </POSCard>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.tipoCard}
-            onPress={() => seleccionarTipo(TipoOrden.PARA_LLEVAR)}
-            activeOpacity={0.8}
-          >
-            <POSCard variant="elevated" style={styles.tipoCardInner}>
-              <POSIcon name="bag-handle" size={64} color={COLORS.success} />
-              <Text style={styles.tipoCardTitle}>Orden Rápida</Text>
-              <Text style={styles.tipoCardSubtitle}>Para llevar o recoger</Text>
-            </POSCard>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-    );
-  }
-
-  // PASO 2: Selección de Mesa
-  if (paso === 'seleccion-mesa') {
-    const mesasDisponibles = mesas.filter((m: MesaPosResponseDTO) => m.estado === EstadoMesa.LIBRE);
-
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => setPaso('seleccion-tipo')}>
-            <POSIcon name="arrow-back" size={24} color={COLORS.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Seleccionar Mesa</Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-=======
->>>>>>> 98d90cdc3691886b5de74b80a90685c782aba913
         <FlatList
           data={mesasDisponibles}
           keyExtractor={(item) => item.id.toString()}

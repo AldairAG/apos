@@ -9,29 +9,13 @@ import { Alert, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpac
 type FiltroTipo = 'todas' | 'mesas' | 'llevar' | 'entregadas';
 
 export default function OrdenesScreen() {
-<<<<<<< HEAD
-  const { ordenes, cargarOrdenes, loading } = usePos();
-=======
   const { getOrdenesBySucursal, actualizarEstadoOrden, cancelarOrden, loading } = usePos();
   const { sucursalActual } = useSucursal();
   const [ordenes, setOrdenes] = useState<OrdenResponseDTO[]>([]);
->>>>>>> 98d90cdc3691886b5de74b80a90685c782aba913
   const [filtroActivo, setFiltroActivo] = useState<FiltroTipo>('todas');
   const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
-<<<<<<< HEAD
-    const loadOrdenes = async () => {
-      try {
-        await cargarOrdenes();
-      } catch (error) {
-        console.error('Error al cargar órdenes:', error);
-      }
-    };
-
-    loadOrdenes();
-  }, [cargarOrdenes]);
-=======
     if (!sucursalActual?.id) {
       setOrdenes([]);
       return;
@@ -50,7 +34,6 @@ export default function OrdenesScreen() {
       console.error('Error al cargar órdenes:', error);
     }
   };
->>>>>>> 98d90cdc3691886b5de74b80a90685c782aba913
 
   const obtenerColorEstado = (estado: EstadoOrden) => {
     switch (estado) {
