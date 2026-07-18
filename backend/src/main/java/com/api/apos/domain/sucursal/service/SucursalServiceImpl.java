@@ -21,26 +21,8 @@ public class SucursalServiceImpl implements SucursalService {
     private final UsuarioRepository usuarioRepository;
 
     @Override
-    public Sucursal crearSucursal(Sucursal sucursal, Long idUsuario) {
+    public Sucursal crearSucursal(Sucursal sucursal) {
 
-        if (sucursal == null) {
-            throw new IllegalArgumentException("La sucursal es requerida");
-        }
-
-        Usuario usuario = usuarioRepository.findById(idUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        if (sucursal.getActiva() == null) {
-            sucursal.setActiva(true);
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-        if (sucursal.getCreatedAt() == null) {
-            sucursal.setCreatedAt(now);
-        }
-        sucursal.setUpdatedAt(now);
-
-        sucursal.setUsuario(usuario);
         return sucursalRepository.save(sucursal);
     }
 

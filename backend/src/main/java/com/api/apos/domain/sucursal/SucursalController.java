@@ -16,18 +16,21 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.sucursal.service.SucursalService;
+import com.api.apos.domain.sucursal.usecase.CrearSucursalUseCase;
 import com.api.apos.enums.Rol;
 import com.api.apos.helpers.ApiResponseWrapper;
 
+import lombok.AllArgsConstructor;
+
 @RestController
 @RequestMapping("/api/sucursales")
+@AllArgsConstructor
 public class SucursalController {
 
 	private final SucursalService sucursalService;
 
-	public SucursalController(SucursalService sucursalService) {
-		this.sucursalService = sucursalService;
-	}
+	//Casos de uso 
+	private final CrearSucursalUseCase crearSucursalUseCase;
 
 	@PostMapping
 	public ResponseEntity<ApiResponseWrapper<Sucursal>> crearSucursal(@RequestBody Sucursal sucursal) {
@@ -36,7 +39,7 @@ public class SucursalController {
 
 			Long idUsuario = ((Usuario) authentication.getPrincipal()).getId();
 
-			Sucursal creada = sucursalService.crearSucursal(sucursal, idUsuario);
+			Sucursal creada = crearSucursalUseCase.execute(sucursal, idUsuario);
 			return ResponseEntity.ok(new ApiResponseWrapper<>(true, creada, null));
 		} catch (IllegalArgumentException e) {
 			return ResponseEntity.badRequest().body(new ApiResponseWrapper<>(false, null, e.getMessage()));

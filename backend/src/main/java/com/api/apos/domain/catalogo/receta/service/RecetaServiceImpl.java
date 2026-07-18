@@ -165,54 +165,6 @@ public class RecetaServiceImpl implements RecetaService {
     }
 
     /**
-     * Calcular el costo total de una receta
-     * Suma el costo de todos los materiales usados en la receta
-     * @param id ID de la receta
-     * @return Costo total calculado
-     * @throws RuntimeException si la receta no existe
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public BigDecimal calcularCostoReceta(Long id) {
-        Receta receta = recetaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Receta no encontrada con ID: " + id));
-        
-        if (receta.getDetalles() == null || receta.getDetalles().isEmpty()) {
-            return BigDecimal.ZERO;
-        }
-        
-        return receta.getDetalles().stream()
-                .map(detalle -> {
-                    if (detalle.getMaterial() != null && 
-                        detalle.getMaterial().getCostoUnitario() != null && 
-                        detalle.getCantidad() != null) {
-                        return detalle.getMaterial().getCostoUnitario()
-                                .multiply(detalle.getCantidad());
-                    }
-                    return BigDecimal.ZERO;
-                })
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    /**
-     * Recalcular y actualizar el costo total de una receta
-     * @param id ID de la receta
-     * @return Receta con costo actualizado
-     * @throws RuntimeException si la receta no existe
-     */
-    @Override
-    public Receta recalcularCostoTotal(Long id) {
-        Receta receta = recetaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Receta no encontrada con ID: " + id));
-        
-        BigDecimal costoTotal = calcularCostoReceta(id);
-        receta.setCostoTotal(costoTotal);
-        receta.setUpdatedAt(LocalDateTime.now());
-        
-        return recetaRepository.save(receta);
-    }
-
-    /**
      * Verificar si hay materiales disponibles para preparar la receta
      * @param id ID de la receta
      * @return true si todos los materiales están disponibles
@@ -268,7 +220,6 @@ public class RecetaServiceImpl implements RecetaService {
                 .toList();
     }
 
-    @Override
     public BigDecimal recalcularCostoTotal(List<DetalleReceta> detallesReceta) {
         if (detallesReceta == null || detallesReceta.isEmpty()) {
             throw new IllegalArgumentException("Lista de detalles de receta inválida para recalcular costo");

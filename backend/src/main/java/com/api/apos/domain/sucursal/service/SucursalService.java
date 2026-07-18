@@ -5,7 +5,7 @@ import java.util.List;
 import com.api.apos.domain.sucursal.Sucursal;
 
 public interface SucursalService {
-    Sucursal crearSucursal(Sucursal sucursal, Long idUsuario);
+    Sucursal crearSucursal(Sucursal sucursal);
     Sucursal obtenerSucursalPorId(Long idSucursal);
     List<Sucursal> obtenerSucursalesPorIdUsuario(Long idUsuario);
     Sucursal actualizarSucursal(Sucursal sucursal);
