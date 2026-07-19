@@ -1,29 +1,39 @@
 import { Sucursal } from "@/features/sucursal/sucursal.types";
+import { MetodoPago } from "@/types/pos.types";
 
 export interface Caja {
     id: number;
     nombre: string;
     activa: boolean;
-    createdAt: string;
-    updatedAt: string;
-    sucursal: Sucursal;
     movimientos: MovimientoCaja[];
 }
 
 export interface MovimientoCaja {
     id: number;
-    tipo: TipoMovimientoCaja;
+    tipoMovimiento: TipoMovimientoCaja;
+    conceptoMovimiento: TipoConceptoMovimiento;
+    metodoPago: MetodoPago;
+    concepto: string;
+    referencia: string;
+    monto: number;
+    aprobado: boolean;
+    fecha: string;
+    createdAt: string;
+    createdBy: number;
+    cajaId: number;
+    empleadoId: number;
+    ordenId: number;
 }
 
 export enum TipoMovimientoCaja {
     INGRESO = "INGRESO",
-    TRANSFERENCIA = "TRANSFERENCIA",
     EGRESO = "EGRESO",
 }
 
-export enum TipoMetodoPago {
-    TARJETA="TARJETA",
-    EFECTIVO="EFECTIVO",
-    VALE="VALE",
-    GRATIS="GRATIS",
+export enum TipoConceptoMovimiento {
+    VENTA = "VENTA",
+    GASTO = "GASTO",
+    APERTURA = "APERTURA",
+    CIERRE = "CIERRE",
+    OTRO = "OTRO",
 }

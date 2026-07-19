@@ -611,8 +611,8 @@ export default function ExtrasScreen() {
             </View>
 
             {/* Lista de Productos */}
-{/*             <ScrollView style={styles.productosLista}>
-              {productosFiltrados.map((producto) => {
+             <ScrollView style={styles.productosLista}>
+              {productos.map((producto) => {
                 const isSeleccionado = productosSeleccionados.includes(producto.id);
                 
                 return (
@@ -637,7 +637,7 @@ export default function ExtrasScreen() {
                 );
               })}
             </ScrollView>
- */}
+ 
             {/* Botón Confirmar */}
             <View style={styles.modalAcciones}>
               <TouchableOpacity

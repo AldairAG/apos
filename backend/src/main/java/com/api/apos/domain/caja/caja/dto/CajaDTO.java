@@ -10,4 +10,5 @@ public class CajaDTO {
     private String nombre;
     private Boolean activa;
 
+    
 }

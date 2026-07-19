@@ -60,14 +60,12 @@ export const ROUTES = {
 
   // Módulo de Gestión de Caja
   CAJA: {
-    APERTURA: '/caja/apertura',
-    COBRO: '/caja/cobro',
+    CAJA_HOME: '/caja/caja-home',
     MOVIMIENTOS: '/caja/movimientos',
-    CIERRE: '/caja/cierre',
-    GASTOS: '/caja/gastos',
+    CAJA_CORTE: '/caja/corte',
   },
 
-  // Módulo de Reportes y Análisis
+  // Módulo de Reportes y     Análisis
   REPORTES: {
     VENTAS: '/reportes/ventas',
     INVENTARIO: '/reportes/inventario',
@@ -121,11 +119,9 @@ export const PERMISOS_POR_ROL: Record<string, string[]> = {
     ROUTES.POS.DETALLE_ORDEN,
     ROUTES.POS.COCINA,
     // Caja
-    ROUTES.CAJA.APERTURA,
-    ROUTES.CAJA.COBRO,
+    ROUTES.CAJA.CAJA_HOME,
     ROUTES.CAJA.MOVIMIENTOS,
-    ROUTES.CAJA.CIERRE,
-    ROUTES.CAJA.GASTOS,
+    ROUTES.CAJA.CAJA_CORTE,
     // Reportes
     ROUTES.REPORTES.VENTAS,
     ROUTES.REPORTES.INVENTARIO,
@@ -157,11 +153,9 @@ export const PERMISOS_POR_ROL: Record<string, string[]> = {
     ROUTES.POS.ORDENES,
     ROUTES.POS.DETALLE_ORDEN,
     // Caja
-    ROUTES.CAJA.APERTURA,
-    ROUTES.CAJA.COBRO,
+    ROUTES.CAJA.CAJA_HOME,
     ROUTES.CAJA.MOVIMIENTOS,
-    ROUTES.CAJA.CIERRE,
-    ROUTES.CAJA.GASTOS,
+    ROUTES.CAJA.CAJA_CORTE,
     // Reportes
     ROUTES.REPORTES.VENTAS,
     ROUTES.REPORTES.INVENTARIO,
@@ -180,7 +174,6 @@ export const PERMISOS_POR_ROL: Record<string, string[]> = {
     ROUTES.POS.ORDENES,
     ROUTES.POS.DETALLE_ORDEN,
     // Caja (solo cobro)
-    ROUTES.CAJA.COBRO,
   ],
 
   // COCINA: Pantalla de cocina y producción
@@ -387,13 +380,8 @@ export const MENU_NAVEGACION: MenuItem[] = [
     submenu: [
       {
         titulo: 'Apertura de Caja',
-        ruta: ROUTES.CAJA.APERTURA,
+        ruta: ROUTES.CAJA.CAJA_HOME,
         rolesPermitidos: [Rol.ADMINISTRADOR, Rol.GERENTE],
-      },
-      {
-        titulo: 'Cobro',
-        ruta: ROUTES.CAJA.COBRO,
-        rolesPermitidos: [Rol.ADMINISTRADOR, Rol.GERENTE, Rol.MESERO],
       },
       {
         titulo: 'Movimientos',
@@ -402,12 +390,7 @@ export const MENU_NAVEGACION: MenuItem[] = [
       },
       {
         titulo: 'Cierre de Caja',
-        ruta: ROUTES.CAJA.CIERRE,
-        rolesPermitidos: [Rol.ADMINISTRADOR, Rol.GERENTE],
-      },
-      {
-        titulo: 'Gastos',
-        ruta: ROUTES.CAJA.GASTOS,
+        ruta: ROUTES.CAJA.CAJA_CORTE,
         rolesPermitidos: [Rol.ADMINISTRADOR, Rol.GERENTE],
       },
     ],

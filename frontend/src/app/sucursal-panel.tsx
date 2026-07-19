@@ -69,7 +69,7 @@ const MENU_OPTIONS: MenuOption[] = [
     id: 'gastos',
     titulo: 'Gastos',
     icono: 'cash',
-    ruta: ROUTES.CAJA.GASTOS,
+    ruta: ROUTES.CAJA.CAJA_HOME,
     color: COLORS.danger,
   },
 ];
