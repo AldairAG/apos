@@ -6,3 +6,4 @@ export { DetalleMovimientoModal } from './DetalleMovimientoModal';
 export { MovimientoListItem } from './MovimientoListItem';
 export { PieChartCaja } from './PieChartCaja';
 export type { SegmentoPie } from './PieChartCaja';
+

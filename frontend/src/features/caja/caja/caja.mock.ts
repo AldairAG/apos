@@ -3,13 +3,13 @@
 // No hay llamadas a API ni a Redux aquí. Cuando se conecte el backend,
 // estas funciones/constantes deben sustituirse por thunks/selectores reales,
 // manteniendo la misma forma de datos (Caja, MovimientoCaja).
-import {
-  Caja,
-  MovimientoCaja,
-  TipoConceptoMovimiento,
-  TipoMovimientoCaja,
-} from './caja.types';
 import { MetodoPago } from '@/types/pos.types';
+import {
+    Caja,
+    MovimientoCaja,
+    TipoConceptoMovimiento,
+    TipoMovimientoCaja,
+} from './caja.types';
 
 // ─────────────────────────────────────────────
 // Usuarios (solo para mostrar nombre en tarjetas/detalle)

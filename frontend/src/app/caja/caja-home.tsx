@@ -26,7 +26,7 @@ import {
   TipoMovimientoCaja,
 } from '@/features/caja/caja/caja.types';
 import { MetodoPago } from '@/types/pos.types';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Alert,
   ScrollView,
