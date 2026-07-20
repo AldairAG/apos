@@ -2,8 +2,9 @@ import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
 import { useAuth } from '@/features/usuario/auth/useAuth';
 import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -17,10 +18,25 @@ import {
   View,
 } from 'react-native';
 
+// ─────────────────────────────────────────────────────────────────────────
+// Paleta de alto contraste (Neo-Brutalismo + MD3)
+// Colores sólidos, sin transparencias ni degradados.
+// ─────────────────────────────────────────────────────────────────────────
+const INK = '#111111';        // "tinta" casi negra para bordes y texto
+const SURFACE = '#FFFFFF';
+const BG = '#F2F1E8';         // fondo cálido neutro (evita el blanco puro plano)
+const DANGER_BG = '#FFD8D8';
+const SUCCESS = '#1B7A3D';
+
 export default function LoginScreen() {
   const [username, setUsername] = useState('pp1@gmail.com');
   const [password, setPassword] = useState('12345678');
   const [showPassword, setShowPassword] = useState(false);
+  const [userPressed, setUserPressed] = useState(false);
+  const [passPressed, setPassPressed] = useState(false);
+  const [btnPressed, setBtnPressed] = useState(false);
+
+  const passwordRef = useRef<TextInput>(null);
 
   const { loading, error, login } = useAuth();
 
@@ -50,15 +66,11 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Cabecera de marca ───────────────────────────────────────── */}
+          {/* ── Cabecera de marca: bloque sólido, sin decoración translúcida ── */}
           <View style={styles.header}>
-            {/* Círculo decorativo de fondo */}
-            <View style={styles.circle} />
-
             <View style={styles.brandContent}>
-              {/* Ícono de la app */}
               <View style={styles.logoContainer}>
-                <POSIcon name="restaurant" size={40} color={COLORS.white} />
+                <POSIcon name="restaurant" size={36} color={INK} />
               </View>
 
               <POSBadge label="APOS DELIVERY" variant="success" />
@@ -67,102 +79,134 @@ export default function LoginScreen() {
               <Text style={styles.subtitle}>
                 Controla pedidos, cocina y caja desde un solo lugar.
               </Text>
+
+              {/* Indicador de confianza — Trust Design */}
+              <View style={styles.trustRow}>
+                <POSIcon name="shield-checkmark" size={16} color={SUCCESS} />
+                <Text style={styles.trustText}>Conexión segura y verificada</Text>
+              </View>
             </View>
           </View>
 
           {/* ── Formulario ──────────────────────────────────────────────── */}
           <View style={styles.formWrapper}>
-            <POSCard style={styles.card} variant="elevated">
+            {/* Bloque de sombra dura (neo-brutalismo): capa negra detrás de la card */}
+            <View style={styles.cardShadowLayer}>
+              <View style={styles.card}>
 
-              {/* Campo usuario */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Usuario</Text>
-                <View style={styles.inputWrapper}>
-                  <View style={styles.inputIcon}>
-                    <POSIcon name="person" size={18} color={COLORS.textSecondary} />
-                  </View>
-                  <TextInput
-                    value={username}
-                    onChangeText={setUsername}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    placeholder="correo@ejemplo.com"
-                    placeholderTextColor={COLORS.textSecondary}
-                    style={styles.input}
-                    editable={!loading}
-                  />
-                </View>
-              </View>
-
-              {/* Campo contraseña */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Contraseña</Text>
-                <View style={styles.inputWrapper}>
-                  <View style={styles.inputIcon}>
-                    <POSIcon name="lock-closed" size={18} color={COLORS.textSecondary} />
-                  </View>
-                  <TextInput
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                    placeholder="••••••••"
-                    placeholderTextColor={COLORS.textSecondary}
-                    style={[styles.input, styles.inputPassword]}
-                    editable={!loading}
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeButton}
-                    onPress={() => setShowPassword(!showPassword)}
-                    activeOpacity={0.7}
-                  >
-                    <POSIcon
-                      name={showPassword ? 'eye-off' : 'eye'}
-                      size={18}
-                      color={COLORS.textSecondary}
+                {/* Campo usuario */}
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>USUARIO</Text>
+                  <View style={[styles.inputWrapper, userPressed && styles.inputWrapperActive]}>
+                    <View style={styles.inputIcon}>
+                      <POSIcon name="person" size={20} color={INK} />
+                    </View>
+                    <TextInput
+                      value={username}
+                      onChangeText={setUsername}
+                      onFocus={() => setUserPressed(true)}
+                      onBlur={() => setUserPressed(false)}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      returnKeyType="next"
+                      onSubmitEditing={() => passwordRef.current?.focus()}
+                      placeholder="correo@ejemplo.com"
+                      placeholderTextColor="#6B6B6B"
+                      style={styles.input}
+                      editable={!loading}
                     />
-                  </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
 
-              {/* Error */}
-              {error && (
-                <View style={styles.errorContainer}>
-                  <POSIcon name="alert-circle" size={16} color={COLORS.danger} />
-                  <Text style={styles.errorText}>{error}</Text>
+                {/* Campo contraseña */}
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>CONTRASEÑA</Text>
+                  <View style={[styles.inputWrapper, passPressed && styles.inputWrapperActive]}>
+                    <View style={styles.inputIcon}>
+                      <POSIcon name="lock-closed" size={20} color={INK} />
+                    </View>
+                    <TextInput
+                      ref={passwordRef}
+                      value={password}
+                      onChangeText={setPassword}
+                      onFocus={() => setPassPressed(true)}
+                      onBlur={() => setPassPressed(false)}
+                      secureTextEntry={!showPassword}
+                      returnKeyType="go"
+                      onSubmitEditing={handleLogin}
+                      placeholder="••••••••"
+                      placeholderTextColor="#6B6B6B"
+                      style={[styles.input, styles.inputPassword]}
+                      editable={!loading}
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeButton}
+                      onPress={() => setShowPassword(!showPassword)}
+                      activeOpacity={0.6}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <POSIcon
+                        name={showPassword ? 'eye-off' : 'eye'}
+                        size={20}
+                        color={INK}
+                      />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              )}
 
-              {/* Botón principal */}
-              <Pressable
-                style={({ pressed }) => [
-                  styles.primaryButton,
-                  pressed && styles.pressed,
-                  loading && styles.buttonDisabled,
-                ]}
-                onPress={handleLogin}
-                disabled={loading}
-              >
-                {loading ? (
-                  <Text style={styles.primaryButtonText}>Entrando...</Text>
-                ) : (
-                  <View style={styles.buttonContent}>
-                    <Text style={styles.primaryButtonText}>Entrar</Text>
-                    <POSIcon name="arrow-forward" size={18} color={COLORS.white} />
+                {/* Error — feedback inmediato, alto contraste, sin ambigüedad */}
+                {error && (
+                  <View style={styles.errorContainer}>
+                    <POSIcon name="alert-circle" size={20} color={INK} />
+                    <Text style={styles.errorText}>{error}</Text>
                   </View>
                 )}
-              </Pressable>
 
-              {/* Registro */}
-              <View style={styles.switchRow}>
-                <Text style={styles.switchText}>¿Aún no tienes cuenta?</Text>
-                <Link href="/register" asChild>
-                  <Pressable>
-                    <Text style={styles.switchLink}>Regístrate</Text>
-                  </Pressable>
-                </Link>
+                {/* Botón principal — objetivo táctil grande, feedback de presión */}
+                <Pressable
+                  onPressIn={() => setBtnPressed(true)}
+                  onPressOut={() => setBtnPressed(false)}
+                  onPress={handleLogin}
+                  disabled={loading}
+                  style={styles.buttonShadowLayer}
+                >
+                  <View
+                    style={[
+                      styles.primaryButton,
+                      btnPressed && styles.primaryButtonPressed,
+                      loading && styles.buttonDisabled,
+                    ]}
+                  >
+                    {loading ? (
+                      <View style={styles.buttonContent}>
+                        <ActivityIndicator color={SURFACE} />
+                        <Text style={styles.primaryButtonText}>ENTRANDO...</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.buttonContent}>
+                        <Text style={styles.primaryButtonText}>ENTRAR</Text>
+                        <POSIcon name="arrow-forward" size={20} color={SURFACE} />
+                      </View>
+                    )}
+                  </View>
+                </Pressable>
+
+                {/* Nota de seguridad psicológica: qué esperar, sin sorpresas */}
+                <Text style={styles.helperNote}>
+                  Tus datos se usan solo para identificarte en este local.
+                </Text>
+
+                {/* Registro */}
+                <View style={styles.switchRow}>
+                  <Text style={styles.switchText}>¿Aún no tienes cuenta?</Text>
+                  <Link href="/register" asChild>
+                    <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Text style={styles.switchLink}>REGÍSTRATE</Text>
+                    </Pressable>
+                  </Link>
+                </View>
               </View>
-
-            </POSCard>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -173,7 +217,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: BG,
   },
   flex: {
     flex: 1,
@@ -182,135 +226,185 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
 
-  // ── Cabecera ──────────────────────────────────────────────────────────────
+  // ── Cabecera: color sólido plano, borde inferior marcado (sin gradientes) ──
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: 60,
-    paddingBottom: 80,          // extra inferior para que la card se solape
+    paddingTop: 56,
+    paddingBottom: 32,
     paddingHorizontal: 24,
-    overflow: 'hidden',
-  },
-  // Círculo decorativo en la esquina superior derecha
-  circle: {
-    position: 'absolute',
-    top: -70,
-    right: -70,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderBottomWidth: 4,
+    borderBottomColor: INK,
   },
   brandContent: {
     gap: 10,
   },
   logoContainer: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    backgroundColor: SURFACE,
+    borderWidth: 3,
+    borderColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 4,
   },
   title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: COLORS.white,
-    lineHeight: 38,
+    fontSize: 30,
+    fontWeight: '900',
+    color: SURFACE,
+    lineHeight: 34,
   },
   subtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.75)',
+    fontWeight: '600',
+    color: SURFACE,
     lineHeight: 20,
   },
+  trustRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    backgroundColor: SURFACE,
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: INK,
+  },
+  trustText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: INK,
+  },
 
-  // ── Formulario (card que se solapa con el header) ─────────────────────────
+  // ── Formulario ──────────────────────────────────────────────────────────
   formWrapper: {
-    marginTop: -48,             // sube la card sobre el header
     paddingHorizontal: 20,
+    paddingTop: 24,
     paddingBottom: 40,
   },
-  card: {
-    padding: 24,
-    gap: 16,
+  // Capa de sombra dura tipo neo-brutalista (offset sólido, sin blur)
+  cardShadowLayer: {
+    backgroundColor: INK,
     borderRadius: 20,
+  },
+  card: {
+    backgroundColor: SURFACE,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: INK,
+    padding: 24,
+    gap: 18,
+    marginRight: 6,
+    marginBottom: 6,
   },
 
   // ── Campos ────────────────────────────────────────────────────────────────
   fieldGroup: {
-    gap: 6,
+    gap: 8,
   },
   label: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    color: INK,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderWidth: 2.5,
+    borderColor: INK,
     borderRadius: 12,
-    backgroundColor: '#FAFAFA',
-    paddingHorizontal: 12,
+    backgroundColor: BG,
+    paddingHorizontal: 14,
+    minHeight: 56, // objetivo táctil grande (MD3 + accesibilidad)
+  },
+  inputWrapperActive: {
+    backgroundColor: SURFACE,
+    borderColor: COLORS.primary,
+    borderWidth: 3,
   },
   inputIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   input: {
     flex: 1,
-    fontSize: 15,
-    color: COLORS.text,
-    paddingVertical: 13,
+    fontSize: 16,
+    fontWeight: '600',
+    color: INK,
+    paddingVertical: 14,
   },
   inputPassword: {
     paddingRight: 8,
   },
   eyeButton: {
-    padding: 4,
+    padding: 6,
   },
 
-  // ── Error ─────────────────────────────────────────────────────────────────
+  // ── Error: bloque sólido, sin ambigüedad ────────────────────────────────
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FFF0F0',
-    borderRadius: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#FFCCCC',
+    gap: 10,
+    backgroundColor: DANGER_BG,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 2.5,
+    borderColor: INK,
   },
   errorText: {
-    color: COLORS.danger,
-    fontSize: 13,
+    color: INK,
+    fontSize: 14,
+    fontWeight: '700',
     flex: 1,
   },
 
-  // ── Botón ─────────────────────────────────────────────────────────────────
+  // ── Botón: objetivo grande + feedback de presión inmediato ──────────────
+  buttonShadowLayer: {
+    backgroundColor: INK,
+    borderRadius: 14,
+    marginTop: 6,
+  },
   primaryButton: {
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    paddingVertical: 15,
+    borderRadius: 14,
+    borderWidth: 3,
+    borderColor: INK,
+    paddingVertical: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    minHeight: 60,
+    marginRight: 6,
+    marginBottom: 6,
+  },
+  primaryButtonPressed: {
+    marginRight: 0,
+    marginBottom: 0,
+    opacity: 0.92,
   },
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   primaryButtonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  pressed: {
-    opacity: 0.85,
+    color: SURFACE,
+    fontSize: 17,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+
+  helperNote: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4A4A4A',
+    textAlign: 'center',
   },
 
   // ── Registro ──────────────────────────────────────────────────────────────
@@ -319,14 +413,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
+    marginTop: 4,
   },
   switchText: {
-    color: COLORS.textSecondary,
+    color: '#4A4A4A',
     fontSize: 13,
+    fontWeight: '600',
   },
   switchLink: {
     color: COLORS.primary,
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '900',
   },
 });
