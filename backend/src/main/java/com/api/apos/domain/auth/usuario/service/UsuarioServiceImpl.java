@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.auth.usuario.UsuarioRepository;
 import com.api.apos.domain.auth.usuario.dto.ColaboradorDTO;
+import com.api.apos.dto.request.AuthRequest;
 import com.api.apos.dto.response.JwtResponse;
 import com.api.apos.enums.Rol;
 import com.api.apos.helpers.JwtHelper;
@@ -46,17 +47,20 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
 
         @Override
-        public JwtResponse registrarUsuario(String email, String password) {
+        public JwtResponse registrarUsuario(AuthRequest request) {
                 // Validar si el usuario ya existe
-                if (usuarioRepository.findByEmail(email).isPresent()) {
+                if (usuarioRepository.findByEmail(request.getEmail()).isPresent()) {
                         throw new IllegalArgumentException("El email ya está registrado");
                 }
 
                 // Crear nuevo usuario
                 Usuario nuevoUsuario = Usuario.builder()
-                                .email(email)
-                                .password(passwordEncoder.encode(password))
+                                .email(request.getEmail())
+                                .password(passwordEncoder.encode(request.getPassword()))
                                 .activo(true)
+                                .telefono(request.getTelefono())
+                                .nombre(request.getNombre() + " " + request.getApellido())
+                                .lada(request.getLada())
                                 .rol(Rol.ADMINISTRADOR) // Por defecto, asignar rol ADMINISTRADOR
                                 .fechaRegistro(LocalDateTime.now())
                                 .createdAt(LocalDateTime.now())

@@ -18,6 +18,22 @@ import {
   View,
 } from 'react-native';
 
+/**
+ * @description
+ * Cambios en el formulario de registro:
+ * - Retirar campo de nombre de usuario (username) y usar email como identificador único.
+ * - Agregar campo de nombre de usuario
+ * - Agregar campo de apellidos de usuario
+ * - Agregar campo de lada 
+ * - Agregar confirmacion de contraseña para evitar errores tipográficos.
+ * - Validar que la contraseña tenga al menos 8 caracteres.
+ * - Validar que el email tenga un formato válido.
+ * - Agregar feedback visual para campos requeridos y errores de validación.
+ * - Agregar los campos nuevo al type de RegistroRequestDTO ubicado en auth.types.ts
+ * - Agregar validación de que el nombre de usuario no contenga caracteres especiales.
+ * - Agregar validación de que el nombre de usuario tenga al menos 3 caracteres.
+ */
+
 // ─────────────────────────────────────────────────────────────────────────
 // Paleta de alto contraste (Neo-Brutalismo + MD3) — misma base que Login
 // ─────────────────────────────────────────────────────────────────────────
@@ -28,10 +44,10 @@ const DANGER_BG = '#FFD8D8';
 const SUCCESS = '#1B7A3D';
 
 export default function RegisterScreen() {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [telefono, setTelefono] = useState('');
+  const [username, setUsername] = useState('pp@gmail.com');
+  const [email, setEmail] = useState('pp@gmail.com');
+  const [password, setPassword] = useState('12345678');
+  const [telefono, setTelefono] = useState('5523169875');
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [btnPressed, setBtnPressed] = useState(false);
@@ -47,6 +63,7 @@ export default function RegisterScreen() {
       Alert.alert('Contraseña muy corta', 'Debe tener al menos 8 caracteres.');
       return;
     }
+
     const result = await registro({
       username: username.trim(),
       email: email.trim(),
@@ -54,6 +71,7 @@ export default function RegisterScreen() {
       telefono: telefono.trim(),
       referenciado: '',
     });
+
     if (result.success) {
       Alert.alert('¡Cuenta creada!', 'Tu negocio ya está listo para operar.', [
         { text: 'Continuar', onPress: () => router.replace('/') },

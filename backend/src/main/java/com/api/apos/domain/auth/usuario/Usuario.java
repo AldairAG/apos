@@ -36,6 +36,7 @@ public class Usuario implements UserDetails {
     private String email;
     private String password;
     private String telefono;
+    private String lada;
     private Boolean activo;
     
     private LocalDateTime fechaRegistro;

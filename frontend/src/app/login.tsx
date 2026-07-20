@@ -18,6 +18,13 @@ import {
   View,
 } from 'react-native';
 
+/**
+ * @description
+ * Cambios de diseño para la pantalla de login:
+ * - Agrear opcion para redirigir a pantalla de entrar como empleado de sucursal
+ * - Agregar opcion para redirigir a pantalla de recuperar contraseña
+ */
+
 // ─────────────────────────────────────────────────────────────────────────
 // Paleta de alto contraste (Neo-Brutalismo + MD3)
 // Colores sólidos, sin transparencias ni degradados.
