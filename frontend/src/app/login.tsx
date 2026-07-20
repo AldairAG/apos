@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 
 /**
- * @description
+ * TODO[AUTH]: Rediseñar login
  * Cambios de diseño para la pantalla de login:
  * - Agrear opcion para redirigir a pantalla de entrar como empleado de sucursal
  * - Agregar opcion para redirigir a pantalla de recuperar contraseña

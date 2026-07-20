@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 
 /**
- * @description
+ * TODO[AUTH]: Rediseñar registro
  * Cambios en el formulario de registro:
  * - Retirar campo de nombre de usuario (username) y usar email como identificador único.
  * - Agregar campo de nombre de usuario
