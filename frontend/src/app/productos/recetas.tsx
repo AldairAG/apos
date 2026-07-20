@@ -1,11 +1,26 @@
-import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
+import { COLORS, POSBadge, POSIcon } from '@/components/pos';
 import { useMateriales } from '@/features/inventario/materiales';
 import { Material } from '@/features/inventario/materiales/materiales.types';
 import { CrearRecetaDTO, DetalleReceta, Receta } from '@/features/producto/receta/receta.types';
 import { useRecetas } from '@/features/producto/receta/useReceta';
 import { Unidad } from '@/types/globalTypes';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+
+// ── Design tokens: MD3 + Neo-Brutalismo Funcional (mismos que Dashboard/Materiales) ──
+const INK = '#0D0D0D';
+const BORDER_W = 3;
+const RADIUS = 16;
+const RIPPLE = { color: 'rgba(0,0,0,0.18)', borderless: false };
+
+const hardShadow = (pressed: boolean) => ({
+  shadowColor: INK,
+  shadowOffset: { width: pressed ? 0 : 4, height: pressed ? 0 : 4 },
+  shadowOpacity: 1,
+  shadowRadius: 0,
+  elevation: pressed ? 0 : 5,
+  transform: [{ translateX: pressed ? 3 : 0 }, { translateY: pressed ? 3 : 0 }],
+});
 
 export default function RecetasScreen() {
   const [busqueda, setBusqueda] = useState('');
@@ -191,18 +206,19 @@ export default function RecetasScreen() {
     const costoPorUnidad = item.rendimiento > 0 ? costoReceta / item.rendimiento : 0;
 
     return (
-      <POSCard style={styles.recetaCard} variant="elevated">
+      <View style={styles.recetaCard}>
         <View style={styles.recetaHeader}>
           <View style={styles.recetaHeaderLeft}>
-            <Text style={styles.recetaNombre}>{item.nombre}</Text>
+            <Text style={styles.recetaNombre} numberOfLines={1}>{item.nombre}</Text>
             <Text style={styles.recetaCodigo}>{item.codigo}</Text>
           </View>
-          <View style={styles.recetaHeaderRight}>
-            <POSBadge
-              label={item.activa ? 'ACTIVA' : 'INACTIVA'}
-              variant={item.activa ? 'success' : 'default'}
-              size="small"
-            />
+          <View
+            style={[
+              styles.estadoBadge,
+              { backgroundColor: item.activa ? COLORS.success : '#D9D9D0' },
+            ]}
+          >
+            <Text style={styles.estadoBadgeTexto}>{item.activa ? 'ACTIVA' : 'INACTIVA'}</Text>
           </View>
         </View>
 
@@ -212,56 +228,58 @@ export default function RecetasScreen() {
 
         <View style={styles.recetaInfoGrid}>
           <View style={styles.recetaInfoItem}>
-            <POSIcon name="bar-chart-outline" size={16} color={COLORS.textSecondary} />
-            <Text style={styles.recetaInfoLabel}>Rendimiento</Text>
+            <POSIcon name="bar-chart-outline" size={16} color={INK} />
+            <Text style={styles.recetaInfoLabel}>RENDIMIENTO</Text>
             <Text style={styles.recetaInfoValue}>
               {item.rendimiento} {item.unidadRendimiento}
             </Text>
           </View>
 
           <View style={styles.recetaInfoItem}>
-            <POSIcon name="list-outline" size={16} color={COLORS.textSecondary} />
-            <Text style={styles.recetaInfoLabel}>Ingredientes</Text>
+            <POSIcon name="list-outline" size={16} color={INK} />
+            <Text style={styles.recetaInfoLabel}>INGREDIENTES</Text>
             <Text style={styles.recetaInfoValue}>{item.detalles.length}</Text>
           </View>
 
           <View style={styles.recetaInfoItem}>
-            <POSIcon name="time-outline" size={16} color={COLORS.textSecondary} />
-            <Text style={styles.recetaInfoLabel}>Tiempo</Text>
+            <POSIcon name="time-outline" size={16} color={INK} />
+            <Text style={styles.recetaInfoLabel}>TIEMPO</Text>
             <Text style={styles.recetaInfoValue}>{item.tiempoPreparacion} min</Text>
           </View>
         </View>
 
         <View style={styles.recetaCostoContainer}>
           <View style={styles.recetaCosto}>
-            <Text style={styles.recetaCostoLabel}>Costo Total</Text>
+            <Text style={styles.recetaCostoLabel}>COSTO TOTAL</Text>
             <Text style={styles.recetaCostoTotal}>${costoReceta.toFixed(2)}</Text>
           </View>
           <View style={styles.recetaCostoDivider} />
           <View style={styles.recetaCosto}>
-            <Text style={styles.recetaCostoLabel}>Costo/Unidad</Text>
+            <Text style={styles.recetaCostoLabel}>COSTO/UNIDAD</Text>
             <Text style={styles.recetaCostoUnidad}>${costoPorUnidad.toFixed(2)}</Text>
           </View>
         </View>
 
         <View style={styles.recetaAcciones}>
-          <TouchableOpacity
-            style={[styles.botonAccion, styles.botonEditar]}
+          <Pressable
+            style={({ pressed }) => [styles.botonAccion, styles.botonEditar, hardShadow(pressed)]}
             onPress={() => handleEditar(item)}
+            android_ripple={RIPPLE}
           >
-            <POSIcon name="create-outline" size={20} color={COLORS.primary} />
-            <Text style={styles.botonAccionTexto}>Editar</Text>
-          </TouchableOpacity>
+            <POSIcon name="create-outline" size={20} color={INK} />
+            <Text style={styles.botonAccionTexto}>EDITAR</Text>
+          </Pressable>
 
-          <TouchableOpacity
-            style={[styles.botonAccion, styles.botonEliminar]}
+          <Pressable
+            style={({ pressed }) => [styles.botonAccion, styles.botonEliminar, hardShadow(pressed)]}
             onPress={() => handleEliminar(item)}
+            android_ripple={RIPPLE}
           >
-            <POSIcon name="trash-outline" size={20} color={COLORS.danger} />
-            <Text style={[styles.botonAccionTexto, styles.botonEliminarTexto]}>Eliminar</Text>
-          </TouchableOpacity>
+            <POSIcon name="trash-outline" size={20} color={INK} />
+            <Text style={styles.botonAccionTexto}>ELIMINAR</Text>
+          </Pressable>
         </View>
-      </POSCard>
+      </View>
     );
   };
 
@@ -270,20 +288,17 @@ export default function RecetasScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.title}>Gestión de Recetas</Text>
-          <POSBadge
-            label={`${recetasFiltradas.length} recetas`}
-            variant="info"
-          />
+          <Text style={styles.title}>RECETAS</Text>
+          <View style={styles.countBadge}>
+            <Text style={styles.countBadgeText}>{recetasFiltradas.length}</Text>
+          </View>
         </View>
-        <Text style={styles.subtitle}>
-          Control de costos y producción
-        </Text>
+        <Text style={styles.subtitle}>Control de costos y producción</Text>
       </View>
 
       {/* Buscador */}
       <View style={styles.busquedaContainer}>
-        <POSIcon name="search" size={20} color={COLORS.textSecondary} />
+        <POSIcon name="search" size={20} color={INK} />
         <TextInput
           style={styles.busquedaInput}
           placeholder="Buscar por nombre o código..."
@@ -292,9 +307,9 @@ export default function RecetasScreen() {
           onChangeText={setBusqueda}
         />
         {busqueda.length > 0 && (
-          <TouchableOpacity onPress={() => setBusqueda('')}>
-            <POSIcon name="close-circle" size={20} color={COLORS.textSecondary} />
-          </TouchableOpacity>
+          <Pressable onPress={() => setBusqueda('')} hitSlop={8}>
+            <POSIcon name="close-circle" size={20} color={INK} />
+          </Pressable>
         )}
       </View>
 
@@ -307,19 +322,28 @@ export default function RecetasScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <POSIcon name="document-text-outline" size={80} color={COLORS.lightGray} />
-            <Text style={styles.emptyTexto}>No se encontraron recetas</Text>
+            <View style={styles.emptyIconBadge}>
+              <POSIcon name="document-text-outline" size={48} color={INK} />
+            </View>
+            <Text style={styles.emptyTexto}>
+              {busqueda ? 'SIN RESULTADOS' : 'AÚN NO HAY RECETAS'}
+            </Text>
             <Text style={styles.emptySubtexto}>
-              {busqueda ? 'Intenta con otra búsqueda' : 'Crea tu primera receta'}
+              {busqueda ? 'Intenta con otra búsqueda' : 'Toca "+ Nueva receta" para comenzar'}
             </Text>
           </View>
         }
       />
 
       {/* FAB Button */}
-      <TouchableOpacity style={styles.fabButton} onPress={handleNuevo}>
-        <POSIcon name="add" size={32} color={COLORS.white} />
-      </TouchableOpacity>
+      <Pressable
+        style={({ pressed }) => [styles.fabButton, hardShadow(pressed)]}
+        onPress={handleNuevo}
+        android_ripple={RIPPLE}
+      >
+        <POSIcon name="add" size={28} color={INK} />
+        <Text style={styles.fabButtonTexto}>NUEVA</Text>
+      </Pressable>
 
       {/* Modal Crear/Editar Receta */}
       <Modal
@@ -333,21 +357,25 @@ export default function RecetasScreen() {
             {/* Header Modal */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitulo}>
-                {recetaSeleccionada ? 'Editar Receta' : 'Nueva Receta'}
+                {recetaSeleccionada ? 'EDITAR RECETA' : 'NUEVA RECETA'}
               </Text>
-              <TouchableOpacity onPress={handleCerrarModal}>
-                <POSIcon name="close" size={28} color={COLORS.textSecondary} />
-              </TouchableOpacity>
+              <Pressable
+                style={({ pressed }) => [styles.modalCloseButton, hardShadow(pressed)]}
+                onPress={handleCerrarModal}
+                hitSlop={6}
+              >
+                <POSIcon name="close" size={22} color={INK} />
+              </Pressable>
             </View>
 
             {/* Formulario */}
             <ScrollView style={styles.modalContenido} showsVerticalScrollIndicator={false}>
               {/* Sección: Información General */}
               <View style={styles.seccionFormulario}>
-                <Text style={styles.seccionTitulo}>Información General</Text>
+                <Text style={styles.seccionTitulo}>INFORMACIÓN GENERAL</Text>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Nombre *</Text>
+                  <Text style={styles.formLabel}>NOMBRE *</Text>
                   <TextInput
                     style={styles.formInput}
                     placeholder="Ej: Pan francés"
@@ -358,7 +386,7 @@ export default function RecetasScreen() {
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Código *</Text>
+                  <Text style={styles.formLabel}>CÓDIGO *</Text>
                   <TextInput
                     style={styles.formInput}
                     placeholder="Ej: PAN-001"
@@ -369,7 +397,7 @@ export default function RecetasScreen() {
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Descripción</Text>
+                  <Text style={styles.formLabel}>DESCRIPCIÓN</Text>
                   <TextInput
                     style={[styles.formInput, styles.formInputMultiline]}
                     placeholder="Descripción de la receta"
@@ -384,11 +412,11 @@ export default function RecetasScreen() {
 
               {/* Sección: Rendimiento */}
               <View style={styles.seccionFormulario}>
-                <Text style={styles.seccionTitulo}>Rendimiento y Tiempo</Text>
+                <Text style={styles.seccionTitulo}>RENDIMIENTO Y TIEMPO</Text>
 
                 <View style={styles.formRow}>
                   <View style={[styles.formGroup, styles.formGroupHalf]}>
-                    <Text style={styles.formLabel}>Rendimiento *</Text>
+                    <Text style={styles.formLabel}>RENDIMIENTO *</Text>
                     <TextInput
                       style={styles.formInput}
                       placeholder="0"
@@ -400,7 +428,7 @@ export default function RecetasScreen() {
                   </View>
 
                   <View style={[styles.formGroup, styles.formGroupHalf]}>
-                    <Text style={styles.formLabel}>Unidad *</Text>
+                    <Text style={styles.formLabel}>UNIDAD *</Text>
                     <View style={styles.formInput}>
                       <Text style={styles.formInputText}>{formData.unidadRendimiento}</Text>
                     </View>
@@ -408,7 +436,7 @@ export default function RecetasScreen() {
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Tiempo de Preparación (minutos)</Text>
+                  <Text style={styles.formLabel}>TIEMPO DE PREPARACIÓN (MIN)</Text>
                   <TextInput
                     style={styles.formInput}
                     placeholder="0"
@@ -423,20 +451,21 @@ export default function RecetasScreen() {
               {/* Sección: Ingredientes */}
               <View style={styles.seccionFormulario}>
                 <View style={styles.seccionHeader}>
-                  <Text style={styles.seccionTitulo}>Ingredientes</Text>
-                  <TouchableOpacity
-                    style={styles.botonAgregar}
+                  <Text style={styles.seccionTitulo}>INGREDIENTES</Text>
+                  <Pressable
+                    style={({ pressed }) => [styles.botonAgregar, hardShadow(pressed)]}
                     onPress={() => setModalMaterialVisible(true)}
+                    android_ripple={RIPPLE}
                   >
-                    <POSIcon name="add-circle" size={20} color={COLORS.white} />
-                    <Text style={styles.botonAgregarTexto}>Agregar</Text>
-                  </TouchableOpacity>
+                    <POSIcon name="add-circle" size={18} color={INK} />
+                    <Text style={styles.botonAgregarTexto}>AGREGAR</Text>
+                  </Pressable>
                 </View>
 
                 {materialesReceta.length === 0 ? (
                   <View style={styles.materialesVacio}>
-                    <POSIcon name="cube-outline" size={48} color={COLORS.lightGray} />
-                    <Text style={styles.materialesVacioTexto}>Sin ingredientes</Text>
+                    <POSIcon name="cube-outline" size={40} color={INK} />
+                    <Text style={styles.materialesVacioTexto}>SIN INGREDIENTES</Text>
                     <Text style={styles.materialesVacioSubtexto}>
                       Agrega materiales para esta receta
                     </Text>
@@ -445,10 +474,10 @@ export default function RecetasScreen() {
                   <View style={styles.tablaIngredientes}>
                     {/* Encabezado Tabla */}
                     <View style={styles.tablaHeader}>
-                      <Text style={[styles.tablaHeaderTexto, { flex: 2 }]}>Material</Text>
-                      <Text style={[styles.tablaHeaderTexto, { flex: 1, textAlign: 'center' }]}>Cantidad</Text>
-                      <Text style={[styles.tablaHeaderTexto, { flex: 1, textAlign: 'right' }]}>Costo Unit.</Text>
-                      <Text style={[styles.tablaHeaderTexto, { flex: 1, textAlign: 'right' }]}>Subtotal</Text>
+                      <Text style={[styles.tablaHeaderTexto, { flex: 2 }]}>MATERIAL</Text>
+                      <Text style={[styles.tablaHeaderTexto, { flex: 1, textAlign: 'center' }]}>CANT.</Text>
+                      <Text style={[styles.tablaHeaderTexto, { flex: 1, textAlign: 'right' }]}>C. UNIT.</Text>
+                      <Text style={[styles.tablaHeaderTexto, { flex: 1, textAlign: 'right' }]}>SUBTOTAL</Text>
                       <View style={{ width: 40 }} />
                     </View>
 
@@ -456,7 +485,7 @@ export default function RecetasScreen() {
                     {costos.detallesConCosto.map((detalle, index) => (
                       <View key={index} style={styles.tablaFila}>
                         <View style={{ flex: 2 }}>
-                          <Text style={styles.tablaFilaTexto}>{detalle.material?.nombre}</Text>
+                          <Text style={styles.tablaFilaTexto} numberOfLines={1}>{detalle.material?.nombre}</Text>
                           <Text style={styles.tablaFilaUnidad}>{detalle.unidadMedida}</Text>
                         </View>
 
@@ -478,12 +507,13 @@ export default function RecetasScreen() {
                           ${detalle.subtotal.toFixed(2)}
                         </Text>
 
-                        <TouchableOpacity
+                        <Pressable
                           style={styles.botonEliminarFila}
                           onPress={() => handleEliminarMaterial(index)}
+                          hitSlop={6}
                         >
                           <POSIcon name="close-circle" size={24} color={COLORS.danger} />
-                        </TouchableOpacity>
+                        </Pressable>
                       </View>
                     ))}
                   </View>
@@ -492,7 +522,7 @@ export default function RecetasScreen() {
 
               {/* Sección: Instrucciones */}
               <View style={styles.seccionFormulario}>
-                <Text style={styles.seccionTitulo}>Instrucciones de Preparación</Text>
+                <Text style={styles.seccionTitulo}>INSTRUCCIONES DE PREPARACIÓN</Text>
                 <TextInput
                   style={[styles.formInput, styles.formInputMultiline]}
                   placeholder="Escribe las instrucciones paso a paso..."
@@ -505,38 +535,42 @@ export default function RecetasScreen() {
               </View>
             </ScrollView>
 
-            {/* Panel de Costos Fijo */}
+            {/* Panel de Costos Fijo — siempre visible, dato de mayor consecuencia (Trust Design) */}
             <View style={styles.panelCostos}>
               <View style={styles.costoItem}>
-                <Text style={styles.costoLabel}>Total Ingredientes</Text>
+                <Text style={styles.costoLabel}>INGREDIENTES</Text>
                 <Text style={styles.costoValor}>${costos.costoTotal.toFixed(2)}</Text>
               </View>
+              <View style={styles.panelCostosDivider} />
               <View style={styles.costoItem}>
-                <Text style={styles.costoLabel}>Rendimiento</Text>
+                <Text style={styles.costoLabel}>RENDIMIENTO</Text>
                 <Text style={styles.costoValor}>{formData.rendimiento} {formData.unidadRendimiento}</Text>
               </View>
+              <View style={styles.panelCostosDivider} />
               <View style={styles.costoItem}>
-                <Text style={styles.costoLabelPrincipal}>Costo por Unidad</Text>
+                <Text style={styles.costoLabelPrincipal}>COSTO/UNIDAD</Text>
                 <Text style={styles.costoValorPrincipal}>${costos.costoPorUnidad.toFixed(2)}</Text>
               </View>
             </View>
 
             {/* Botones de Acción */}
             <View style={styles.modalAcciones}>
-              <TouchableOpacity
-                style={[styles.botonModal, styles.botonCancelar]}
+              <Pressable
+                style={({ pressed }) => [styles.botonModal, styles.botonCancelar, hardShadow(pressed)]}
                 onPress={handleCerrarModal}
+                android_ripple={RIPPLE}
               >
-                <Text style={styles.botonCancelarTexto}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.botonModal, styles.botonGuardar]}
+                <Text style={styles.botonCancelarTexto}>CANCELAR</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.botonModal, styles.botonGuardar, hardShadow(pressed)]}
                 onPress={handleCrearReceta}
+                android_ripple={RIPPLE}
               >
                 <Text style={styles.botonGuardarTexto}>
-                  {recetaSeleccionada ? 'Actualizar' : 'Crear Receta'}
+                  {recetaSeleccionada ? 'ACTUALIZAR' : 'CREAR RECETA'}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         </View>
@@ -552,35 +586,42 @@ export default function RecetasScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalMaterialContainer}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitulo}>Seleccionar Material</Text>
-              <TouchableOpacity onPress={() => setModalMaterialVisible(false)}>
-                <POSIcon name="close" size={28} color={COLORS.textSecondary} />
-              </TouchableOpacity>
+              <Text style={styles.modalTitulo}>SELECCIONAR MATERIAL</Text>
+              <Pressable
+                style={({ pressed }) => [styles.modalCloseButton, hardShadow(pressed)]}
+                onPress={() => setModalMaterialVisible(false)}
+                hitSlop={6}
+              >
+                <POSIcon name="close" size={22} color={INK} />
+              </Pressable>
             </View>
 
             <ScrollView style={styles.materialesDisponiblesLista}>
               {materialesDisponibles.length === 0 ? (
                 <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyTexto}>Todos los materiales agregados</Text>
+                  <Text style={styles.emptyTexto}>TODOS LOS MATERIALES AGREGADOS</Text>
                 </View>
               ) : (
                 materialesDisponibles.map((material) => (
-                  <TouchableOpacity
+                  <Pressable
                     key={material.id}
-                    style={styles.materialDisponibleItem}
+                    style={({ pressed }) => [styles.materialDisponibleItem, hardShadow(pressed)]}
                     onPress={() => handleAgregarMaterial(material)}
+                    android_ripple={RIPPLE}
                   >
                     <View style={styles.materialDisponibleInfo}>
-                      <Text style={styles.materialDisponibleNombre}>{material.nombre}</Text>
+                      <Text style={styles.materialDisponibleNombre} numberOfLines={1}>{material.nombre}</Text>
                       <View style={styles.materialDisponibleDetalles}>
-                        <POSIcon name="cube-outline" size={14} color={COLORS.textSecondary} />
+                        <POSIcon name="cube-outline" size={14} color={INK} />
                         <Text style={styles.materialDisponibleUnidad}>{material.unidadMedida}</Text>
-                        <Text style={styles.materialDisponibleSeparador}>•</Text>
+                        <Text style={styles.materialDisponibleSeparador}>·</Text>
                         <Text style={styles.materialDisponibleCosto}>${material.costoUnitario.toFixed(2)}</Text>
                       </View>
                     </View>
-                    <POSIcon name="add-circle-outline" size={24} color={COLORS.primary} />
-                  </TouchableOpacity>
+                    <View style={styles.materialDisponibleAddIcon}>
+                      <POSIcon name="add" size={20} color={INK} />
+                    </View>
+                  </Pressable>
                 ))
               )}
             </ScrollView>
@@ -594,16 +635,16 @@ export default function RecetasScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F1F1EC',
   },
 
-  // Header
+  // ── Header ────────────────────────────────────────────────────────────────
   header: {
     backgroundColor: COLORS.white,
     padding: 20,
     paddingTop: 60,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: BORDER_W,
+    borderBottomColor: INK,
   },
   headerTop: {
     flexDirection: 'row',
@@ -612,214 +653,273 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
+  },
+  countBadge: {
+    minWidth: 32,
+    height: 32,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    backgroundColor: COLORS.info,
+    borderWidth: 2,
+    borderColor: INK,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  countBadgeText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: INK,
   },
   subtitle: {
     fontSize: 14,
+    fontWeight: '600',
     color: COLORS.textSecondary,
   },
 
-  // Buscador
+  // ── Buscador ─────────────────────────────────────────────────────────────
   busquedaContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
     marginHorizontal: 16,
-    marginVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    height: 50,
+    marginVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: RADIUS,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    height: 52,
+    gap: 10,
   },
   busquedaInput: {
     flex: 1,
     fontSize: 16,
-    color: COLORS.text,
-    marginLeft: 12,
+    fontWeight: '600',
+    color: INK,
   },
 
-  // Lista
+  // ── Lista ────────────────────────────────────────────────────────────────
   listContainer: {
     padding: 16,
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
 
-  // Tarjeta Receta
+  // ── Tarjeta Receta ──────────────────────────────────────────────────────
   recetaCard: {
+    backgroundColor: COLORS.white,
     marginBottom: 16,
     padding: 16,
+    borderRadius: RADIUS,
+    borderWidth: BORDER_W,
+    borderColor: INK,
   },
   recetaHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 8,
+    gap: 10,
   },
   recetaHeaderLeft: {
     flex: 1,
   },
-  recetaHeaderRight: {
-    marginLeft: 12,
-  },
   recetaNombre: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 19,
+    fontWeight: '800',
+    color: INK,
     marginBottom: 4,
   },
   recetaCodigo: {
     fontSize: 13,
     color: COLORS.textSecondary,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  estadoBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: INK,
+  },
+  estadoBadgeTexto: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
   recetaDescripcion: {
     fontSize: 14,
+    fontWeight: '500',
     color: COLORS.textSecondary,
     marginBottom: 16,
     lineHeight: 20,
   },
 
-  // Grid de información
+  // ── Grid de información ────────────────────────────────────────────────
   recetaInfoGrid: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
+    gap: 10,
+    marginBottom: 14,
   },
   recetaInfoItem: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: '#F1F1EC',
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: INK,
     alignItems: 'center',
     gap: 4,
   },
   recetaInfoLabel: {
-    fontSize: 11,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
   recetaInfoValue: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: INK,
     textAlign: 'center',
   },
 
-  // Costos destacados
+  // ── Costos destacados — color sólido, no pastel, para máxima lectura ──
   recetaCostoContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFF9E6',
-    borderRadius: 8,
+    backgroundColor: COLORS.warning,
+    borderRadius: 10,
     padding: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#FFE082',
+    marginBottom: 14,
+    borderWidth: 2,
+    borderColor: INK,
   },
   recetaCosto: {
     flex: 1,
     alignItems: 'center',
   },
   recetaCostoDivider: {
-    width: 1,
-    backgroundColor: '#FFE082',
+    width: 2,
+    backgroundColor: INK,
     marginHorizontal: 12,
+    opacity: 0.3,
   },
   recetaCostoLabel: {
-    fontSize: 11,
-    color: '#9C6F19',
+    fontSize: 10,
+    color: INK,
     marginBottom: 4,
-    textTransform: 'uppercase',
-    fontWeight: '600',
+    letterSpacing: 0.3,
+    fontWeight: '800',
   },
   recetaCostoTotal: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#9C6F19',
+    fontWeight: '800',
+    color: INK,
   },
   recetaCostoUnidad: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#9C6F19',
+    fontWeight: '800',
+    color: INK,
   },
 
-  // Acciones
+  // ── Acciones ─────────────────────────────────────────────────────────────
   recetaAcciones: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   botonAccion: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: INK,
     gap: 6,
   },
   botonEditar: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: COLORS.info,
   },
   botonEliminar: {
-    backgroundColor: '#FFEBEE',
+    backgroundColor: '#FF9494',
   },
   botonAccionTexto: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-  botonEliminarTexto: {
-    color: COLORS.danger,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
 
-  // FAB Button
+  // ── FAB Button ──────────────────────────────────────────────────────────
   fabButton: {
     position: 'absolute',
     bottom: 20,
     right: 20,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    height: 60,
+    paddingHorizontal: 22,
+    borderRadius: 30,
     backgroundColor: COLORS.primary,
-    justifyContent: 'center',
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    gap: 8,
+  },
+  fabButtonTexto: {
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
   },
 
-  // Empty State
+  // ── Empty State ─────────────────────────────────────────────────────────
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
+    gap: 8,
+  },
+  emptyIconBadge: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: COLORS.white,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   emptyTexto: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    marginTop: 16,
-    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
   },
   emptySubtexto: {
     fontSize: 14,
+    fontWeight: '500',
     color: COLORS.textSecondary,
   },
 
-  // Modal
+  // ── Modal ────────────────────────────────────────────────────────────────
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(13, 13, 13, 0.55)',
     justifyContent: 'flex-end',
   },
   modalContainer: {
     backgroundColor: COLORS.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    borderBottomWidth: 0,
     maxHeight: '95%',
   },
   modalHeader: {
@@ -828,23 +928,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: BORDER_W,
+    borderBottomColor: INK,
   },
   modalTitulo: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
+  },
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: INK,
+    backgroundColor: '#F1F1EC',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContenido: {
     maxHeight: '50%',
   },
 
-  // Formulario
+  // ── Formulario ──────────────────────────────────────────────────────────
   seccionFormulario: {
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: 2,
+    borderBottomColor: '#EDEDE6',
   },
   seccionHeader: {
     flexDirection: 'row',
@@ -853,9 +964,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   seccionTitulo: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
     marginBottom: 16,
   },
   formGroup: {
@@ -869,85 +981,94 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   formLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
     marginBottom: 8,
   },
   formInput: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     fontSize: 16,
-    color: COLORS.text,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    fontWeight: '600',
+    color: INK,
+    borderWidth: 2,
+    borderColor: INK,
   },
   formInputText: {
     fontSize: 16,
-    color: COLORS.text,
+    fontWeight: '700',
+    color: INK,
   },
   formInputMultiline: {
     minHeight: 100,
     textAlignVertical: 'top',
   },
 
-  // Botón Agregar
+  // ── Botón Agregar ───────────────────────────────────────────────────────
   botonAgregar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: INK,
     gap: 6,
   },
   botonAgregarTexto: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
 
-  // Materiales Vacío
+  // ── Materiales Vacío ────────────────────────────────────────────────────
   materialesVacio: {
     alignItems: 'center',
-    padding: 40,
-    backgroundColor: '#F9FAFB',
+    padding: 32,
+    backgroundColor: '#F1F1EC',
     borderRadius: 12,
+    borderWidth: 2,
+    borderColor: INK,
+    borderStyle: 'dashed',
+    gap: 4,
   },
   materialesVacioTexto: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    marginTop: 12,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
+    marginTop: 8,
   },
   materialesVacioSubtexto: {
     fontSize: 13,
+    fontWeight: '500',
     color: COLORS.textSecondary,
-    marginTop: 4,
   },
 
-  // Tabla de Ingredientes
+  // ── Tabla de Ingredientes ──────────────────────────────────────────────
   tablaIngredientes: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: INK,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   tablaHeader: {
     flexDirection: 'row',
-    backgroundColor: '#F9FAFB',
-    paddingVertical: 12,
+    backgroundColor: INK,
+    paddingVertical: 10,
     paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   tablaHeaderTexto: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    textTransform: 'uppercase',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: COLORS.white,
   },
   tablaFila: {
     flexDirection: 'row',
@@ -955,116 +1076,130 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: '#EDEDE6',
     backgroundColor: COLORS.white,
   },
   tablaFilaTexto: {
     fontSize: 14,
-    color: COLORS.text,
+    fontWeight: '600',
+    color: INK,
   },
   tablaFilaUnidad: {
     fontSize: 11,
+    fontWeight: '600',
     color: COLORS.textSecondary,
     marginTop: 2,
   },
   tablaFilaSubtotal: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: COLORS.success,
   },
   inputCantidad: {
     backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderWidth: 2,
+    borderColor: INK,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     fontSize: 14,
+    fontWeight: '700',
+    color: INK,
     textAlign: 'center',
     minWidth: 60,
   },
   botonEliminarFila: {
     width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  // Panel de Costos
+  // ── Panel de Costos — siempre visible, alto contraste ─────────────────
   panelCostos: {
     flexDirection: 'row',
-    backgroundColor: '#FFF9E6',
+    backgroundColor: COLORS.warning,
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderTopWidth: 2,
-    borderTopColor: '#FFE082',
-    gap: 16,
+    borderTopWidth: BORDER_W,
+    borderTopColor: INK,
   },
   costoItem: {
     flex: 1,
     alignItems: 'center',
   },
+  panelCostosDivider: {
+    width: 2,
+    backgroundColor: INK,
+    opacity: 0.25,
+  },
   costoLabel: {
-    fontSize: 11,
-    color: '#9C6F19',
+    fontSize: 10,
+    color: INK,
     marginBottom: 4,
-    textTransform: 'uppercase',
-    fontWeight: '600',
+    letterSpacing: 0.3,
+    fontWeight: '800',
   },
   costoValor: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#9C6F19',
+    fontWeight: '800',
+    color: INK,
   },
   costoLabelPrincipal: {
-    fontSize: 12,
-    color: '#9C6F19',
+    fontSize: 11,
+    color: INK,
     marginBottom: 4,
-    textTransform: 'uppercase',
-    fontWeight: 'bold',
+    letterSpacing: 0.3,
+    fontWeight: '800',
   },
   costoValorPrincipal: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#9C6F19',
+    fontWeight: '800',
+    color: INK,
   },
 
-  // Botones Modal
+  // ── Botones Modal ────────────────────────────────────────────────────────
   modalAcciones: {
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
   },
   botonModal: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: BORDER_W,
+    borderColor: INK,
     alignItems: 'center',
   },
   botonCancelar: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F1F1EC',
   },
   botonCancelarTexto: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
   botonGuardar: {
     backgroundColor: COLORS.primary,
   },
   botonGuardarTexto: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.white,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
 
-  // Modal Material
+  // ── Modal Material ──────────────────────────────────────────────────────
   modalMaterialContainer: {
     backgroundColor: COLORS.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    borderBottomWidth: 0,
     maxHeight: '70%',
   },
   materialesDisponiblesLista: {
@@ -1074,20 +1209,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    borderWidth: 2,
+    borderColor: INK,
   },
   materialDisponibleInfo: {
     flex: 1,
+    marginRight: 10,
   },
   materialDisponibleNombre: {
     fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: INK,
     marginBottom: 6,
   },
   materialDisponibleDetalles: {
@@ -1097,6 +1233,7 @@ const styles = StyleSheet.create({
   },
   materialDisponibleUnidad: {
     fontSize: 13,
+    fontWeight: '600',
     color: COLORS.textSecondary,
   },
   materialDisponibleSeparador: {
@@ -1105,7 +1242,17 @@ const styles = StyleSheet.create({
   },
   materialDisponibleCosto: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '800',
     color: COLORS.success,
+  },
+  materialDisponibleAddIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    borderWidth: 2,
+    borderColor: INK,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

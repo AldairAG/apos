@@ -1,4 +1,4 @@
-import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
+import { COLORS, POSBadge, POSIcon } from '@/components/pos';
 import { Material } from '@/features/inventario/materiales/materiales.types';
 import { useMateriales } from '@/features/inventario/materiales/useMateriales';
 import { useSucursal } from '@/features/sucursal/useSucursal';
@@ -9,13 +9,28 @@ import {
   Alert,
   FlatList,
   Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
+
+// ── Design tokens: MD3 + Neo-Brutalismo Funcional (mismos que Dashboard) ──
+const INK = '#0D0D0D';
+const BORDER_W = 3;
+const RADIUS = 16;
+const RIPPLE = { color: 'rgba(0,0,0,0.18)', borderless: false };
+
+const hardShadow = (pressed: boolean) => ({
+  shadowColor: INK,
+  shadowOffset: { width: pressed ? 0 : 4, height: pressed ? 0 : 4 },
+  shadowOpacity: 1,
+  shadowRadius: 0,
+  elevation: pressed ? 0 : 5,
+  transform: [{ translateX: pressed ? 3 : 0 }, { translateY: pressed ? 3 : 0 }],
+});
 
 export default function MaterialesScreen() {
   const { sucursalActual } = useSucursal();
@@ -33,7 +48,7 @@ export default function MaterialesScreen() {
   const [busqueda, setBusqueda] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [materialSeleccionado, setMaterialSeleccionado] = useState<Material | null>(null);
-  const [mostrarUnidades, setMostrarUnidades] = useState(false);
+  const [modalUnidadesVisible, setModalUnidadesVisible] = useState(false);
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -153,6 +168,7 @@ export default function MaterialesScreen() {
   const handleCerrarModal = () => {
     setModalVisible(false);
     setMaterialSeleccionado(null);
+    setModalUnidadesVisible(false);
     setFormData({
       nombre: '',
       descripcion: '',
@@ -167,30 +183,30 @@ export default function MaterialesScreen() {
 
   const renderMaterialItem = ({ item }: { item: Material }) => {
     return (
-      <POSCard style={styles.materialCard} variant="elevated">
+      <View style={styles.materialCard}>
         <View style={styles.materialInfo}>
           <View style={styles.materialHeader}>
-            <Text style={styles.materialNombre}>{item.nombre}</Text>
+            <Text style={styles.materialNombre} numberOfLines={1}>{item.nombre}</Text>
             {item.perecedero && (
-              <POSBadge label="Perecedero" variant="warning" size="small" />
+              <POSBadge label="PERECEDERO" variant="warning" size="small" />
             )}
           </View>
-          <Text style={styles.materialDescripcion}>
+          <Text style={styles.materialDescripcion} numberOfLines={2}>
             {item.descripcion || 'Sin descripción'}
           </Text>
 
           <View style={styles.materialDetalles}>
             <View style={styles.detalleItem}>
-              <Text style={styles.detalleLabel}>Unidad</Text>
+              <Text style={styles.detalleLabel}>UNIDAD</Text>
               <Text style={styles.detalleValor}>{item.unidadMedida}</Text>
             </View>
             <View style={styles.detalleItem}>
-              <Text style={styles.detalleLabel}>Costo</Text>
+              <Text style={styles.detalleLabel}>COSTO</Text>
               <Text style={styles.detalleValor}>${item.costoUnitario.toFixed(2)}</Text>
             </View>
             {item.proveedor && (
               <View style={styles.detalleItem}>
-                <Text style={styles.detalleLabel}>Proveedor</Text>
+                <Text style={styles.detalleLabel}>PROVEEDOR</Text>
                 <Text style={styles.detalleValor} numberOfLines={1}>
                   {item.proveedor}
                 </Text>
@@ -200,22 +216,24 @@ export default function MaterialesScreen() {
         </View>
 
         <View style={styles.materialAcciones}>
-          <TouchableOpacity
-            style={[styles.botonAccion, styles.botonEditar]}
+          <Pressable
+            style={({ pressed }) => [styles.botonAccion, styles.botonEditar, hardShadow(pressed)]}
             onPress={() => handleEditar(item)}
-            activeOpacity={0.8}
+            android_ripple={RIPPLE}
+            hitSlop={4}
           >
-            <POSIcon name="create" size={20} color={COLORS.info} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.botonAccion, styles.botonEliminar]}
+            <POSIcon name="create" size={20} color={INK} />
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.botonAccion, styles.botonEliminar, hardShadow(pressed)]}
             onPress={() => handleEliminar(item)}
-            activeOpacity={0.8}
+            android_ripple={RIPPLE}
+            hitSlop={4}
           >
-            <POSIcon name="trash" size={20} color={COLORS.danger} />
-          </TouchableOpacity>
+            <POSIcon name="trash" size={20} color={INK} />
+          </Pressable>
         </View>
-      </POSCard>
+      </View>
     );
   };
 
@@ -224,8 +242,10 @@ export default function MaterialesScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.title}>Materiales</Text>
-          <POSBadge label={`${materialesFiltrados.length}`} variant="info" />
+          <Text style={styles.title}>MATERIALES</Text>
+          <View style={styles.countBadge}>
+            <Text style={styles.countBadgeText}>{materialesFiltrados.length}</Text>
+          </View>
         </View>
         <Text style={styles.subtitle}>
           {materialesFiltrados.length === 1
@@ -236,7 +256,7 @@ export default function MaterialesScreen() {
 
       {/* Buscador */}
       <View style={styles.busquedaContainer}>
-        <POSIcon name="search" size={20} color={COLORS.textSecondary} />
+        <POSIcon name="search" size={20} color={INK} />
         <TextInput
           style={styles.busquedaInput}
           placeholder="Buscar material..."
@@ -245,9 +265,9 @@ export default function MaterialesScreen() {
           onChangeText={setBusqueda}
         />
         {busqueda.length > 0 && (
-          <TouchableOpacity onPress={() => setBusqueda('')}>
-            <POSIcon name="close-circle" size={20} color={COLORS.textSecondary} />
-          </TouchableOpacity>
+          <Pressable onPress={() => setBusqueda('')} hitSlop={8}>
+            <POSIcon name="close-circle" size={20} color={INK} />
+          </Pressable>
         )}
       </View>
 
@@ -269,20 +289,29 @@ export default function MaterialesScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <POSIcon name="cube-outline" size={64} color={COLORS.textSecondary} />
-              <Text style={styles.emptyTexto}>No se encontraron materiales</Text>
+              <View style={styles.emptyIconBadge}>
+                <POSIcon name="cube-outline" size={48} color={INK} />
+              </View>
+              <Text style={styles.emptyTexto}>
+                {busqueda ? 'SIN RESULTADOS' : 'AÚN NO HAY MATERIALES'}
+              </Text>
               <Text style={styles.emptySubtexto}>
-                {busqueda ? 'Intenta con otra búsqueda' : 'Comienza agregando un material'}
+                {busqueda ? 'Intenta con otra búsqueda' : 'Toca "+ Nuevo material" para comenzar'}
               </Text>
             </View>
           }
         />
       )}
 
-      {/* Botón Flotante Agregar */}
-      <TouchableOpacity style={styles.botonFlotante} onPress={handleNuevo} activeOpacity={0.9}>
-        <POSIcon name="add" size={32} color={COLORS.white} />
-      </TouchableOpacity>
+      {/* Botón Flotante Agregar — un solo tap, siempre accesible */}
+      <Pressable
+        style={({ pressed }) => [styles.botonFlotante, hardShadow(pressed)]}
+        onPress={handleNuevo}
+        android_ripple={RIPPLE}
+      >
+        <POSIcon name="add" size={30} color={INK} />
+        <Text style={styles.botonFlotanteTexto}>NUEVO</Text>
+      </Pressable>
 
       {/* Modal Crear/Editar Material */}
       <Modal
@@ -296,17 +325,21 @@ export default function MaterialesScreen() {
             {/* Header Modal */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitulo}>
-                {materialSeleccionado ? 'Editar Material' : 'Nuevo Material'}
+                {materialSeleccionado ? 'EDITAR MATERIAL' : 'NUEVO MATERIAL'}
               </Text>
-              <TouchableOpacity onPress={handleCerrarModal}>
-                <POSIcon name="close" size={26} color={COLORS.textSecondary} />
-              </TouchableOpacity>
+              <Pressable
+                style={({ pressed }) => [styles.modalCloseButton, hardShadow(pressed)]}
+                onPress={handleCerrarModal}
+                hitSlop={6}
+              >
+                <POSIcon name="close" size={22} color={INK} />
+              </Pressable>
             </View>
 
             {/* Formulario */}
             <ScrollView style={styles.modalContenido} showsVerticalScrollIndicator={false}>
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Nombre del Material *</Text>
+                <Text style={styles.formLabel}>NOMBRE DEL MATERIAL *</Text>
                 <TextInput
                   style={styles.formInput}
                   placeholder="Ej: Harina de trigo"
@@ -317,7 +350,7 @@ export default function MaterialesScreen() {
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Descripción</Text>
+                <Text style={styles.formLabel}>DESCRIPCIÓN</Text>
                 <TextInput
                   style={[styles.formInput, styles.formInputMultiline]}
                   placeholder="Descripción del material"
@@ -330,7 +363,7 @@ export default function MaterialesScreen() {
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Proveedor</Text>
+                <Text style={styles.formLabel}>PROVEEDOR</Text>
                 <TextInput
                   style={styles.formInput}
                   placeholder="Nombre del proveedor"
@@ -341,7 +374,7 @@ export default function MaterialesScreen() {
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Categoría</Text>
+                <Text style={styles.formLabel}>CATEGORÍA</Text>
                 <TextInput
                   style={styles.formInput}
                   placeholder="Ej: Granos, Lácteos, etc."
@@ -353,52 +386,20 @@ export default function MaterialesScreen() {
                 />
               </View>
 
-              <View style={[styles.formRow, { zIndex: mostrarUnidades ? 1000 : 1 }]}>
-                <View
-                  style={[
-                    styles.formGroup,
-                    styles.formGroupHalf,
-                    { zIndex: mostrarUnidades ? 1001 : 1, elevation: mostrarUnidades ? 1001 : 1 },
-                  ]}
-                >
-                  <Text style={styles.formLabel}>Unidad de Medida *</Text>
-                  <TouchableOpacity
+              <View style={styles.formRow}>
+                <View style={[styles.formGroup, styles.formGroupHalf]}>
+                  <Text style={styles.formLabel}>UNIDAD DE MEDIDA *</Text>
+                  <Pressable
                     style={[styles.formInput, styles.dropdownTrigger]}
-                    onPress={() => setMostrarUnidades(!mostrarUnidades)}
+                    onPress={() => setModalUnidadesVisible(true)}
                   >
                     <Text style={styles.dropdownTriggerText}>{formData.unidadMedida}</Text>
-                    <POSIcon
-                      name={mostrarUnidades ? 'chevron-up' : 'chevron-down'}
-                      size={18}
-                      color={COLORS.textSecondary}
-                    />
-                  </TouchableOpacity>
-                  {mostrarUnidades && (
-                    <View style={styles.dropdownContainer}>
-                      <ScrollView
-                        style={styles.dropdownList}
-                        nestedScrollEnabled
-                        showsVerticalScrollIndicator={true}
-                      >
-                        {Object.values(Unidad).map((unidad) => (
-                          <TouchableOpacity
-                            key={unidad}
-                            style={styles.dropdownItem}
-                            onPress={() => {
-                              setFormData({ ...formData, unidadMedida: unidad });
-                              setMostrarUnidades(false);
-                            }}
-                          >
-                            <Text style={styles.dropdownItemText}>{unidad}</Text>
-                          </TouchableOpacity>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
+                    <POSIcon name="chevron-down" size={18} color={INK} />
+                  </Pressable>
                 </View>
 
                 <View style={[styles.formGroup, styles.formGroupHalf]}>
-                  <Text style={styles.formLabel}>Costo Unitario *</Text>
+                  <Text style={styles.formLabel}>COSTO UNITARIO *</Text>
                   <TextInput
                     style={styles.formInput}
                     placeholder="0.00"
@@ -414,33 +415,29 @@ export default function MaterialesScreen() {
 
               <View style={styles.formRow}>
                 <View style={[styles.formGroup, styles.formGroupHalf]}>
-                  <Text style={styles.formLabel}>¿Es Perecedero?</Text>
-                  <TouchableOpacity
-                    style={[
+                  <Text style={styles.formLabel}>¿ES PERECEDERO?</Text>
+                  <Pressable
+                    style={({ pressed }) => [
                       styles.checkboxContainer,
                       formData.perecedero && styles.checkboxContainerActive,
+                      hardShadow(pressed),
                     ]}
                     onPress={() =>
                       setFormData({ ...formData, perecedero: !formData.perecedero })
                     }
                   >
                     {formData.perecedero && (
-                      <POSIcon name="checkmark" size={16} color={COLORS.primary} />
+                      <POSIcon name="checkmark" size={18} color={INK} />
                     )}
-                    <Text
-                      style={[
-                        styles.checkboxText,
-                        formData.perecedero && { color: COLORS.primary },
-                      ]}
-                    >
-                      {formData.perecedero ? 'Sí' : 'No'}
+                    <Text style={styles.checkboxText}>
+                      {formData.perecedero ? 'SÍ' : 'NO'}
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
 
                 {formData.perecedero && (
                   <View style={[styles.formGroup, styles.formGroupHalf]}>
-                    <Text style={styles.formLabel}>Días de Vencimiento</Text>
+                    <Text style={styles.formLabel}>DÍAS DE VENCIMIENTO</Text>
                     <TextInput
                       style={styles.formInput}
                       placeholder="0"
@@ -458,29 +455,82 @@ export default function MaterialesScreen() {
 
             {/* Botones de Acción */}
             <View style={styles.modalAcciones}>
-              <TouchableOpacity
-                style={[styles.botonModal, styles.botonCancelar]}
+              <Pressable
+                style={({ pressed }) => [styles.botonModal, styles.botonCancelar, hardShadow(pressed)]}
                 onPress={handleCerrarModal}
                 disabled={loading}
-                activeOpacity={0.8}
+                android_ripple={RIPPLE}
               >
-                <Text style={styles.botonCancelarTexto}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.botonModal, styles.botonGuardar]}
+                <Text style={styles.botonCancelarTexto}>CANCELAR</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.botonModal, styles.botonGuardar, hardShadow(pressed)]}
                 onPress={handleGuardar}
                 disabled={loading}
-                activeOpacity={0.8}
+                android_ripple={RIPPLE}
               >
                 {loading ? (
-                  <ActivityIndicator color={COLORS.white} />
+                  <ActivityIndicator color={INK} />
                 ) : (
                   <Text style={styles.botonGuardarTexto}>
-                    {materialSeleccionado ? 'Actualizar' : 'Crear'}
+                    {materialSeleccionado ? 'ACTUALIZAR' : 'CREAR'}
                   </Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={modalUnidadesVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalUnidadesVisible(false)}
+      >
+        <View style={styles.unidadModalOverlay}>
+          <Pressable
+            style={styles.unidadModalBackdrop}
+            onPress={() => setModalUnidadesVisible(false)}
+          />
+          <View style={styles.unidadModalContainer}>
+            <View style={styles.unidadModalHeader}>
+              <Text style={styles.unidadModalTitle}>SELECCIONA UNA UNIDAD</Text>
+              <Pressable
+                style={({ pressed }) => [styles.modalCloseButton, hardShadow(pressed)]}
+                onPress={() => setModalUnidadesVisible(false)}
+                hitSlop={6}
+              >
+                <POSIcon name="close" size={22} color={INK} />
+              </Pressable>
+            </View>
+
+            <FlatList
+              data={Object.values(Unidad)}
+              keyExtractor={(unidad) => unidad}
+              style={styles.unidadList}
+              contentContainerStyle={styles.unidadListContent}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => {
+                const seleccionada = item === formData.unidadMedida;
+                return (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.unidadOption,
+                      seleccionada && styles.unidadOptionActive,
+                      pressed && styles.unidadOptionPressed,
+                    ]}
+                    onPress={() => {
+                      setFormData({ ...formData, unidadMedida: item });
+                      setModalUnidadesVisible(false);
+                    }}
+                  >
+                    <Text style={styles.unidadOptionText}>{item}</Text>
+                    {seleccionada && <POSIcon name="checkmark" size={18} color={INK} />}
+                  </Pressable>
+                );
+              }}
+            />
           </View>
         </View>
       </Modal>
@@ -491,16 +541,16 @@ export default function MaterialesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F1F1EC',
   },
 
-  // ── Header (igual que HomeScreen) ─────────────────────────────────────────
+  // ── Header ────────────────────────────────────────────────────────────────
   header: {
     backgroundColor: COLORS.white,
     padding: 20,
     paddingTop: 60,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: BORDER_W,
+    borderBottomColor: INK,
   },
   headerTop: {
     flexDirection: 'row',
@@ -509,16 +559,34 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
+  },
+  countBadge: {
+    minWidth: 32,
+    height: 32,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    backgroundColor: COLORS.info,
+    borderWidth: 2,
+    borderColor: INK,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  countBadgeText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: INK,
   },
   subtitle: {
     fontSize: 14,
+    fontWeight: '600',
     color: COLORS.textSecondary,
   },
 
-  // ── Buscador ───────────────────────────────────────────────────────────────
+  // ── Buscador ─────────────────────────────────────────────────────────────
   busquedaContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -526,27 +594,32 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 14,
     paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    height: 48,
+    borderRadius: RADIUS,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    height: 52,
     gap: 10,
   },
   busquedaInput: {
     flex: 1,
     fontSize: 16,
-    color: COLORS.text,
+    fontWeight: '600',
+    color: INK,
   },
 
-  // ── Lista ──────────────────────────────────────────────────────────────────
+  // ── Lista ────────────────────────────────────────────────────────────────
   listContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
   materialCard: {
     flexDirection: 'row',
+    backgroundColor: COLORS.white,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 14,
+    borderRadius: RADIUS,
+    borderWidth: BORDER_W,
+    borderColor: INK,
   },
   materialInfo: {
     flex: 1,
@@ -561,11 +634,13 @@ const styles = StyleSheet.create({
   },
   materialNombre: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: INK,
+    flexShrink: 1,
   },
   materialDescripcion: {
     fontSize: 14,
+    fontWeight: '500',
     color: COLORS.textSecondary,
     marginBottom: 12,
   },
@@ -580,53 +655,59 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: COLORS.textSecondary,
     marginBottom: 2,
-    textTransform: 'uppercase',
-    fontWeight: '600',
+    letterSpacing: 0.4,
+    fontWeight: '800',
   },
   detalleValor: {
     fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: INK,
   },
 
-  // ── Acciones ───────────────────────────────────────────────────────────────
+  // ── Acciones — objetivos táctiles grandes con borde propio ─────────────────
   materialAcciones: {
     justifyContent: 'center',
-    gap: 8,
+    gap: 10,
   },
   botonAccion: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
   },
   botonEditar: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: COLORS.info,
   },
   botonEliminar: {
-    backgroundColor: '#FFEBEE',
+    backgroundColor: '#FF9494',
   },
 
-  // ── Botón Flotante ────────────────────────────────────────────────────────
+  // ── Botón Flotante ──────────────────────────────────────────────────────
   botonFlotante: {
     position: 'absolute',
     bottom: 24,
     right: 20,
-    width: 60,
     height: 60,
+    paddingHorizontal: 22,
     borderRadius: 30,
     backgroundColor: COLORS.primary,
-    justifyContent: 'center',
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    gap: 8,
+  },
+  botonFlotanteTexto: {
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
   },
 
-  // ── Loading ───────────────────────────────────────────────────────────────
+  // ── Loading ─────────────────────────────────────────────────────────────
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -636,36 +717,53 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
+    fontWeight: '600',
     color: COLORS.textSecondary,
   },
 
-  // ── Empty State ───────────────────────────────────────────────────────────
+  // ── Empty State — invitación clara a actuar ────────────────────────────
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
-    gap: 6,
+    gap: 8,
+  },
+  emptyIconBadge: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: COLORS.white,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   emptyTexto: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
   },
   emptySubtexto: {
     fontSize: 14,
+    fontWeight: '500',
     color: COLORS.textSecondary,
   },
 
-  // ── Modal ─────────────────────────────────────────────────────────────────
+  // ── Modal ────────────────────────────────────────────────────────────────
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(13, 13, 13, 0.55)',
     justifyContent: 'flex-end',
   },
   modalContainer: {
     backgroundColor: COLORS.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    borderBottomWidth: 0,
     maxHeight: '90%',
     paddingBottom: 20,
   },
@@ -675,13 +773,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: BORDER_W,
+    borderBottomColor: INK,
   },
   modalTitulo: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
+  },
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: INK,
+    backgroundColor: '#F1F1EC',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContenido: {
     padding: 20,
@@ -689,7 +798,7 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
 
-  // ── Formulario ────────────────────────────────────────────────────────────
+  // ── Formulario — inputs con borde marcado, alto contraste ──────────────
   formGroup: {
     marginBottom: 20,
     position: 'relative',
@@ -703,20 +812,22 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   formLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
     marginBottom: 8,
   },
   formInput: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.white,
     borderRadius: 12,
     paddingHorizontal: 15,
-    paddingVertical: 12,
+    paddingVertical: 14,
     fontSize: 16,
-    color: COLORS.text,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    fontWeight: '600',
+    color: INK,
+    borderWidth: 2,
+    borderColor: INK,
   },
   formInputMultiline: {
     minHeight: 80,
@@ -729,69 +840,99 @@ const styles = StyleSheet.create({
   },
   dropdownTriggerText: {
     fontSize: 16,
-    color: COLORS.text,
+    fontWeight: '700',
+    color: INK,
   },
 
-  // ── Checkbox ──────────────────────────────────────────────────────────────
+  // ── Checkbox / Toggle grande ─────────────────────────────────────────────
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  checkboxContainerActive: {
-    backgroundColor: '#E3F2FD',
-    borderColor: COLORS.primary,
-  },
-  checkboxText: {
-    fontSize: 16,
-    color: COLORS.text,
-    fontWeight: '600',
-  },
-
-  // ── Dropdown ──────────────────────────────────────────────────────────────
-  dropdownContainer: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
     backgroundColor: COLORS.white,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginTop: 4,
-    maxHeight: 240,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 1002,
-    zIndex: 1002,
-    overflow: 'hidden',
-  },
-  dropdownList: {
-    maxHeight: 240,
-  },
-  dropdownItem: {
     paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
-    elevation: 1000,
-    zIndex: 2000,
+    paddingVertical: 14,
+    borderWidth: 2,
+    borderColor: INK,
   },
-  dropdownItemText: {
-    fontSize: 16,
-    color: COLORS.text,
+  checkboxContainerActive: {
+    backgroundColor: COLORS.success,
+  },
+  checkboxText: {
+    fontSize: 15,
+    color: INK,
+    fontWeight: '800',
   },
 
-  // ── Botones Modal ─────────────────────────────────────────────────────────
+  // ── Modal de unidades ──────────────────────────────────────────────────
+  unidadModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(13, 13, 13, 0.65)',
+  },
+  unidadModalBackdrop: {
+    ...StyleSheet.absoluteFill,
+  },
+  unidadModalContainer: {
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    overflow: 'hidden',
+    maxHeight: '80%',
+    zIndex: 1,
+  },
+  unidadModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    borderBottomWidth: BORDER_W,
+    borderBottomColor: INK,
+    backgroundColor: COLORS.white,
+  },
+  unidadModalTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
+  },
+  unidadList: {
+    maxHeight: 360,
+  },
+  unidadListContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  unidadOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: INK,
+    backgroundColor: COLORS.white,
+    marginBottom: 10,
+  },
+  unidadOptionActive: {
+    backgroundColor: COLORS.info,
+  },
+  unidadOptionPressed: {
+    backgroundColor: '#F1F1EC',
+  },
+  unidadOptionText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: INK,
+  },
+
+  // ── Botones Modal ────────────────────────────────────────────────────────
   modalAcciones: {
     flexDirection: 'row',
     gap: 15,
@@ -800,24 +941,28 @@ const styles = StyleSheet.create({
   },
   botonModal: {
     flex: 1,
-    paddingVertical: 15,
+    paddingVertical: 16,
     borderRadius: 12,
+    borderWidth: BORDER_W,
+    borderColor: INK,
     alignItems: 'center',
   },
   botonCancelar: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F1F1EC',
   },
   botonCancelarTexto: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
   botonGuardar: {
     backgroundColor: COLORS.primary,
   },
   botonGuardarTexto: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
 });
