@@ -60,5 +60,11 @@ public class MovimientoCajaServiceImpl implements MovimientoCajaService {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'aprobarMovimiento'");
     }
+
+    @Override
+    public List<MovimientoCaja> obtenerMovimientosPorCajaIdYFechas(Long idCaja, LocalDateTime fechaInicio,
+            LocalDateTime fechaFin) {
+        return movimientoRepository.findByCajaIdAndFechaBetween(idCaja, fechaInicio, fechaFin);
+    }
     
 }
