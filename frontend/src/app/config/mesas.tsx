@@ -1,51 +1,48 @@
+import { COLORS, POSIcon } from '@/components/pos';
 import { CrearMesaDTO, EstadoMesa, Mesa } from '@/features/mesas/mesas.types';
 import { useMesa } from '@/features/mesas/useMesa';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   FlatList,
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PURPLE = '#6C63FF';
+// ── Design tokens: MD3 + Neo-Brutalismo Funcional (mismos que el resto de la app) ──
+const INK = '#0D0D0D';
+const BORDER_W = 3;
+const RADIUS = 16;
+const RIPPLE = { color: 'rgba(0,0,0,0.18)', borderless: false };
+
+const hardShadow = (pressed: boolean) => ({
+  shadowColor: INK,
+  shadowOffset: { width: pressed ? 0 : 4, height: pressed ? 0 : 4 },
+  shadowOpacity: 1,
+  shadowRadius: 0,
+  elevation: pressed ? 0 : 5,
+  transform: [{ translateX: pressed ? 3 : 0 }, { translateY: pressed ? 3 : 0 }],
+});
 
 // ─── Estado config ─────────────────────────────────────────────────────────────
-
-const ESTADO_CONFIG: Record<
-  EstadoMesa,
-  { label: string; barColor: string; badgeBg: string; badgeText: string }
-> = {
-  [EstadoMesa.LIBRE]: {
-    label: 'Libre',
-    barColor: '#639922',
-    badgeBg: '#EAF3DE',
-    badgeText: '#3B6D11',
-  },
-  [EstadoMesa.OCUPADA]: {
-    label: 'Ocupada',
-    barColor: '#BA7517',
-    badgeBg: '#FAEEDA',
-    badgeText: '#854F0B',
-  },
-  [EstadoMesa.RESERVADA]: {
-    label: 'Reservada',
-    barColor: '#378ADD',
-    badgeBg: '#E6F1FB',
-    badgeText: '#185FA5',
-  },
+// Psicología del color: verde = disponible (afirmativo, invita a usar la mesa),
+// ámbar = ocupada (atención, no alarma — es un estado normal del negocio),
+// azul = reservada (informativo/planeado). Ningún estado usa rojo: el rojo
+// queda reservado exclusivamente para acciones destructivas (eliminar).
+const ESTADO_CONFIG: Record<EstadoMesa, { label: string; color: string }> = {
+  [EstadoMesa.LIBRE]: { label: 'LIBRE', color: COLORS.success },
+  [EstadoMesa.OCUPADA]: { label: 'OCUPADA', color: COLORS.warning },
+  [EstadoMesa.RESERVADA]: { label: 'RESERVADA', color: COLORS.info },
 };
 
 // ─── MesaCard ──────────────────────────────────────────────────────────────────
@@ -61,7 +58,7 @@ const MesaCard: React.FC<MesaCardProps> = ({ mesa, onEdit, onDelete }) => {
 
   return (
     <View style={[styles.card, !mesa.activa && styles.cardInactive]}>
-      <View style={[styles.cardStatusBar, { backgroundColor: cfg.barColor }]} />
+      <View style={[styles.cardStatusBar, { backgroundColor: cfg.color }]} />
 
       <View style={styles.cardBody}>
         <Text style={styles.cardNombre} numberOfLines={1}>
@@ -69,32 +66,33 @@ const MesaCard: React.FC<MesaCardProps> = ({ mesa, onEdit, onDelete }) => {
         </Text>
         <Text style={styles.cardCodigo}>{mesa.codigo}</Text>
 
-        <View style={[styles.estadoBadge, { backgroundColor: cfg.badgeBg }]}>
-          <View style={[styles.estadoDot, { backgroundColor: cfg.barColor }]} />
-          <Text style={[styles.estadoText, { color: cfg.badgeText }]}>{cfg.label}</Text>
+        <View style={[styles.estadoBadge, { backgroundColor: cfg.color }]}>
+          <Text style={styles.estadoText}>{cfg.label}</Text>
         </View>
 
         {mesa.estado === EstadoMesa.OCUPADA && mesa.ordenActual > 0 && (
-          <Text style={styles.ordenText}>Orden #{mesa.ordenActual}</Text>
+          <Text style={styles.ordenText}>ORDEN #{mesa.ordenActual}</Text>
         )}
 
-        {!mesa.activa && <Text style={styles.inactiveText}>Inactiva</Text>}
+        {!mesa.activa && <Text style={styles.inactiveText}>INACTIVA</Text>}
 
         <View style={styles.cardActions}>
-          <TouchableOpacity
-            style={styles.actionBtn}
+          <Pressable
+            style={({ pressed }) => [styles.actionBtn, styles.actionBtnEditar, hardShadow(pressed)]}
             onPress={() => onEdit(mesa)}
+            android_ripple={RIPPLE}
             accessibilityLabel={`Editar ${mesa.nombre}`}
           >
-            <Text style={styles.actionIcon}>✏️</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.actionBtnDanger]}
+            <POSIcon name="create-outline" size={18} color={INK} />
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.actionBtn, styles.actionBtnDanger, hardShadow(pressed)]}
             onPress={() => onDelete(mesa.id, mesa.nombre)}
+            android_ripple={RIPPLE}
             accessibilityLabel={`Eliminar ${mesa.nombre}`}
           >
-            <Text style={styles.actionIcon}>🗑️</Text>
-          </TouchableOpacity>
+            <POSIcon name="trash-outline" size={18} color={INK} />
+          </Pressable>
         </View>
       </View>
     </View>
@@ -108,32 +106,22 @@ interface FilterChipProps {
   count: number;
   active: boolean;
   onPress: () => void;
-  dotColor?: string;
-  badgeBg?: string;
-  badgeText?: string;
+  color?: string;
 }
 
-const FilterChip: React.FC<FilterChipProps> = ({
-  label,
-  count,
-  active,
-  onPress,
-  dotColor,
-  badgeBg = '#F1EFE8',
-  badgeText = '#5F5E5A',
-}) => (
-  <TouchableOpacity
-    style={[styles.chip, active && styles.chipActive]}
+const FilterChip: React.FC<FilterChipProps> = ({ label, count, active, onPress, color = COLORS.primary }) => (
+  <Pressable
+    style={({ pressed }) => [styles.chip, active && { backgroundColor: color }, hardShadow(pressed)]}
     onPress={onPress}
+    android_ripple={RIPPLE}
     accessibilityRole="button"
     accessibilityState={{ selected: active }}
   >
-    {dotColor && <View style={[styles.chipDot, { backgroundColor: dotColor }]} />}
-    <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>{label}</Text>
-    <View style={[styles.chipBadge, { backgroundColor: badgeBg }]}>
-      <Text style={[styles.chipBadgeText, { color: badgeText }]}>{count}</Text>
+    <Text style={styles.chipLabel}>{label.toUpperCase()}</Text>
+    <View style={styles.chipBadge}>
+      <Text style={styles.chipBadgeText}>{count}</Text>
     </View>
-  </TouchableOpacity>
+  </Pressable>
 );
 
 // ─── MesaFormModal ─────────────────────────────────────────────────────────────
@@ -156,12 +144,14 @@ const MesaFormModal: React.FC<MesaFormModalProps> = ({
   const [nombre, setNombre] = useState('');
   const [codigo, setCodigo] = useState('');
   const [errors, setErrors] = useState<{ nombre?: string; codigo?: string }>({});
+  const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
     if (visible) {
       setNombre(mesa?.nombre ?? '');
       setCodigo(mesa?.codigo ?? '');
       setErrors({});
+      setGuardando(false);
     }
   }, [visible, mesa]);
 
@@ -173,9 +163,11 @@ const MesaFormModal: React.FC<MesaFormModalProps> = ({
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) return;
-    onSave({ nombre: nombre.trim(), codigo: codigo.trim() });
+    setGuardando(true);
+    await onSave({ nombre: nombre.trim(), codigo: codigo.trim() });
+    setGuardando(false);
   };
 
   const handleRequestDelete = () => {
@@ -209,26 +201,26 @@ const MesaFormModal: React.FC<MesaFormModalProps> = ({
         style={styles.modalContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <TouchableOpacity
-          style={StyleSheet.absoluteFill}
-          activeOpacity={1}
-          onPress={onClose}
-          accessibilityLabel="Cerrar formulario"
-        >
-          <View style={styles.modalBackdrop} />
-        </TouchableOpacity>
+        <Pressable style={styles.modalBackdrop} onPress={onClose} accessibilityLabel="Cerrar formulario" />
 
         <View style={styles.modalSheet}>
-          <View style={styles.sheetHandle} />
-
-          <Text style={styles.modalTitle}>{mesa ? 'Editar mesa' : 'Nueva mesa'}</Text>
+          <View style={styles.modalHeaderRow}>
+            <Text style={styles.modalTitle}>{mesa ? 'EDITAR MESA' : 'NUEVA MESA'}</Text>
+            <Pressable
+              style={({ pressed }) => [styles.modalCloseButton, hardShadow(pressed)]}
+              onPress={onClose}
+              hitSlop={6}
+            >
+              <POSIcon name="close" size={20} color={INK} />
+            </Pressable>
+          </View>
 
           {/* ── Nombre ── */}
-          <Text style={styles.inputLabel}>Nombre</Text>
+          <Text style={styles.inputLabel}>NOMBRE</Text>
           <TextInput
             style={[styles.input, !!errors.nombre && styles.inputError]}
             placeholder="Mesa 01"
-            placeholderTextColor="#B4B2A9"
+            placeholderTextColor={COLORS.textSecondary}
             value={nombre}
             onChangeText={t => {
               setNombre(t);
@@ -240,11 +232,11 @@ const MesaFormModal: React.FC<MesaFormModalProps> = ({
           {!!errors.nombre && <Text style={styles.errorText}>{errors.nombre}</Text>}
 
           {/* ── Código ── */}
-          <Text style={styles.inputLabel}>Código</Text>
+          <Text style={styles.inputLabel}>CÓDIGO</Text>
           <TextInput
             style={[styles.input, !!errors.codigo && styles.inputError]}
             placeholder="M01"
-            placeholderTextColor="#B4B2A9"
+            placeholderTextColor={COLORS.textSecondary}
             value={codigo}
             onChangeText={t => {
               setCodigo(t);
@@ -258,22 +250,38 @@ const MesaFormModal: React.FC<MesaFormModalProps> = ({
 
           {/* ── Eliminar (solo en edición) ── */}
           {mesa && (
-            <>
-              <View style={styles.formDivider} />
-              <TouchableOpacity style={styles.deleteBtn} onPress={handleRequestDelete}>
-                <Text style={styles.deleteBtnText}>Eliminar mesa</Text>
-              </TouchableOpacity>
-            </>
+            <Pressable
+              style={({ pressed }) => [styles.deleteBtn, hardShadow(pressed)]}
+              onPress={handleRequestDelete}
+              android_ripple={RIPPLE}
+            >
+              <POSIcon name="trash-outline" size={18} color={INK} />
+              <Text style={styles.deleteBtnText}>ELIMINAR MESA</Text>
+            </Pressable>
           )}
 
           {/* ── Acciones ── */}
           <View style={styles.modalActions}>
-            <TouchableOpacity style={styles.btnCancel} onPress={onClose}>
-              <Text style={styles.btnCancelText}>Cancelar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.btnSave} onPress={handleSave}>
-              <Text style={styles.btnSaveText}>Guardar</Text>
-            </TouchableOpacity>
+            <Pressable
+              style={({ pressed }) => [styles.btnCancel, hardShadow(pressed)]}
+              onPress={onClose}
+              android_ripple={RIPPLE}
+              disabled={guardando}
+            >
+              <Text style={styles.btnCancelText}>CANCELAR</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.btnSave, hardShadow(pressed)]}
+              onPress={handleSave}
+              android_ripple={RIPPLE}
+              disabled={guardando}
+            >
+              {guardando ? (
+                <ActivityIndicator color={INK} />
+              ) : (
+                <Text style={styles.btnSaveText}>GUARDAR</Text>
+              )}
+            </Pressable>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -387,12 +395,16 @@ export default function MesasScreen() {
   const renderEmpty = useCallback(
     () => (
       <View style={styles.emptyState}>
-        <Text style={styles.emptyIcon}>🪑</Text>
-        <Text style={styles.emptyTitle}>Sin mesas</Text>
+        <View style={styles.emptyIconBadge}>
+          <POSIcon name="grid-outline" size={40} color={INK} />
+        </View>
+        <Text style={styles.emptyTitle}>
+          {filtro !== null ? 'SIN MESAS EN ESTE ESTADO' : 'AÚN NO HAY MESAS'}
+        </Text>
         <Text style={styles.emptySubtitle}>
           {filtro !== null
-            ? 'No hay mesas con este estado'
-            : 'Agrega la primera mesa con el botón +'}
+            ? 'Prueba con otro filtro'
+            : 'Toca "+" para agregar la primera'}
         </Text>
       </View>
     ),
@@ -401,39 +413,40 @@ export default function MesasScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
 
       {/* ── Header ──────────────────────────────── */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>Mesas</Text>
+          <Text style={styles.headerTitle}>MESAS</Text>
           <Text style={styles.headerSubtitle} numberOfLines={1}>
             {sucursalActual?.nombre ?? 'Sin sucursal seleccionada'}
           </Text>
         </View>
-        <TouchableOpacity
-          style={[styles.refreshBtn, loading && styles.refreshBtnDisabled]}
+        <Pressable
+          style={({ pressed }) => [styles.refreshBtn, hardShadow(pressed)]}
           onPress={cargarMesas}
           disabled={loading}
+          android_ripple={RIPPLE}
           accessibilityLabel="Recargar mesas"
         >
-          <Text style={styles.refreshIcon}>↻</Text>
-        </TouchableOpacity>
+          <POSIcon name="refresh" size={20} color={INK} />
+        </Pressable>
       </View>
 
       {/* ── Estadísticas ─────────────────────────── */}
       <View style={styles.statsRow}>
-        <View style={styles.statPill}>
-          <Text style={[styles.statNum, { color: '#639922' }]}>{conteos.libre}</Text>
-          <Text style={styles.statLabel}>Libres</Text>
+        <View style={[styles.statPill, { backgroundColor: COLORS.success }]}>
+          <Text style={styles.statNum}>{conteos.libre}</Text>
+          <Text style={styles.statLabel}>LIBRES</Text>
         </View>
-        <View style={styles.statPill}>
-          <Text style={[styles.statNum, { color: '#BA7517' }]}>{conteos.ocupada}</Text>
-          <Text style={styles.statLabel}>Ocupadas</Text>
+        <View style={[styles.statPill, { backgroundColor: COLORS.warning }]}>
+          <Text style={styles.statNum}>{conteos.ocupada}</Text>
+          <Text style={styles.statLabel}>OCUPADAS</Text>
         </View>
-        <View style={styles.statPill}>
-          <Text style={[styles.statNum, { color: '#378ADD' }]}>{conteos.reservada}</Text>
-          <Text style={styles.statLabel}>Reservadas</Text>
+        <View style={[styles.statPill, { backgroundColor: COLORS.info }]}>
+          <Text style={styles.statNum}>{conteos.reservada}</Text>
+          <Text style={styles.statLabel}>RESERVADAS</Text>
         </View>
       </View>
 
@@ -455,34 +468,28 @@ export default function MesasScreen() {
           count={conteos.libre}
           active={filtro === EstadoMesa.LIBRE}
           onPress={() => setFiltro(EstadoMesa.LIBRE)}
-          dotColor="#639922"
-          badgeBg="#EAF3DE"
-          badgeText="#3B6D11"
+          color={COLORS.success}
         />
         <FilterChip
           label="Ocupadas"
           count={conteos.ocupada}
           active={filtro === EstadoMesa.OCUPADA}
           onPress={() => setFiltro(EstadoMesa.OCUPADA)}
-          dotColor="#BA7517"
-          badgeBg="#FAEEDA"
-          badgeText="#854F0B"
+          color={COLORS.warning}
         />
         <FilterChip
           label="Reservadas"
           count={conteos.reservada}
           active={filtro === EstadoMesa.RESERVADA}
           onPress={() => setFiltro(EstadoMesa.RESERVADA)}
-          dotColor="#378ADD"
-          badgeBg="#E6F1FB"
-          badgeText="#185FA5"
+          color={COLORS.info}
         />
       </ScrollView>
 
       {/* ── Grid / Loading ───────────────────────── */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={PURPLE} />
+          <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Cargando mesas…</Text>
         </View>
       ) : (
@@ -502,14 +509,15 @@ export default function MesasScreen() {
       )}
 
       {/* ── FAB ──────────────────────────────────── */}
-      <TouchableOpacity
-        style={styles.fab}
+      <Pressable
+        style={({ pressed }) => [styles.fab, hardShadow(pressed)]}
         onPress={handleOpenCreate}
+        android_ripple={RIPPLE}
         accessibilityLabel="Agregar mesa"
         accessibilityRole="button"
       >
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+        <POSIcon name="add" size={28} color={INK} />
+      </Pressable>
 
       {/* ── Modal de formulario ───────────────────── */}
       <MesaFormModal
@@ -528,124 +536,120 @@ export default function MesasScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F1F1EC',
   },
 
-  // Header
+  // ── Header ────────────────────────────────────────────────────────────────
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     paddingHorizontal: 20,
     paddingTop: 18,
-    paddingBottom: 12,
+    paddingBottom: 14,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: BORDER_W,
+    borderBottomColor: INK,
   },
   headerLeft: {
     flex: 1,
     marginRight: 12,
   },
   headerTitle: {
-    fontSize: 26,
-    fontWeight: '600',
-    color: '#1C1C1E',
-    letterSpacing: -0.5,
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
   },
   headerSubtitle: {
     fontSize: 13,
-    color: '#888780',
+    fontWeight: '600',
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   refreshBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    borderWidth: 0.5,
-    borderColor: '#D3D1C7',
-    backgroundColor: '#F1EFE8',
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: INK,
+    backgroundColor: '#F1F1EC',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  refreshBtnDisabled: {
-    opacity: 0.5,
-  },
-  refreshIcon: {
-    fontSize: 18,
-    color: '#5F5E5A',
-  },
 
-  // Stats
+  // ── Stats ────────────────────────────────────────────────────────────────
   statsRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
     paddingHorizontal: 16,
-    marginBottom: 12,
+    marginTop: 14,
+    marginBottom: 14,
   },
   statPill: {
     flex: 1,
-    backgroundColor: '#F1EFE8',
-    borderRadius: 10,
-    paddingVertical: 10,
+    borderRadius: 12,
+    paddingVertical: 12,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: INK,
   },
   statNum: {
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: '800',
     lineHeight: 26,
+    color: INK,
   },
   statLabel: {
-    fontSize: 11,
-    color: '#888780',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
     marginTop: 2,
   },
 
-  // Filter bar
+  // ── Filter bar ───────────────────────────────────────────────────────────
   filterBar: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   filterContent: {
     paddingHorizontal: 16,
-    gap: 8,
+    gap: 10,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 0.5,
-    borderColor: '#D3D1C7',
-    backgroundColor: '#FFFFFF',
-    gap: 5,
-  },
-  chipActive: {
-    borderColor: '#2C2C2A',
-  },
-  chipDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: INK,
+    backgroundColor: COLORS.white,
+    gap: 8,
   },
   chipLabel: {
-    fontSize: 13,
-    color: '#888780',
-  },
-  chipLabelActive: {
-    color: '#1C1C1E',
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    color: INK,
   },
   chipBadge: {
-    borderRadius: 9,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    minWidth: 18,
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    minWidth: 22,
     alignItems: 'center',
+    backgroundColor: '#F1F1EC',
+    borderWidth: 1.5,
+    borderColor: INK,
   },
   chipBadgeText: {
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '800',
+    color: INK,
   },
 
-  // Grid
+  // ── Grid ─────────────────────────────────────────────────────────────────
   gridContent: {
     paddingHorizontal: 16,
     paddingBottom: 100,
@@ -654,93 +658,90 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   columnWrapper: {
-    gap: 10,
-    marginBottom: 10,
+    gap: 12,
+    marginBottom: 12,
   },
 
-  // Mesa card
+  // ── Mesa card ────────────────────────────────────────────────────────────
   card: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 0.5,
-    borderColor: '#D3D1C7',
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS,
+    borderWidth: BORDER_W,
+    borderColor: INK,
     overflow: 'hidden',
   },
   cardInactive: {
-    opacity: 0.5,
+    opacity: 0.55,
   },
   cardStatusBar: {
-    height: 5,
+    height: 6,
     width: '100%',
   },
   cardBody: {
     padding: 12,
   },
   cardNombre: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1C1C1E',
+    fontSize: 15,
+    fontWeight: '800',
+    color: INK,
   },
   cardCodigo: {
     fontSize: 11,
-    color: '#B4B2A9',
+    fontWeight: '600',
+    color: COLORS.textSecondary,
     marginTop: 1,
   },
   estadoBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: INK,
     marginTop: 8,
-    gap: 4,
-  },
-  estadoDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
   },
   estadoText: {
-    fontSize: 11,
-    fontWeight: '500',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
   ordenText: {
-    fontSize: 12,
-    color: '#888780',
-    marginTop: 5,
+    fontSize: 11,
+    fontWeight: '700',
+    color: INK,
+    marginTop: 6,
   },
   inactiveText: {
     fontSize: 11,
-    color: '#B4B2A9',
-    fontStyle: 'italic',
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: COLORS.textSecondary,
     marginTop: 4,
   },
   cardActions: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
     marginTop: 10,
   },
   actionBtn: {
     flex: 1,
-    height: 30,
-    borderRadius: 8,
-    borderWidth: 0.5,
-    borderColor: '#D3D1C7',
-    backgroundColor: '#F1EFE8',
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: INK,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionBtnDanger: {
-    borderColor: '#FCA5A5',
-    backgroundColor: '#FEF2F2',
+  actionBtnEditar: {
+    backgroundColor: COLORS.info,
   },
-  actionIcon: {
-    fontSize: 13,
+  actionBtnDanger: {
+    backgroundColor: '#FF9494',
   },
 
-  // Loading
+  // ── Loading ─────────────────────────────────────────────────────────────
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
@@ -749,10 +750,11 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 14,
-    color: '#888780',
+    fontWeight: '600',
+    color: COLORS.textSecondary,
   },
 
-  // Empty state
+  // ── Empty state ─────────────────────────────────────────────────────────
   emptyState: {
     flex: 1,
     alignItems: 'center',
@@ -760,155 +762,170 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     gap: 8,
   },
-  emptyIcon: {
-    fontSize: 40,
+  emptyIconBadge: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: COLORS.white,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 4,
   },
   emptyTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#2C2C2A',
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
   emptySubtitle: {
     fontSize: 13,
-    color: '#B4B2A9',
+    fontWeight: '500',
+    color: COLORS.textSecondary,
     textAlign: 'center',
     maxWidth: 220,
   },
 
-  // FAB
+  // ── FAB ──────────────────────────────────────────────────────────────────
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 32,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: PURPLE,
+    bottom: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.primary,
+    borderWidth: BORDER_W,
+    borderColor: INK,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
-    shadowColor: PURPLE,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  fabText: {
-    fontSize: 28,
-    color: '#FFFFFF',
-    lineHeight: 32,
-    marginTop: -2,
   },
 
-  // Modal
+  // ── Modal ────────────────────────────────────────────────────────────────
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(13, 13, 13, 0.55)',
   },
   modalSheet: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
+    paddingTop: 20,
     paddingBottom: Platform.OS === 'ios' ? 34 : 24,
-    borderTopWidth: 0.5,
-    borderColor: '#D3D1C7',
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    borderBottomWidth: 0,
   },
-  sheetHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#D3D1C7',
-    alignSelf: 'center',
-    marginVertical: 14,
+  modalHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 18,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1C1C1E',
-    marginBottom: 18,
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
+  },
+  modalCloseButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: INK,
+    backgroundColor: '#F1F1EC',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   inputLabel: {
     fontSize: 12,
-    color: '#888780',
-    fontWeight: '500',
-    marginBottom: 4,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
+    marginBottom: 8,
   },
   input: {
-    height: 44,
-    borderWidth: 0.5,
-    borderColor: '#D3D1C7',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    fontSize: 15,
-    color: '#1C1C1E',
-    backgroundColor: '#FFFFFF',
-    marginBottom: 14,
+    height: 52,
+    borderWidth: 2,
+    borderColor: INK,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    fontWeight: '600',
+    color: INK,
+    backgroundColor: COLORS.white,
+    marginBottom: 16,
   },
   inputError: {
-    borderColor: '#E24B4A',
-    backgroundColor: '#FCEBEB',
+    borderColor: COLORS.danger,
+    backgroundColor: '#FFF1F1',
   },
   errorText: {
     fontSize: 12,
-    color: '#E24B4A',
+    fontWeight: '700',
+    color: COLORS.danger,
     marginTop: -10,
-    marginBottom: 10,
-  },
-  formDivider: {
-    height: 0.5,
-    backgroundColor: '#D3D1C7',
-    marginVertical: 14,
+    marginBottom: 14,
   },
   deleteBtn: {
-    height: 42,
-    borderRadius: 10,
-    borderWidth: 0.5,
-    borderColor: '#FCA5A5',
-    backgroundColor: '#FEF2F2',
+    flexDirection: 'row',
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: INK,
+    backgroundColor: '#FF9494',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
+    gap: 8,
+    marginBottom: 16,
   },
   deleteBtnText: {
     fontSize: 14,
-    color: '#991B1B',
-    fontWeight: '500',
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
   modalActions: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
   },
   btnCancel: {
     flex: 1,
-    height: 44,
-    borderRadius: 10,
-    borderWidth: 0.5,
-    borderColor: '#D3D1C7',
-    backgroundColor: '#F1EFE8',
+    height: 52,
+    borderRadius: 12,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    backgroundColor: '#F1F1EC',
     alignItems: 'center',
     justifyContent: 'center',
   },
   btnCancelText: {
     fontSize: 15,
-    color: '#5F5E5A',
-    fontWeight: '500',
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
   btnSave: {
     flex: 1,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: PURPLE,
+    height: 52,
+    borderRadius: 12,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   btnSaveText: {
     fontSize: 15,
-    color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
 });
