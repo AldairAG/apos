@@ -4,11 +4,12 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.auth.usuario.dto.ColaboradorDTO;
+import com.api.apos.dto.request.AuthRequest;
 import com.api.apos.dto.response.JwtResponse;
 
 public interface UsuarioService extends UserDetailsService {
 
-    JwtResponse registrarUsuario(String email,String password);
+    JwtResponse registrarUsuario(AuthRequest request);
 
     JwtResponse login(String email, String password);
 

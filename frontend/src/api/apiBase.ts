@@ -76,10 +76,10 @@ const storage = new WebSessionStorageWrapper();
 
 // Configuración base de la API
 //const API_BASE_URL = 'http://localhost:8080/api';
-const API_BASE_URL = 'http://192.168.1.4:8080/api';
+//const API_BASE_URL = 'http://192.168.1.4:8080/api';
 //const API_BASE_URL = 'http://192.168.1.13:8080/api';//pc orlando
 //const API_BASE_URL = 'http://192.168.1.5:8080/api';//mamalona de alda
-//const API_BASE_URL = 'http://192.168.1.85:8080/api';
+const API_BASE_URL = 'http://192.168.1.85:8080/api';
 //const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 // Rutas públicas que no requieren autenticación
@@ -377,8 +377,8 @@ class ApiBase {
             if (error.response?.data) {
                 // Error desde el servidor
                 const serverError = error.response.data;
-                if (serverError.message) {
-                    errorMessage = serverError.message;
+                if (serverError.error) {
+                    errorMessage = serverError.error;
                 } else if (typeof serverError === 'string') {
                     errorMessage = serverError;
                 }
