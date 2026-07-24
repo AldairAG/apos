@@ -1,8 +1,4 @@
-// Pantalla principal de Caja (mobile) — dashboard construido 100% con datos mock.
-// No hay integración con API/Redux/hooks; toda la información vive en estado
-// local de este componente para facilitar su reemplazo posterior por
-// selectores/thunks reales (ver comentarios "// TODO Redux/API").
-import {
+ import {
   AgregarMovimientoModal,
   CorteCajaModal,
   DetalleMovimientoModal,

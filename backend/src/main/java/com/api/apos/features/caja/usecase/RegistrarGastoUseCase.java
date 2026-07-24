@@ -28,7 +28,7 @@ public class RegistrarGastoUseCase {
     private final MaterialService materialService;
 
     @Transactional
-    public MovimientoCajaDTO registrarGastoUseCase(MovimientoCajaDTO movimiento) {
+    public MovimientoCajaDTO execute(MovimientoCajaDTO movimiento) {
 
         MovimientoCaja movimientoCaja = MovimientoCaja.builder()
                 .caja(cajaService.obtenerCajaPorId(movimiento.getCajaId()))
