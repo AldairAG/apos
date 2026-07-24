@@ -4,7 +4,7 @@ import { CrearOrdenDTO, DetalleOrdenDTO, ProductosBySucursalResponse, TipoOrden 
 import usePos from '@/features/pos/usePos';
 import { useSucursal } from '@/features/sucursal/useSucursal';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Mesa } from '@/types/pos.types';
 
@@ -17,11 +17,44 @@ interface ItemCarrito {
   extras: { id: number; nombre: string; precio: number; cantidad: number }[];
 }
 
+/**
+ * ---------------------------------------------------------------------------
+ * SISTEMA DE DISEÑO: Material Design 3 + Neo-Brutalismo Funcional
+ * ---------------------------------------------------------------------------
+ * - Bordes marcados (3px sólidos, negro puro) en vez de sombras difusas.
+ * - Sombra "offset" dura (hard shadow) para dar sensación física de botón.
+ * - Colores sólidos y saturados, sin gradientes ni transparencias sutiles.
+ * - Alto contraste texto/fondo (mínimo AA/AAA) para uso en cocina/mostrador
+ *   con luz variable y decisiones rápidas.
+ * - Área táctil mínima de 56px (por encima del mínimo MD3 de 48px) porque
+ *   se usa con dedos, prisa y a veces guantes.
+ * - Psicología del color aplicada a propósito:
+ *     Verde  -> dinero / confirmar / éxito (nunca para alertas)
+ *     Rojo   -> SOLO eliminar o error real (evita fatiga de alerta)
+ *     Azul   -> acciones neutras / navegación / confianza
+ *     Ámbar  -> advertencia suave (obligatorio, requiere atención)
+ *     Negro/blanco -> estructura, nunca decoración
+ * - Feedback inmediato: todo elemento accionable cambia de estado visible
+ *   al presionar (no se depende solo de opacidad).
+ * ---------------------------------------------------------------------------
+ */
+const BRUTAL_BORDER = 3;
+const BRUTAL_RADIUS = 14;
+const INK = '#141414'; // negro "tinta", más suave que #000 puro para no fatigar
+
+const hardShadow = (elevationLevel: number = 4) => ({
+  shadowColor: INK,
+  shadowOffset: { width: elevationLevel, height: elevationLevel },
+  shadowOpacity: 1,
+  shadowRadius: 0,
+  elevation: elevationLevel,
+});
+
 export default function CrearOrdenScreen() {
   const { ordenId } = useLocalSearchParams<{ ordenId?: string }>();
   const { productos, mesas, cargarProductos, cargarMesas, cargarOrdenes, crearOrden, seleccionarMesa } = usePos();
-  const {sucursalActual}=useSucursal();
-  
+  const { sucursalActual } = useSucursal();
+
   const [paso, setPaso] = useState<PasoCreacion>('seleccion');
   const [tipoOrden, setTipoOrden] = useState<TipoOrden | null>(null);
   const [mesaSeleccionada, setMesaSeleccionada] = useState<number | null>(null);
@@ -35,22 +68,33 @@ export default function CrearOrdenScreen() {
   const [numeroPersonas, setNumeroPersonas] = useState(1);
   const [observacionesOrden, setObservacionesOrden] = useState('');
 
+  // --- Feedback inmediato -----------------------------------------------
+  // Id del producto que se acaba de agregar rápido, para pulso visual breve.
+  const [productoRecienAgregado, setProductoRecienAgregado] = useState<number | null>(null);
+  const [carritoAbierto, setCarritoAbierto] = useState(false);
+  const feedbackTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     cargarProductos();
     cargarMesas();
   }, [cargarProductos, cargarMesas]);
 
-  // Calcular totales en tiempo real
+  useEffect(() => {
+    return () => {
+      if (feedbackTimeout.current) clearTimeout(feedbackTimeout.current);
+    };
+  }, []);
+
   const totales = useMemo(() => {
     let subtotal = 0;
     let cantidadTotal = 0;
 
     carrito.forEach(item => {
       subtotal += item.subtotal;
-      cantidadTotal += item.subtotal;
+      cantidadTotal += item.cantidad;
     });
 
-    const descuento = 0; // Aquí se podría calcular descuentos
+    const descuento = 0;
     const total = subtotal - descuento;
 
     return { subtotal, descuento, total, cantidadTotal };
@@ -107,23 +151,67 @@ export default function CrearOrdenScreen() {
     setExtrasSeleccionados(new Map());
   };
 
+  // Un producto se puede agregar en UN toque cuando no tiene ningún grupo
+  // de extras obligatorio. Esto elimina el paso del modal para el caso
+  // más común (bebidas, antojitos, productos simples) y reduce la
+  // interacción de "2 toques + scroll" a "1 toque".
+  const requiereModal = (producto: ProductosBySucursalResponse) => {
+    return Boolean(producto.gruposExtra?.some(g => g.obligatorio));
+  };
+
+  const dispararFeedback = (productoId: number) => {
+    setProductoRecienAgregado(productoId);
+    if (feedbackTimeout.current) clearTimeout(feedbackTimeout.current);
+    feedbackTimeout.current = setTimeout(() => setProductoRecienAgregado(null), 450);
+  };
+
+  const agregarRapidoAlCarrito = (producto: ProductosBySucursalResponse) => {
+    const itemExistente = carrito.find(
+      item => item.productoId === producto.id && item.extras.length === 0
+    );
+
+    if (itemExistente) {
+      setCarrito(carrito.map(item =>
+        item === itemExistente ? { ...item, cantidad: item.cantidad + 1, subtotal: item.subtotal + producto.precioVenta } : item
+      ));
+    } else {
+      const nuevoItem: DetalleOrdenDTO = {
+        cantidad: 1,
+        precioUnitario: producto.precioVenta,
+        subtotal: producto.precioVenta,
+        extras: [],
+        productoId: producto.id,
+      };
+      setCarrito(prev => [...prev, nuevoItem]);
+    }
+
+    dispararFeedback(producto.id);
+  };
+
+  const manejarToqueProducto = (producto: ProductosBySucursalResponse) => {
+    if (requiereModal(producto)) {
+      abrirModalProducto(producto);
+    } else {
+      agregarRapidoAlCarrito(producto);
+    }
+  };
+
   const actualizarCantidadExtra = (extraId: number, delta: number) => {
     setExtrasSeleccionados(prev => {
       const nuevo = new Map(prev);
       const cantidadActual = nuevo.get(extraId) || 0;
       const nuevaCantidad = Math.max(0, cantidadActual + delta);
-      
+
       if (nuevaCantidad === 0) {
         nuevo.delete(extraId);
       } else {
         nuevo.set(extraId, nuevaCantidad);
       }
-      
+
       return nuevo;
     });
   };
 
-  // Calcular totales del modal en tiempo real
   const totalesModal = useMemo(() => {
     if (!modalProducto) return { precioBase: 0, totalExtras: 0, precioFinal: 0 };
 
@@ -145,7 +233,6 @@ export default function CrearOrdenScreen() {
   const agregarAlCarrito = () => {
     if (!modalProducto) return;
 
-    // Convertir extras seleccionados a array con información completa
     const extrasArray: { id: number; nombre: string; precio: number; cantidad: number }[] = [];
     modalProducto.gruposExtra?.forEach(grupo => {
       grupo.grupoExtra.opciones.forEach(opcion => {
@@ -155,16 +242,15 @@ export default function CrearOrdenScreen() {
             id: opcion.id,
             nombre: opcion.nombre,
             precio: opcion.precio,
-            cantidad
+            cantidad,
           });
         }
       });
     });
 
-    const itemExistente = carrito.find(item => 
+    const itemExistente = carrito.find(item =>
       item.productoId === modalProducto.id &&
-      JSON.stringify(item.extras) === JSON.stringify(extrasArray) 
-      //item.observaciones === observacionesTemp
+      JSON.stringify(item.extras) === JSON.stringify(extrasArray)
     );
 
     if (itemExistente) {
@@ -177,19 +263,20 @@ export default function CrearOrdenScreen() {
       const nuevoCarritoItem: DetalleOrdenDTO = {
         cantidad: cantidadTemp,
         precioUnitario: modalProducto.precioVenta,
-        subtotal: modalProducto.precioVenta * cantidadTemp+(extrasArray.reduce((sum, extra) => sum + (extra.precio * extra.cantidad), 0) * cantidadTemp),
+        subtotal: modalProducto.precioVenta * cantidadTemp + (extrasArray.reduce((sum, extra) => sum + (extra.precio * extra.cantidad), 0) * cantidadTemp),
         extras: extrasArray.map(extra => ({
           opcionExtraId: extra.id,
           cantidad: extra.cantidad,
           precioUnitario: extra.precio,
-          subtotal: extra.precio * extra.cantidad
+          subtotal: extra.precio * extra.cantidad,
         })),
-        productoId: modalProducto.id
+        productoId: modalProducto.id,
       };
 
       setCarrito([...carrito, nuevoCarritoItem]);
     }
 
+    dispararFeedback(modalProducto.id);
     setModalProducto(null);
   };
 
@@ -208,12 +295,12 @@ export default function CrearOrdenScreen() {
 
   const finalizarOrden = async () => {
     if (carrito.length === 0) {
-      Alert.alert('Error', 'Agrega al menos un producto al carrito');
+      Alert.alert('Carrito vacío', 'Agrega al menos un producto antes de finalizar.');
       return;
     }
 
     if (!tipoOrden) {
-      Alert.alert('Error', 'Selecciona el tipo de orden');
+      Alert.alert('Falta información', 'Selecciona el tipo de orden.');
       return;
     }
 
@@ -231,8 +318,8 @@ export default function CrearOrdenScreen() {
           opcionExtraId: extra.opcionExtraId,
           cantidad: extra.cantidad,
           precioUnitario: extra.precioUnitario,
-          subtotal: extra.subtotal
-        }))
+          subtotal: extra.subtotal,
+        })),
       }));
 
       const ordenDTO: CrearOrdenDTO = {
@@ -245,19 +332,19 @@ export default function CrearOrdenScreen() {
         subtotal: totales.subtotal,
         descuento: totales.descuento,
         total: totales.total,
-        sucursalId: sucursalActual?.id || 0, // Usar sucursal actual
+        sucursalId: sucursalActual?.id || 0,
         mesaId: mesaSeleccionada || 0,
-        detallesDTO: detalles
+        detallesDTO: detalles,
       };
 
       await crearOrden(ordenDTO);
       await cargarMesas();
       await cargarOrdenes();
-      Alert.alert('Éxito', 'Orden creada correctamente', [
-        { text: 'OK', onPress: () => router.back() }
+      Alert.alert('Orden creada', 'La orden se registró correctamente.', [
+        { text: 'Aceptar', onPress: () => router.back() },
       ]);
     } catch (error) {
-      Alert.alert('Error', 'No se pudo crear la orden');
+      Alert.alert('No se pudo crear la orden', 'Verifica tu conexión e intenta de nuevo.');
       console.error(error);
     }
   };
@@ -288,15 +375,20 @@ export default function CrearOrdenScreen() {
     return cats;
   }, [productos]);
 
+  // ---------------------------------------------------------------------
+  // PASO 1: Selección de mesa / tipo de orden
+  // ---------------------------------------------------------------------
   if (paso === 'seleccion') {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <POSIcon name="arrow-back" size={24} color={COLORS.text} />
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.6}>
+            <View style={styles.backButtonInner}>
+              <POSIcon name="arrow-back" size={24} color={INK} />
+            </View>
           </TouchableOpacity>
           <Text style={styles.title}>Nueva Orden</Text>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 48 }} />
         </View>
 
         <FlatList
@@ -307,49 +399,61 @@ export default function CrearOrdenScreen() {
           columnWrapperStyle={styles.columnWrapper}
           ListHeaderComponent={(
             <View style={styles.seleccionTipoContainer}>
-              <Text style={styles.seleccionTipoTitle}>Selecciona una mesa libre o inicia una orden directa</Text>
-              <Text style={styles.seleccionTipoSubtitle}>Las mesas ocupadas quedan bloqueadas para evitar duplicar órdenes.</Text>
+              <Text style={styles.seleccionTipoTitle}>¿Cómo empezamos?</Text>
+              <Text style={styles.seleccionTipoSubtitle}>
+                Elige una acción rápida o selecciona una mesa libre abajo. Las mesas ocupadas están bloqueadas.
+              </Text>
 
               <View style={styles.quickActions}>
                 <TouchableOpacity
-                  style={[styles.tipoCard, styles.quickActionButton, styles.quickActionSecondary]}
+                  style={[styles.quickActionButton, styles.quickActionSecondary]}
                   onPress={() => iniciarOrden(TipoOrden.PARA_LLEVAR)}
-                  activeOpacity={0.8}
+                  activeOpacity={0.75}
                 >
-                  <POSIcon name="bag-handle" size={24} color={COLORS.success} />
-                  <Text style={styles.quickActionText}>Orden para llevar</Text>
+                  <POSIcon name="bag-handle" size={26} color={INK} />
+                  <Text style={styles.quickActionText}>PARA LLEVAR</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.tipoCard, styles.quickActionButton, styles.quickActionPrimary]}
+                  style={[styles.quickActionButton, styles.quickActionPrimary]}
                   onPress={() => iniciarOrden(TipoOrden.RECOGER)}
-                  activeOpacity={0.8}
+                  activeOpacity={0.75}
                 >
-                  <POSIcon name="flash" size={24} color={COLORS.primary} />
-                  <Text style={styles.quickActionText}>Orden rápida</Text>
+                  <POSIcon name="flash" size={26} color={INK} />
+                  <Text style={styles.quickActionText}>ORDEN RÁPIDA</Text>
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.mesasTitle}>Mesas disponibles</Text>
+              <View style={styles.sectionDivider}>
+                <Text style={styles.mesasTitle}>MESAS DISPONIBLES</Text>
+                <View style={styles.countPill}>
+                  <Text style={styles.countPillText}>{mesasDisponibles.length}</Text>
+                </View>
+              </View>
             </View>
           )}
           ListEmptyComponent={(
             <View style={styles.emptyState}>
-              <POSIcon name="grid-outline" size={56} color={COLORS.border} />
-              <Text style={styles.emptyStateText}>No hay mesas libres disponibles</Text>
+              <View style={styles.emptyStateIconBox}>
+                <POSIcon name="grid-outline" size={44} color={INK} />
+              </View>
+              <Text style={styles.emptyStateText}>No hay mesas libres ahora mismo</Text>
+              <Text style={styles.emptyStateSubtext}>Usa "Para llevar" u "Orden rápida" mientras tanto</Text>
             </View>
           )}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.mesaCard}
               onPress={() => seleccionarMesaYContinuar(item.id)}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
-              <POSCard variant="elevated" style={styles.mesaCardInner}>
-                <POSIcon name="restaurant" size={40} color={COLORS.primary} />
+              <View style={styles.mesaCardInner}>
+                <POSIcon name="restaurant" size={36} color={INK} />
                 <Text style={styles.mesaNombre}>{item.nombre}</Text>
-                <POSBadge label="LIBRE" variant="success" size="small" />
-              </POSCard>
+                <View style={styles.libreBadge}>
+                  <Text style={styles.libreBadgeText}>LIBRE</Text>
+                </View>
+              </View>
             </TouchableOpacity>
           )}
         />
@@ -357,13 +461,15 @@ export default function CrearOrdenScreen() {
     );
   }
 
-  // PASO 2: Agregar Productos
+  // ---------------------------------------------------------------------
+  // PASO 2: Agregar productos
+  // ---------------------------------------------------------------------
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
+        <TouchableOpacity
+          style={styles.backButton}
+          activeOpacity={0.6}
           onPress={() => {
             setPaso('seleccion');
             setTipoOrden(null);
@@ -371,19 +477,22 @@ export default function CrearOrdenScreen() {
             setCarrito([]);
           }}
         >
-          <POSIcon name="arrow-back" size={24} color={COLORS.text} />
+          <View style={styles.backButtonInner}>
+            <POSIcon name="arrow-back" size={24} color={INK} />
+          </View>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.title}>Agregar Productos</Text>
+          <Text style={styles.title} numberOfLines={1}>Agregar Productos</Text>
           <Text style={styles.subtitle}>
-            {tipoOrden === TipoOrden.EN_MESA ? `Mesa ${mesaSeleccionada}` : 'Para Llevar'}
+            {tipoOrden === TipoOrden.EN_MESA ? `Mesa ${mesaSeleccionada}` : tipoOrden === TipoOrden.PARA_LLEVAR ? 'Para llevar' : 'Orden rápida'}
           </Text>
         </View>
-        <TouchableOpacity 
-          style={styles.carritoButton}
-          onPress={() => {/* scroll to carrito */}}
+        <TouchableOpacity
+          style={styles.carritoHeaderButton}
+          onPress={() => setCarritoAbierto(true)}
+          activeOpacity={0.7}
         >
-          <POSIcon name="cart" size={24} color={COLORS.primary} />
+          <POSIcon name="cart" size={24} color={INK} />
           {carrito.length > 0 && (
             <View style={styles.carritoBadge}>
               <Text style={styles.carritoBadgeText}>{totales.cantidadTotal}</Text>
@@ -392,29 +501,28 @@ export default function CrearOrdenScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Búsqueda */}
       <View style={styles.searchSection}>
         <View style={styles.searchContainer}>
-          <POSIcon name="search" size={20} color={COLORS.textSecondary} />
+          <POSIcon name="search" size={20} color={INK} />
           <TextInput
             style={styles.searchInput}
             placeholder="Buscar productos..."
             value={busqueda}
             onChangeText={setBusqueda}
-            placeholderTextColor={COLORS.textSecondary}
+            placeholderTextColor="#6B6B6B"
           />
           {busqueda.length > 0 && (
-            <TouchableOpacity onPress={() => setBusqueda('')}>
-              <POSIcon name="close-circle" size={20} color={COLORS.textSecondary} />
+            <TouchableOpacity onPress={() => setBusqueda('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <POSIcon name="close-circle" size={20} color={INK} />
             </TouchableOpacity>
           )}
         </View>
 
-        {/* Filtro de Categorías */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categorias}>
           <TouchableOpacity
             style={[styles.categoriaChip, !categoriaFiltro && styles.categoriaChipActivo]}
             onPress={() => setCategoriaFiltro(null)}
+            activeOpacity={0.7}
           >
             <Text style={[styles.categoriaChipText, !categoriaFiltro && styles.categoriaChipTextoActivo]}>
               Todas
@@ -425,6 +533,7 @@ export default function CrearOrdenScreen() {
               key={cat.id}
               style={[styles.categoriaChip, categoriaFiltro === cat.id && styles.categoriaChipActivo]}
               onPress={() => setCategoriaFiltro(cat.id)}
+              activeOpacity={0.7}
             >
               <Text style={[styles.categoriaChipText, categoriaFiltro === cat.id && styles.categoriaChipTextoActivo]}>
                 {cat.nombre}
@@ -435,111 +544,172 @@ export default function CrearOrdenScreen() {
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentPadding}>
-        {/* Grid de Productos */}
         <View style={styles.productosGrid}>
-          {productosFiltrados.map((producto: ProductosBySucursalResponse) => (
-            <TouchableOpacity
-              key={producto.id}
-              style={styles.productoCard}
-              onPress={() => abrirModalProducto(producto)}
-              activeOpacity={0.8}
-            >
-              <POSCard variant="elevated" style={styles.productoCardInner}>
-                {producto.destacado && (
-                  <View style={styles.destacadoBadge}>
-                    <POSIcon name="star" size={14} color={COLORS.warning} />
+          {productosFiltrados.map((producto: ProductosBySucursalResponse) => {
+            const enFeedback = productoRecienAgregado === producto.id;
+            const tieneModal = requiereModal(producto);
+
+            return (
+              <TouchableOpacity
+                key={producto.id}
+                style={styles.productoCard}
+                onPress={() => manejarToqueProducto(producto)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.productoCardInner, enFeedback && styles.productoCardFeedback]}>
+                  {producto.destacado && (
+                    <View style={styles.destacadoBadge}>
+                      <POSIcon name="star" size={14} color={INK} />
+                    </View>
+                  )}
+                  <POSIcon name="pizza-outline" size={40} color={INK} />
+                  <Text style={styles.productoNombre} numberOfLines={2}>{producto.nombre}</Text>
+                  <Text style={styles.productoPrecio}>${producto.precioVenta.toFixed(2)}</Text>
+
+                  <View style={styles.productoAccion}>
+                    {enFeedback ? (
+                      <View style={styles.productoAccionAgregado}>
+                        <POSIcon name="checkmark" size={16} color={COLORS.white} />
+                        <Text style={styles.productoAccionAgregadoText}>AGREGADO</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.productoAccionDefault}>
+                        <POSIcon name={tieneModal ? 'options' : 'add'} size={16} color={INK} />
+                        <Text style={styles.productoAccionDefaultText}>
+                          {tieneModal ? 'PERSONALIZAR' : 'AGREGAR'}
+                        </Text>
+                      </View>
+                    )}
                   </View>
-                )}
-                <POSIcon name="pizza-outline" size={48} color={COLORS.primary} />
-                <Text style={styles.productoNombre} numberOfLines={2}>{producto.nombre}</Text>
-                <Text style={styles.productoPrecio}>${producto.precioVenta.toFixed(2)}</Text>
-                {producto.tiempoPreparacion > 0 && (
-                  <View style={styles.tiempoPrep}>
-                    <POSIcon name="time-outline" size={12} color={COLORS.textSecondary} />
-                    <Text style={styles.tiempoPrepText}>{producto.tiempoPreparacion} min</Text>
-                  </View>
-                )}
-              </POSCard>
-            </TouchableOpacity>
-          ))}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+
+          {productosFiltrados.length === 0 && (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No se encontraron productos</Text>
+            </View>
+          )}
         </View>
-
-        {/* Carrito */}
-        {carrito.length > 0 && (
-          <POSCard variant="elevated" style={styles.carritoSection}>
-            <View style={styles.carritoHeader}>
-              <Text style={styles.carritoTitle}>Resumen de la Orden</Text>
-              <POSBadge label={`${totales.cantidadTotal}`} variant="info" size="small" />
-            </View>
-
-            {carrito.map((item, index) => (
-              <View key={`${item.productoId}-${index}`} style={styles.carritoItem}>
-                <View style={styles.carritoItemInfo}>
-                  <Text style={styles.carritoItemNombre}>{productos.find(p => p.id === item.productoId)?.nombre}</Text>
-                  {item.extras.length > 0 ? (
-                    <Text style={styles.carritoItemExtras}>
-                      {item.extras.map(e => `${productos.find(p => p.id === e.opcionExtraId)?.nombre} x${e.cantidad}`).join(', ')}
-                    </Text>
-                  ) : null}
-                  {/*item.observaciones ? (
-                    <Text style={styles.carritoItemObs}>{item.observaciones}</Text>
-                  ) : null*/}
-                </View>
-
-                <View style={styles.carritoItemControls}>
-                  <TouchableOpacity
-                    style={styles.cantidadButton}
-                    onPress={() => actualizarCantidadCarrito(index, item.cantidad - 1)}
-                  >
-                    <POSIcon name="remove" size={18} color={COLORS.white} />
-                  </TouchableOpacity>
-                  <Text style={styles.cantidadText}>{item.cantidad}</Text>
-                  <TouchableOpacity
-                    style={styles.cantidadButton}
-                    onPress={() => actualizarCantidadCarrito(index, item.cantidad + 1)}
-                  >
-                    <POSIcon name="add" size={18} color={COLORS.white} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.eliminarButton}
-                    onPress={() => eliminarDelCarrito(index)}
-                  >
-                    <POSIcon name="trash-outline" size={18} color={COLORS.danger} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-
-            {/* Totales */}
-            <View style={styles.totalesContainer}>
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Subtotal</Text>
-                <Text style={styles.totalValue}>${totales.subtotal.toFixed(2)}</Text>
-              </View>
-              {totales.descuento > 0 && (
-                <View style={styles.totalRow}>
-                  <Text style={[styles.totalLabel, { color: COLORS.danger }]}>Descuento</Text>
-                  <Text style={[styles.totalValue, { color: COLORS.danger }]}>
-                    -${totales.descuento.toFixed(2)}
-                  </Text>
-                </View>
-              )}
-              <View style={styles.totalDivider} />
-              <View style={styles.totalRow}>
-                <Text style={styles.totalFinalLabel}>Total</Text>
-                <Text style={styles.totalFinalValue}>${totales.total.toFixed(2)}</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity style={styles.finalizarButton} onPress={finalizarOrden}>
-              <POSIcon name="checkmark-circle" size={24} color={COLORS.white} />
-              <Text style={styles.finalizarButtonText}>Finalizar Orden</Text>
-            </TouchableOpacity>
-          </POSCard>
-        )}
       </ScrollView>
 
-      {/* Modal Agregar Producto */}
+      {/* Barra inferior fija: siempre visible mientras hay productos en el
+          carrito, para no depender de hacer scroll hasta el final.
+          Menos pasos + feedback inmediato del total en todo momento. */}
+      {carrito.length > 0 && (
+        <TouchableOpacity
+          style={styles.barraCarritoFija}
+          activeOpacity={0.85}
+          onPress={() => setCarritoAbierto(true)}
+        >
+          <View style={styles.barraCarritoIzquierda}>
+            <View style={styles.barraCarritoCantidad}>
+              <Text style={styles.barraCarritoCantidadText}>{totales.cantidadTotal}</Text>
+            </View>
+            <Text style={styles.barraCarritoLabel}>Ver orden</Text>
+          </View>
+          <Text style={styles.barraCarritoTotal}>${totales.total.toFixed(2)}</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Modal: Carrito / Resumen de la orden */}
+      <Modal
+        visible={carritoAbierto}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setCarritoAbierto(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContentBrutal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Resumen de la Orden</Text>
+              <TouchableOpacity onPress={() => setCarritoAbierto(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <POSIcon name="close" size={26} color={INK} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalScroll}>
+              {carrito.length === 0 ? (
+                <Text style={styles.emptyStateText}>Tu orden está vacía</Text>
+              ) : (
+                carrito.map((item, index) => (
+                  <View key={`${item.productoId}-${index}`} style={styles.carritoItem}>
+                    <View style={styles.carritoItemInfo}>
+                      <Text style={styles.carritoItemNombre}>{productos.find(p => p.id === item.productoId)?.nombre}</Text>
+                      {item.extras.length > 0 ? (
+                        <Text style={styles.carritoItemExtras}>
+                          {item.extras.map(e => `x${e.cantidad} extra`).join(', ')}
+                        </Text>
+                      ) : null}
+                      <Text style={styles.carritoItemSubtotal}>${item.subtotal.toFixed(2)}</Text>
+                    </View>
+
+                    <View style={styles.carritoItemControls}>
+                      <TouchableOpacity
+                        style={styles.cantidadButton}
+                        onPress={() => actualizarCantidadCarrito(index, item.cantidad - 1)}
+                        activeOpacity={0.7}
+                      >
+                        <POSIcon name="remove" size={18} color={COLORS.white} />
+                      </TouchableOpacity>
+                      <Text style={styles.cantidadText}>{item.cantidad}</Text>
+                      <TouchableOpacity
+                        style={styles.cantidadButton}
+                        onPress={() => actualizarCantidadCarrito(index, item.cantidad + 1)}
+                        activeOpacity={0.7}
+                      >
+                        <POSIcon name="add" size={18} color={COLORS.white} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.eliminarButton}
+                        onPress={() => eliminarDelCarrito(index)}
+                        activeOpacity={0.7}
+                      >
+                        <POSIcon name="trash-outline" size={18} color={COLORS.white} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))
+              )}
+
+              {carrito.length > 0 && (
+                <View style={styles.totalesContainer}>
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>Subtotal</Text>
+                    <Text style={styles.totalValue}>${totales.subtotal.toFixed(2)}</Text>
+                  </View>
+                  {totales.descuento > 0 && (
+                    <View style={styles.totalRow}>
+                      <Text style={[styles.totalLabel, { color: COLORS.danger }]}>Descuento</Text>
+                      <Text style={[styles.totalValue, { color: COLORS.danger }]}>
+                        -${totales.descuento.toFixed(2)}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.totalDivider} />
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalFinalLabel}>Total</Text>
+                    <Text style={styles.totalFinalValue}>${totales.total.toFixed(2)}</Text>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[styles.finalizarButton, carrito.length === 0 && styles.finalizarButtonDisabled]}
+              onPress={finalizarOrden}
+              disabled={carrito.length === 0}
+              activeOpacity={0.8}
+            >
+              <POSIcon name="checkmark-circle" size={24} color={COLORS.white} />
+              <Text style={styles.finalizarButtonText}>FINALIZAR ORDEN</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal: Personalizar producto (solo cuando tiene extras obligatorios) */}
       <Modal
         visible={modalProducto !== null}
         animationType="slide"
@@ -547,28 +717,28 @@ export default function CrearOrdenScreen() {
         onRequestClose={() => setModalProducto(null)}
       >
         <View style={styles.modalOverlay}>
-          <POSCard style={styles.modalContent} variant="elevated">
+          <View style={styles.modalContentBrutal}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{modalProducto?.nombre}</Text>
-              <TouchableOpacity onPress={() => setModalProducto(null)}>
-                <POSIcon name="close" size={28} color={COLORS.text} />
+              <TouchableOpacity onPress={() => setModalProducto(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <POSIcon name="close" size={28} color={INK} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.modalScroll}>
               <Text style={styles.modalPrecio}>${modalProducto?.precioVenta.toFixed(2)}</Text>
-              
+
               {modalProducto?.descripcion && (
                 <Text style={styles.modalDescripcion}>{modalProducto.descripcion}</Text>
               )}
 
-              {/* Cantidad */}
               <View style={styles.modalSection}>
-                <Text style={styles.modalSectionTitle}>Cantidad</Text>
+                <Text style={styles.modalSectionTitle}>CANTIDAD</Text>
                 <View style={styles.cantidadControls}>
                   <TouchableOpacity
                     style={styles.cantidadButtonLarge}
                     onPress={() => setCantidadTemp(Math.max(1, cantidadTemp - 1))}
+                    activeOpacity={0.7}
                   >
                     <POSIcon name="remove" size={24} color={COLORS.white} />
                   </TouchableOpacity>
@@ -576,38 +746,39 @@ export default function CrearOrdenScreen() {
                   <TouchableOpacity
                     style={styles.cantidadButtonLarge}
                     onPress={() => setCantidadTemp(cantidadTemp + 1)}
+                    activeOpacity={0.7}
                   >
                     <POSIcon name="add" size={24} color={COLORS.white} />
                   </TouchableOpacity>
                 </View>
               </View>
 
-              {/* Grupos de Extras */}
               {modalProducto?.gruposExtra && modalProducto.gruposExtra.length > 0 && (
                 <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionTitle}>Extras</Text>
-                  
+                  <Text style={styles.modalSectionTitle}>EXTRAS</Text>
+
                   {modalProducto.gruposExtra.map((grupo, grupoIndex) => (
                     <View key={grupoIndex} style={styles.grupoExtraContainer}>
                       <View style={styles.grupoExtraHeader}>
                         <Text style={styles.grupoExtraNombre}>{grupo.grupoExtra.nombre}</Text>
                         {grupo.obligatorio && (
-                          <POSBadge label="Obligatorio" variant="warning" size="small" />
+                          <View style={styles.obligatorioBadge}>
+                            <Text style={styles.obligatorioBadgeText}>OBLIGATORIO</Text>
+                          </View>
                         )}
                       </View>
-                      
+
                       {grupo.grupoExtra.descripcion && (
                         <Text style={styles.grupoExtraDescripcion}>{grupo.grupoExtra.descripcion}</Text>
                       )}
 
                       {grupo.minimo > 0 || grupo.maximo > 0 ? (
                         <Text style={styles.grupoExtraLimites}>
-                          {grupo.minimo > 0 && grupo.maximo > 0 
+                          {grupo.minimo > 0 && grupo.maximo > 0
                             ? `Selecciona entre ${grupo.minimo} y ${grupo.maximo}`
-                            : grupo.minimo > 0 
-                            ? `M\u00ednimo ${grupo.minimo}`
-                            : `M\u00e1ximo ${grupo.maximo}`
-                          }
+                            : grupo.minimo > 0
+                              ? `Mínimo ${grupo.minimo}`
+                              : `Máximo ${grupo.maximo}`}
                         </Text>
                       ) : null}
 
@@ -619,7 +790,7 @@ export default function CrearOrdenScreen() {
                             const subtotalExtra = opcion.precio * cantidadSeleccionada;
 
                             return (
-                              <View key={opcion.id} style={styles.opcionExtraItem}>
+                              <View key={opcion.id} style={[styles.opcionExtraItem, cantidadSeleccionada > 0 && styles.opcionExtraItemActiva]}>
                                 <View style={styles.opcionExtraInfo}>
                                   <Text style={styles.opcionExtraNombre}>{opcion.nombre}</Text>
                                   <Text style={styles.opcionExtraPrecio}>
@@ -636,15 +807,17 @@ export default function CrearOrdenScreen() {
                                   <TouchableOpacity
                                     style={styles.extraButton}
                                     onPress={() => actualizarCantidadExtra(opcion.id, -1)}
+                                    activeOpacity={0.7}
                                   >
                                     <POSIcon name="remove" size={18} color={COLORS.white} />
                                   </TouchableOpacity>
-                                  
+
                                   <Text style={styles.extraCantidad}>{cantidadSeleccionada}</Text>
-                                  
+
                                   <TouchableOpacity
                                     style={styles.extraButton}
                                     onPress={() => actualizarCantidadExtra(opcion.id, 1)}
+                                    activeOpacity={0.7}
                                   >
                                     <POSIcon name="add" size={18} color={COLORS.white} />
                                   </TouchableOpacity>
@@ -658,11 +831,10 @@ export default function CrearOrdenScreen() {
                 </View>
               )}
 
-              {/* Resumen de Costos */}
               {(totalesModal.totalExtras > 0 || cantidadTemp > 1) && (
                 <View style={styles.resumenModalContainer}>
-                  <Text style={styles.resumenModalTitle}>Resumen de Costos</Text>
-                  
+                  <Text style={styles.resumenModalTitle}>RESUMEN</Text>
+
                   <View style={styles.resumenModalRow}>
                     <Text style={styles.resumenModalLabel}>Producto Base</Text>
                     <Text style={styles.resumenModalValue}>
@@ -679,9 +851,8 @@ export default function CrearOrdenScreen() {
                         </Text>
                       </View>
 
-                      {/* Detalle de extras */}
                       <View style={styles.resumenExtrasDetalle}>
-                        {modalProducto?.gruposExtra?.map(grupo => 
+                        {modalProducto?.gruposExtra?.map(grupo =>
                           grupo.grupoExtra.opciones
                             .filter(opcion => (extrasSeleccionados.get(opcion.id) || 0) > 0)
                             .map(opcion => {
@@ -721,9 +892,8 @@ export default function CrearOrdenScreen() {
                 </View>
               )}
 
-              {/* Observaciones */}
               <View style={styles.modalSection}>
-                <Text style={styles.modalSectionTitle}>Observaciones</Text>
+                <Text style={styles.modalSectionTitle}>OBSERVACIONES</Text>
                 <TextInput
                   style={styles.observacionesInput}
                   placeholder="Ej: Sin cebolla, extra queso..."
@@ -731,18 +901,18 @@ export default function CrearOrdenScreen() {
                   onChangeText={setObservacionesTemp}
                   multiline
                   numberOfLines={3}
-                  placeholderTextColor={COLORS.textSecondary}
+                  placeholderTextColor="#6B6B6B"
                 />
               </View>
             </ScrollView>
 
-            <TouchableOpacity style={styles.agregarButton} onPress={agregarAlCarrito}>
+            <TouchableOpacity style={styles.agregarButton} onPress={agregarAlCarrito} activeOpacity={0.8}>
               <POSIcon name="cart" size={24} color={COLORS.white} />
               <Text style={styles.agregarButtonText}>
-                Agregar ${totalesModal.precioFinal.toFixed(2)}
+                AGREGAR · ${totalesModal.precioFinal.toFixed(2)}
               </Text>
             </TouchableOpacity>
-          </POSCard>
+          </View>
         </View>
       </Modal>
     </View>
@@ -752,10 +922,12 @@ export default function CrearOrdenScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F2F0EA', // hueso cálido: cómodo para la vista, no clínico
   },
 
+  // ------------------------------------------------------------------- //
   // Header
+  // ------------------------------------------------------------------- //
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -763,237 +935,316 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 60,
     paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: BRUTAL_BORDER,
+    borderBottomColor: INK,
     gap: 12,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  backButtonInner: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: BRUTAL_BORDER,
+    borderColor: INK,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    ...hardShadow(3),
   },
   headerCenter: {
     flex: 1,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 21,
+    fontWeight: '900',
+    color: INK,
+    letterSpacing: 0.2,
   },
   subtitle: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    fontWeight: '700',
+    color: '#5A5A5A',
+    marginTop: 2,
   },
-  carritoButton: {
-    width: 40,
-    height: 40,
+  carritoHeaderButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    borderWidth: BRUTAL_BORDER,
+    borderColor: INK,
+    backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    ...hardShadow(3),
   },
   carritoBadge: {
     position: 'absolute',
-    top: 0,
-    right: 0,
-    backgroundColor: COLORS.danger,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
+    top: -8,
+    right: -8,
+    backgroundColor: COLORS.success,
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: INK,
   },
   carritoBadgeText: {
-    fontSize: 11,
-    fontWeight: 'bold',
+    fontSize: 12,
+    fontWeight: '900',
     color: COLORS.white,
   },
 
-  // Selección Tipo
+  // ------------------------------------------------------------------- //
+  // Selección Tipo / Mesas
+  // ------------------------------------------------------------------- //
   seleccionTipoContainer: {
     padding: 20,
     gap: 16,
-    alignItems: 'center',
-    paddingTop: 20,
+    paddingTop: 24,
     paddingBottom: 8,
   },
   seleccionTipoTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    textAlign: 'center',
+    fontSize: 26,
+    fontWeight: '900',
+    color: INK,
   },
   seleccionTipoSubtitle: {
     fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
+    fontWeight: '600',
+    color: '#5A5A5A',
     lineHeight: 20,
   },
   quickActions: {
-    width: '100%',
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  tipoCard: {
-    width: '100%',
-    maxWidth: 350,
+    gap: 14,
+    marginTop: 4,
   },
   quickActionButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
+    minHeight: 92,
+    paddingVertical: 16,
+    borderRadius: BRUTAL_RADIUS,
+    borderWidth: BRUTAL_BORDER,
+    borderColor: INK,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    ...hardShadow(5),
   },
   quickActionPrimary: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#7FD1E0', // azul confianza, saturado y sólido
   },
   quickActionSecondary: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#B8E8A8', // verde suave, acción positiva
   },
   quickActionText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '900',
+    color: INK,
+    letterSpacing: 0.4,
+    textAlign: 'center',
+  },
+  sectionDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
   },
   mesasTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginTop: 8,
-    alignSelf: 'flex-start',
-  },
-  tipoCardInner: {
-    padding: 40,
-    alignItems: 'center',
-    gap: 16,
-  },
-  tipoCardTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  tipoCardSubtitle: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    fontWeight: '900',
+    color: INK,
+    letterSpacing: 0.4,
+  },
+  countPill: {
+    minWidth: 28,
+    height: 28,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    backgroundColor: INK,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  countPillText: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: COLORS.white,
   },
 
-  // Selección Mesa
   mesasGrid: {
     padding: 16,
     paddingBottom: 100,
   },
   columnWrapper: {
-    gap: 16,
-    marginBottom: 16,
+    gap: 14,
+    marginBottom: 14,
   },
   mesaCard: {
     flex: 1,
+    minHeight: 108,
   },
   mesaCardInner: {
-    padding: 24,
+    flex: 1,
+    padding: 18,
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: COLORS.white,
+    borderRadius: BRUTAL_RADIUS,
+    borderWidth: BRUTAL_BORDER,
+    borderColor: INK,
+    ...hardShadow(4),
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
-    gap: 12,
+    paddingVertical: 48,
+    gap: 10,
+    width: '100%',
+  },
+  emptyStateIconBox: {
+    width: 72,
+    height: 72,
+    borderRadius: 16,
+    borderWidth: BRUTAL_BORDER,
+    borderColor: INK,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...hardShadow(4),
   },
   emptyStateText: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    fontWeight: '700',
+    color: INK,
+    textAlign: 'center',
+  },
+  emptyStateSubtext: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#5A5A5A',
     textAlign: 'center',
   },
   mesaNombre: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontWeight: '900',
+    color: INK,
+  },
+  libreBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: COLORS.success,
+    borderWidth: 2,
+    borderColor: INK,
+  },
+  libreBadgeText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: COLORS.white,
+    letterSpacing: 0.4,
   },
 
-  // Search
+  // ------------------------------------------------------------------- //
+  // Búsqueda / Categorías
+  // ------------------------------------------------------------------- //
   searchSection: {
     backgroundColor: COLORS.white,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: BRUTAL_BORDER,
+    borderBottomColor: INK,
     gap: 12,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    backgroundColor: '#F2F0EA',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    height: 52,
+    gap: 10,
+    borderWidth: BRUTAL_BORDER,
+    borderColor: INK,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: COLORS.text,
+    fontWeight: '600',
+    color: INK,
     padding: 0,
   },
 
-  // Categorías
   categorias: {
     flexDirection: 'row',
     gap: 8,
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   categoriaChip: {
+    height: 40,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    justifyContent: 'center',
     borderRadius: 20,
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
+    borderWidth: 2,
+    borderColor: INK,
   },
   categoriaChipActivo: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: INK,
   },
   categoriaChipText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: INK,
   },
   categoriaChipTextoActivo: {
     color: COLORS.white,
   },
 
-  // Content
+  // ------------------------------------------------------------------- //
+  // Contenido / Productos
+  // ------------------------------------------------------------------- //
   content: {
     flex: 1,
   },
   contentPadding: {
     padding: 16,
-    paddingBottom: 100,
+    paddingBottom: 140,
     gap: 16,
   },
-
-  // Productos Grid
   productosGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
-    marginBottom: 16,
   },
   productoCard: {
     width: '48%',
+    minHeight: 168,
   },
   productoCardInner: {
-    padding: 16,
+    flex: 1,
+    padding: 14,
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     position: 'relative',
+    backgroundColor: COLORS.white,
+    borderRadius: BRUTAL_RADIUS,
+    borderWidth: BRUTAL_BORDER,
+    borderColor: INK,
+    ...hardShadow(4),
+  },
+  productoCardFeedback: {
+    backgroundColor: '#DFF4D8', // pulso verde: refuerzo positivo inmediato
+    borderColor: COLORS.success,
   },
   destacadoBadge: {
     position: 'absolute',
@@ -1002,46 +1253,115 @@ const styles = StyleSheet.create({
   },
   productoNombre: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: INK,
     textAlign: 'center',
   },
   productoPrecio: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.success,
+    fontSize: 17,
+    fontWeight: '900',
+    color: INK,
   },
-  tiempoPrep: {
+  productoAccion: {
+    marginTop: 4,
+    width: '100%',
+  },
+  productoAccionDefault: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 4,
+    height: 32,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: INK,
+    backgroundColor: '#FFE38A', // ámbar: llama la atención sin alarmar
   },
-  tiempoPrepText: {
+  productoAccionDefaultText: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    fontWeight: '900',
+    color: INK,
+    letterSpacing: 0.3,
+  },
+  productoAccionAgregado: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    height: 32,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: INK,
+    backgroundColor: COLORS.success,
+  },
+  productoAccionAgregadoText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: COLORS.white,
+    letterSpacing: 0.3,
   },
 
-  // Carrito
-  carritoSection: {
-    padding: 16,
-  },
-  carritoHeader: {
+  // ------------------------------------------------------------------- //
+  // Barra de carrito fija (bottom bar)
+  // ------------------------------------------------------------------- //
+  barraCarritoFija: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 20,
+    height: 64,
+    borderRadius: BRUTAL_RADIUS,
+    borderWidth: BRUTAL_BORDER,
+    borderColor: INK,
+    backgroundColor: COLORS.success,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    ...hardShadow(5),
   },
-  carritoTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.text,
+  barraCarritoIzquierda: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
+  barraCarritoCantidad: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.white,
+    borderWidth: 2,
+    borderColor: INK,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  barraCarritoCantidadText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: INK,
+  },
+  barraCarritoLabel: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: COLORS.white,
+    letterSpacing: 0.3,
+  },
+  barraCarritoTotal: {
+    fontSize: 19,
+    fontWeight: '900',
+    color: COLORS.white,
+  },
+
+  // ------------------------------------------------------------------- //
+  // Carrito (dentro del modal de resumen)
+  // ------------------------------------------------------------------- //
   carritoItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 2,
+    borderBottomColor: '#E5E2D8',
   },
   carritoItemInfo: {
     flex: 1,
@@ -1049,17 +1369,18 @@ const styles = StyleSheet.create({
   },
   carritoItemNombre: {
     fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: INK,
   },
   carritoItemExtras: {
     fontSize: 12,
+    fontWeight: '600',
     color: COLORS.info,
   },
-  carritoItemObs: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontStyle: 'italic',
+  carritoItemSubtotal: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: INK,
   },
   carritoItemControls: {
     flexDirection: 'row',
@@ -1067,33 +1388,37 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cantidadButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLORS.primary,
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cantidadText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    minWidth: 30,
+    fontWeight: '900',
+    color: INK,
+    minWidth: 26,
     textAlign: 'center',
   },
   eliminarButton: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: COLORS.danger,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
+  // ------------------------------------------------------------------- //
   // Totales
+  // ------------------------------------------------------------------- //
   totalesContainer: {
     marginTop: 16,
     paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopWidth: BRUTAL_BORDER,
+    borderTopColor: INK,
     gap: 12,
   },
   totalRow: {
@@ -1103,56 +1428,72 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    fontWeight: '600',
+    color: '#5A5A5A',
   },
   totalValue: {
     fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: INK,
   },
   totalDivider: {
-    height: 1,
-    backgroundColor: COLORS.border,
+    height: 2,
+    backgroundColor: '#E5E2D8',
     marginVertical: 4,
   },
   totalFinalLabel: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontWeight: '900',
+    color: INK,
   },
   totalFinalValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 26,
+    fontWeight: '900',
     color: COLORS.success,
   },
 
-  // Buttons
+  // ------------------------------------------------------------------- //
+  // Botones de acción principal
+  // ------------------------------------------------------------------- //
   finalizarButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 10,
     backgroundColor: COLORS.success,
-    paddingVertical: 16,
-    borderRadius: 8,
+    height: 60,
+    borderRadius: BRUTAL_RADIUS,
+    borderWidth: BRUTAL_BORDER,
+    borderColor: INK,
     marginTop: 16,
+    ...hardShadow(5),
+  },
+  finalizarButtonDisabled: {
+    backgroundColor: '#CFCFCF',
   },
   finalizarButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '900',
     color: COLORS.white,
+    letterSpacing: 0.4,
   },
 
-  // Modal
+  // ------------------------------------------------------------------- //
+  // Modales
+  // ------------------------------------------------------------------- //
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(20, 20, 20, 0.55)',
     justifyContent: 'flex-end',
   },
-  modalContent: {
+  modalContentBrutal: {
     backgroundColor: COLORS.white,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    borderTopWidth: BRUTAL_BORDER,
+    borderLeftWidth: BRUTAL_BORDER,
+    borderRightWidth: BRUTAL_BORDER,
+    borderColor: INK,
     padding: 20,
     maxHeight: '90%',
   },
@@ -1164,22 +1505,23 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontWeight: '900',
+    color: INK,
     flex: 1,
   },
   modalScroll: {
-    maxHeight: 400,
+    maxHeight: 420,
   },
   modalPrecio: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: COLORS.success,
+    fontSize: 26,
+    fontWeight: '900',
+    color: INK,
     marginBottom: 12,
   },
   modalDescripcion: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    fontWeight: '600',
+    color: '#5A5A5A',
     marginBottom: 20,
     lineHeight: 20,
   },
@@ -1187,10 +1529,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalSectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '900',
+    color: INK,
     marginBottom: 12,
+    letterSpacing: 0.4,
   },
   cantidadControls: {
     flexDirection: 'row',
@@ -1199,54 +1542,62 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   cantidadButtonLarge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.primary,
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cantidadTextLarge: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontWeight: '900',
+    color: INK,
     minWidth: 60,
     textAlign: 'center',
   },
   observacionesInput: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: '#F2F0EA',
+    borderRadius: 10,
+    padding: 14,
     fontSize: 15,
-    color: COLORS.text,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    fontWeight: '600',
+    color: INK,
+    borderWidth: BRUTAL_BORDER,
+    borderColor: INK,
     textAlignVertical: 'top',
+    minHeight: 56,
   },
   agregarButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    backgroundColor: COLORS.primary,
-    paddingVertical: 16,
-    borderRadius: 8,
+    gap: 10,
+    backgroundColor: '#7FD1E0',
+    height: 60,
+    borderRadius: BRUTAL_RADIUS,
+    borderWidth: BRUTAL_BORDER,
+    borderColor: INK,
     marginTop: 20,
+    ...hardShadow(5),
   },
   agregarButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.white,
+    fontWeight: '900',
+    color: INK,
+    letterSpacing: 0.3,
   },
 
-  // Grupos de Extras
+  // ------------------------------------------------------------------- //
+  // Grupos de extras
+  // ------------------------------------------------------------------- //
   grupoExtraContainer: {
-    marginBottom: 24,
-    padding: 16,
-    backgroundColor: '#F9FAFB',
+    marginBottom: 20,
+    padding: 14,
+    backgroundColor: '#F2F0EA',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    borderWidth: 2,
+    borderColor: INK,
   },
   grupoExtraHeader: {
     flexDirection: 'row',
@@ -1255,25 +1606,40 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   grupoExtraNombre: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: '900',
+    color: INK,
     flex: 1,
+  },
+  obligatorioBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: '#FFE38A',
+    borderWidth: 2,
+    borderColor: INK,
+  },
+  obligatorioBadgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: INK,
+    letterSpacing: 0.3,
   },
   grupoExtraDescripcion: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    fontWeight: '600',
+    color: '#5A5A5A',
     marginBottom: 8,
     lineHeight: 18,
   },
   grupoExtraLimites: {
     fontSize: 12,
+    fontWeight: '800',
     color: COLORS.info,
-    fontWeight: '600',
     marginBottom: 12,
   },
   opcionesContainer: {
-    gap: 12,
+    gap: 10,
   },
   opcionExtraItem: {
     flexDirection: 'row',
@@ -1281,64 +1647,72 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.white,
     padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: INK,
+  },
+  opcionExtraItemActiva: {
+    backgroundColor: '#DFF4D8',
+    borderColor: COLORS.success,
   },
   opcionExtraInfo: {
     flex: 1,
-    gap: 4,
+    gap: 3,
   },
   opcionExtraNombre: {
     fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: INK,
   },
   opcionExtraPrecio: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    fontWeight: '600',
+    color: '#5A5A5A',
   },
   opcionExtraSubtotal: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '800',
     color: COLORS.info,
   },
   opcionExtraControles: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   extraButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.primary,
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
   },
   extraCantidad: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    minWidth: 24,
+    fontWeight: '900',
+    color: INK,
+    minWidth: 22,
     textAlign: 'center',
   },
 
-  // Resumen Modal
+  // ------------------------------------------------------------------- //
+  // Resumen dentro del modal de producto
+  // ------------------------------------------------------------------- //
   resumenModalContainer: {
-    marginTop: 16,
+    marginTop: 12,
     marginBottom: 16,
     padding: 16,
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#EAF7FA',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderWidth: 2,
+    borderColor: INK,
   },
   resumenModalTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '900',
+    color: INK,
     marginBottom: 12,
+    letterSpacing: 0.4,
   },
   resumenModalRow: {
     flexDirection: 'row',
@@ -1348,15 +1722,16 @@ const styles = StyleSheet.create({
   },
   resumenModalLabel: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    fontWeight: '600',
+    color: '#5A5A5A',
   },
   resumenModalValue: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: INK,
   },
   resumenExtrasDetalle: {
-    marginLeft: 12,
+    marginLeft: 8,
     marginTop: 4,
     marginBottom: 8,
     gap: 6,
@@ -1369,26 +1744,27 @@ const styles = StyleSheet.create({
   extraDetalleText: {
     flex: 1,
     fontSize: 12,
-    color: COLORS.textSecondary,
+    fontWeight: '600',
+    color: '#5A5A5A',
   },
   extraDetalleValue: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '800',
     color: COLORS.info,
   },
   resumenModalDivider: {
-    height: 1,
-    backgroundColor: COLORS.primary,
+    height: 2,
+    backgroundColor: INK,
     marginVertical: 8,
   },
   resumenModalTotalLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontWeight: '900',
+    color: INK,
   },
   resumenModalTotalValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '900',
     color: COLORS.success,
   },
 });

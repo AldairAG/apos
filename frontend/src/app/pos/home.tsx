@@ -1,15 +1,30 @@
-import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
+import { COLORS, POSIcon } from '@/components/pos';
 import { EstadoMesa } from '@/features/mesas/mesas.types';
 import { EstadoOrden } from '@/features/pos/pos.types';
 import usePos from '@/features/pos/usePos';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+// ── Design tokens: MD3 + Neo-Brutalismo Funcional (mismos que el resto de la app) ──
+const INK = '#0D0D0D';
+const BORDER_W = 3;
+const RADIUS = 16;
+const RIPPLE = { color: 'rgba(0,0,0,0.18)', borderless: false };
+
+const hardShadow = (pressed: boolean) => ({
+  shadowColor: INK,
+  shadowOffset: { width: pressed ? 0 : 4, height: pressed ? 0 : 4 },
+  shadowOpacity: 1,
+  shadowRadius: 0,
+  elevation: pressed ? 0 : 5,
+  transform: [{ translateX: pressed ? 3 : 0 }, { translateY: pressed ? 3 : 0 }],
+});
 
 export default function HomeScreen() {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const animacionMenu = useState(new Animated.Value(0))[0];
-  
+
   const { mesas, cargarMesas, cargarOrdenes, ordenes } = usePos();
 
   useEffect(() => {
@@ -21,7 +36,7 @@ export default function HomeScreen() {
   const mesasLibres = mesas.filter((m: any) => m.estado === EstadoMesa.LIBRE).length;
   const mesasOcupadas = mesas.filter((m: any) => m.estado === EstadoMesa.OCUPADA).length;
   const mesasReservadas = mesas.filter((m: any) => m.estado === EstadoMesa.RESERVADA).length;
-  
+
   const ordenesActivas = ordenes.filter(o => o.estado !== EstadoOrden.CANCELADA && o.estado !== EstadoOrden.ENTREGADA).length;
   const ordenesEnCocina = ordenes.filter(o => o.estado === EstadoOrden.EN_PREPARACION).length;
   const ordenesPendientesCobro = ordenes.filter(o => o.estado === EstadoOrden.LISTA).length;
@@ -43,8 +58,8 @@ export default function HomeScreen() {
       toValue: 0,
       useNativeDriver: true,
     }).start();
-    
-    switch(accion) {
+
+    switch (accion) {
       case 'nueva-orden':
         router.push('/pos/crear-orden');
         break;
@@ -63,10 +78,10 @@ export default function HomeScreen() {
     }
   };
 
-  const renderOpcionMenu = (icono: string, label: string, accion: string, index: number) => {
+  const renderOpcionMenu = (icono: string, label: string, accion: string, index: number, color: string) => {
     const translateY = animacionMenu.interpolate({
       inputRange: [0, 1],
-      outputRange: [0, -(60 * (index + 1))],
+      outputRange: [0, -(64 * (index + 1))],
     });
 
     const scale = animacionMenu.interpolate({
@@ -84,14 +99,20 @@ export default function HomeScreen() {
           },
         ]}
       >
-        <TouchableOpacity
-          style={styles.botonOpcionMenu}
+        <View style={styles.labelOpcionMenu}>
+          <Text style={styles.labelOpcionMenuTexto}>{label.toUpperCase()}</Text>
+        </View>
+        <Pressable
+          style={({ pressed }) => [
+            styles.botonOpcionMenu,
+            { backgroundColor: color },
+            hardShadow(pressed),
+          ]}
           onPress={() => accionMenu(accion)}
-          activeOpacity={0.8}
+          android_ripple={RIPPLE}
         >
-          <POSIcon name={icono as any} size={24} color={COLORS.white} />
-        </TouchableOpacity>
-        <Text style={styles.labelOpcionMenu}>{label}</Text>
+          <POSIcon name={icono as any} size={22} color={INK} />
+        </Pressable>
       </Animated.View>
     );
   };
@@ -102,185 +123,193 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <Text style={styles.title}>Centro de Control POS</Text>
-            <POSBadge label="ACTIVO" variant="success" />
+            <Text style={styles.title}>CENTRO DE CONTROL POS</Text>
+            <View style={styles.activoBadge}>
+              <Text style={styles.activoBadgeTexto}>ACTIVO</Text>
+            </View>
           </View>
           <Text style={styles.subtitle}>
-            {new Date().toLocaleDateString('es-MX', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
+            {new Date().toLocaleDateString('es-MX', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
             })}
           </Text>
         </View>
 
         {/* Resumen de Mesas */}
         <View style={styles.seccion}>
-          <Text style={styles.tituloSeccion}>Estado de Mesas</Text>
+          <Text style={styles.tituloSeccion}>ESTADO DE MESAS</Text>
           <View style={styles.estadisticasGrid}>
-            <POSCard style={styles.estadisticaCard} variant="elevated">
-              <POSIcon name="checkmark-circle" size={32} color={COLORS.success} />
+            <View style={[styles.estadisticaCard, { backgroundColor: COLORS.success }]}>
+              <POSIcon name="checkmark-circle" size={28} color={INK} />
               <Text style={styles.estadisticaNumero}>{mesasLibres}</Text>
-              <Text style={styles.estadisticaLabel}>Libres</Text>
-            </POSCard>
+              <Text style={styles.estadisticaLabel}>LIBRES</Text>
+            </View>
 
-            <POSCard style={styles.estadisticaCard} variant="elevated">
-              <POSIcon name="restaurant" size={32} color={COLORS.danger} />
+            <View style={[styles.estadisticaCard, { backgroundColor: COLORS.warning }]}>
+              <POSIcon name="restaurant" size={28} color={INK} />
               <Text style={styles.estadisticaNumero}>{mesasOcupadas}</Text>
-              <Text style={styles.estadisticaLabel}>Ocupadas</Text>
-            </POSCard>
+              <Text style={styles.estadisticaLabel}>OCUPADAS</Text>
+            </View>
 
-            <POSCard style={styles.estadisticaCard} variant="elevated">
-              <POSIcon name="time" size={32} color={COLORS.warning} />
+            <View style={[styles.estadisticaCard, { backgroundColor: COLORS.info }]}>
+              <POSIcon name="time" size={28} color={INK} />
               <Text style={styles.estadisticaNumero}>{mesasReservadas}</Text>
-              <Text style={styles.estadisticaLabel}>Reservadas</Text>
-            </POSCard>
+              <Text style={styles.estadisticaLabel}>RESERVADAS</Text>
+            </View>
           </View>
         </View>
 
         {/* Resumen de Órdenes */}
         <View style={styles.seccion}>
-          <Text style={styles.tituloSeccion}>Estado de Órdenes</Text>
+          <Text style={styles.tituloSeccion}>ESTADO DE ÓRDENES</Text>
           <View style={styles.estadisticasGrid}>
-            <POSCard style={styles.estadisticaCard} variant="elevated">
-              <POSIcon name="receipt" size={32} color={COLORS.primary} />
+            <View style={[styles.estadisticaCard, { backgroundColor: COLORS.primary }]}>
+              <POSIcon name="receipt" size={28} color={INK} />
               <Text style={styles.estadisticaNumero}>{ordenesActivas}</Text>
-              <Text style={styles.estadisticaLabel}>Activas</Text>
-            </POSCard>
+              <Text style={styles.estadisticaLabel}>ACTIVAS</Text>
+            </View>
 
-            <POSCard style={styles.estadisticaCard} variant="elevated">
-              <POSIcon name="flame" size={32} color={COLORS.info} />
+            <View style={[styles.estadisticaCard, { backgroundColor: '#FFB37A' }]}>
+              <POSIcon name="flame" size={28} color={INK} />
               <Text style={styles.estadisticaNumero}>{ordenesEnCocina}</Text>
-              <Text style={styles.estadisticaLabel}>En Cocina</Text>
-            </POSCard>
+              <Text style={styles.estadisticaLabel}>EN COCINA</Text>
+            </View>
 
-            <POSCard style={styles.estadisticaCard} variant="elevated">
-              <POSIcon name="cash" size={32} color={COLORS.warning} />
+            <View style={[styles.estadisticaCard, { backgroundColor: COLORS.warning }]}>
+              <POSIcon name="cash" size={28} color={INK} />
               <Text style={styles.estadisticaNumero}>{ordenesPendientesCobro}</Text>
-              <Text style={styles.estadisticaLabel}>Por Cobrar</Text>
-            </POSCard>
+              <Text style={styles.estadisticaLabel}>POR COBRAR</Text>
+            </View>
           </View>
         </View>
 
         {/* Accesos Rápidos */}
         <View style={styles.seccion}>
-          <Text style={styles.tituloSeccion}>Accesos Rápidos</Text>
-          <View style={styles.acceosGrid}>
-            <TouchableOpacity 
-              style={styles.accesoCard}
+          <Text style={styles.tituloSeccion}>ACCESOS RÁPIDOS</Text>
+          <View style={styles.accesosGrid}>
+            <Pressable
+              style={({ pressed }) => [styles.accesoCard, { backgroundColor: COLORS.success }, hardShadow(pressed)]}
               onPress={() => router.push('/pos/crear-orden')}
-              activeOpacity={0.8}
+              android_ripple={RIPPLE}
             >
-              <POSCard style={styles.accesoCardInner} variant="elevated">
-                <POSIcon name="add-circle" size={48} color={COLORS.success} />
-                <Text style={styles.accesoLabel}>Nueva Orden</Text>
-              </POSCard>
-            </TouchableOpacity>
+              <POSIcon name="add-circle" size={38} color={INK} />
+              <Text style={styles.accesoLabel}>NUEVA ORDEN</Text>
+            </Pressable>
 
-            <TouchableOpacity 
-              style={styles.accesoCard}
+            <Pressable
+              style={({ pressed }) => [styles.accesoCard, { backgroundColor: COLORS.primary }, hardShadow(pressed)]}
               onPress={() => router.push('/pos/vista-mesas')}
-              activeOpacity={0.8}
+              android_ripple={RIPPLE}
             >
-              <POSCard style={styles.accesoCardInner} variant="elevated">
-                <POSIcon name="grid" size={48} color={COLORS.primary} />
-                <Text style={styles.accesoLabel}>Mesas</Text>
-              </POSCard>
-            </TouchableOpacity>
+              <POSIcon name="grid" size={38} color={INK} />
+              <Text style={styles.accesoLabel}>MESAS</Text>
+            </Pressable>
 
-            <TouchableOpacity 
-              style={styles.accesoCard}
+            <Pressable
+              style={({ pressed }) => [styles.accesoCard, { backgroundColor: COLORS.info }, hardShadow(pressed)]}
               onPress={() => router.push('/pos/ordenes')}
-              activeOpacity={0.8}
+              android_ripple={RIPPLE}
             >
-              <POSCard style={styles.accesoCardInner} variant="elevated">
-                <POSIcon name="list" size={48} color={COLORS.info} />
-                <Text style={styles.accesoLabel}>Órdenes</Text>
-              </POSCard>
-            </TouchableOpacity>
+              <POSIcon name="list" size={38} color={INK} />
+              <Text style={styles.accesoLabel}>ÓRDENES</Text>
+            </Pressable>
 
-            <TouchableOpacity 
-              style={styles.accesoCard}
+            <Pressable
+              style={({ pressed }) => [styles.accesoCard, { backgroundColor: '#FFB37A' }, hardShadow(pressed)]}
               onPress={() => router.push('/pos/cocina')}
-              activeOpacity={0.8}
+              android_ripple={RIPPLE}
             >
-              <POSCard style={styles.accesoCardInner} variant="elevated">
-                <POSIcon name="flame" size={48} color={COLORS.danger} />
-                <Text style={styles.accesoLabel}>Cocina</Text>
-              </POSCard>
-            </TouchableOpacity>
+              <POSIcon name="flame" size={38} color={INK} />
+              <Text style={styles.accesoLabel}>COCINA</Text>
+            </Pressable>
           </View>
         </View>
 
         {/* Actividad Reciente */}
         <View style={[styles.seccion, styles.ultimaSeccion]}>
-          <Text style={styles.tituloSeccion}>Actividad Reciente</Text>
-          {ordenes.slice(0, 5).map((orden) => (
-            <TouchableOpacity
-              key={orden.id}
-              onPress={() => router.push(`/pos/detalle-orden?ordenId=${orden.id}`)}
-            >
-              <POSCard style={styles.actividadCard}>
-                <View style={styles.actividadHeader}>
-                  <View style={styles.actividadInfo}>
-                    <Text style={styles.actividadOrden}>Orden {orden.folio}</Text>
-                    {orden.mesa && (
-                      <View style={styles.actividadMesa}>
-                        <POSIcon name="restaurant" size={14} color={COLORS.textSecondary} />
-                        <Text style={styles.actividadMesaText}>Mesa {orden?.mesa?.numero || orden?.mesa?.nombre}</Text>
+          <Text style={styles.tituloSeccion}>ACTIVIDAD RECIENTE</Text>
+          {ordenes.length === 0 ? (
+            <View style={styles.emptyActividad}>
+              <View style={styles.emptyIconBadge}>
+                <POSIcon name="receipt-outline" size={32} color={INK} />
+              </View>
+              <Text style={styles.emptyActividadTexto}>SIN ACTIVIDAD TODAVÍA</Text>
+            </View>
+          ) : (
+            ordenes.slice(0, 5).map((orden) => {
+              const estadoColor =
+                orden.estado === EstadoOrden.PENDIENTE ? COLORS.warning :
+                  orden.estado === EstadoOrden.EN_PREPARACION ? COLORS.info :
+                    orden.estado === EstadoOrden.LISTA ? COLORS.success :
+                      '#D9D9D0';
+
+              return (
+                <Pressable
+                  key={orden.id}
+                  style={({ pressed }) => [styles.actividadCard, hardShadow(pressed)]}
+                  onPress={() => router.push(`/pos/detalle-orden?ordenId=${orden.id}`)}
+                  android_ripple={RIPPLE}
+                >
+                  <View style={styles.actividadHeader}>
+                    <View style={styles.actividadInfo}>
+                      <Text style={styles.actividadOrden}>ORDEN {orden.folio}</Text>
+                      {orden.mesa && (
+                        <View style={styles.actividadMesa}>
+                          <POSIcon name="restaurant" size={13} color={INK} />
+                          <Text style={styles.actividadMesaText}>
+                            Mesa {orden?.mesa?.numero || orden?.mesa?.nombre}
+                          </Text>
+                        </View>
+                      )}
+                      {orden.tipo === 'PARA_LLEVAR' && (
+                        <View style={[styles.miniBadge, { backgroundColor: COLORS.info }]}>
+                          <Text style={styles.miniBadgeTexto}>LLEVAR</Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.actividadDerecha}>
+                      <View style={[styles.miniBadge, { backgroundColor: estadoColor }]}>
+                        <Text style={styles.miniBadgeTexto}>{orden.estado.replace('_', ' ')}</Text>
                       </View>
-                    )}
-                    {orden.tipo === 'PARA_LLEVAR' && (
-                      <POSBadge label="LLEVAR" variant="info" size="small" />
-                    )}
+                      <Text style={styles.actividadTotal}>${orden.total.toFixed(2)}</Text>
+                    </View>
                   </View>
-                  <View style={styles.actividadDerecha}>
-                    <POSBadge 
-                      label={orden.estado.replace('_', ' ')}
-                      variant={
-                        orden.estado === EstadoOrden.PENDIENTE ? 'warning' :
-                        orden.estado === EstadoOrden.EN_PREPARACION ? 'info' :
-                        orden.estado === EstadoOrden.LISTA ? 'success' :
-                        'default'
-                      }
-                      size="small"
-                    />
-                    <Text style={styles.actividadTotal}>${orden.total.toFixed(2)}</Text>
-                  </View>
-                </View>
-                <Text style={styles.actividadDetalle}>
-                  {orden.detalles?.length || 0} {orden.detalles?.length === 1 ? 'producto' : 'productos'}
-                  {orden.tiempoPreparacion && ` • ${orden.tiempoPreparacion} min`}
-                </Text>
-              </POSCard>
-            </TouchableOpacity>
-          ))}
+                  <Text style={styles.actividadDetalle}>
+                    {orden.detalles?.length || 0} {orden.detalles?.length === 1 ? 'producto' : 'productos'}
+                    {orden.tiempoPreparacion && ` · ${orden.tiempoPreparacion} min`}
+                  </Text>
+                </Pressable>
+              );
+            })
+          )}
         </View>
       </ScrollView>
 
       {/* FAB Menu Flotante */}
       <View style={styles.fabContainer}>
         {menuAbierto && (
-          <TouchableOpacity
-            style={styles.overlay}
-            activeOpacity={1}
-            onPress={toggleMenu}
-          />
+          <Pressable style={styles.overlay} onPress={toggleMenu} />
         )}
 
         {/* Opciones del menú */}
-        {renderOpcionMenu('add-circle', 'Nueva Orden', 'nueva-orden', 4)}
-        {renderOpcionMenu('grid', 'Mesas', 'mesas', 3)}
-        {renderOpcionMenu('list', 'Órdenes', 'ordenes', 2)}
-        {renderOpcionMenu('flame', 'Cocina', 'cocina', 1)}
-        {renderOpcionMenu('time', 'Historial', 'historial', 0)}
+        {renderOpcionMenu('add-circle', 'Nueva Orden', 'nueva-orden', 4, COLORS.success)}
+        {renderOpcionMenu('grid', 'Mesas', 'mesas', 3, COLORS.primary)}
+        {renderOpcionMenu('list', 'Órdenes', 'ordenes', 2, COLORS.info)}
+        {renderOpcionMenu('flame', 'Cocina', 'cocina', 1, '#FFB37A')}
+        {renderOpcionMenu('time', 'Historial', 'historial', 0, COLORS.warning)}
 
         {/* Botón principal */}
-        <TouchableOpacity
-          style={[styles.fabButton, menuAbierto && styles.fabButtonRotate]}
+        <Pressable
+          style={({ pressed }) => [
+            styles.fabButton,
+            menuAbierto && styles.fabButtonActivo,
+            hardShadow(pressed),
+          ]}
           onPress={toggleMenu}
-          activeOpacity={0.9}
+          android_ripple={RIPPLE}
         >
           <Animated.View
             style={{
@@ -292,9 +321,9 @@ export default function HomeScreen() {
               }],
             }}
           >
-            <POSIcon name="menu" size={28} color={COLORS.white} />
+            <POSIcon name="menu" size={26} color={INK} />
           </Animated.View>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );
@@ -303,37 +332,59 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F1F1EC',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
+
+  // ── Header ────────────────────────────────────────────────────────────────
   header: {
     backgroundColor: COLORS.white,
     padding: 20,
     paddingTop: 60,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: BORDER_W,
+    borderBottomColor: INK,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+    gap: 10,
   },
   title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
+  },
+  activoBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    backgroundColor: COLORS.success,
+    borderWidth: 2,
+    borderColor: INK,
+  },
+  activoBadgeTexto: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
   subtitle: {
     fontSize: 14,
+    fontWeight: '600',
     color: COLORS.textSecondary,
     textTransform: 'capitalize',
   },
+
+  // ── Secciones ────────────────────────────────────────────────────────────
   seccion: {
     padding: 16,
   },
@@ -341,11 +392,14 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   tituloSeccion: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
     marginBottom: 12,
   },
+
+  // ── Estadísticas ────────────────────────────────────────────────────────
   estadisticasGrid: {
     flexDirection: 'row',
     gap: 12,
@@ -353,55 +407,72 @@ const styles = StyleSheet.create({
   estadisticaCard: {
     flex: 1,
     alignItems: 'center',
-    padding: 16,
-    gap: 8,
+    padding: 14,
+    gap: 6,
+    borderRadius: RADIUS,
+    borderWidth: BORDER_W,
+    borderColor: INK,
   },
   estadisticaNumero: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 28,
+    fontWeight: '800',
+    color: INK,
   },
   estadisticaLabel: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    color: INK,
     textAlign: 'center',
   },
-  acceosGrid: {
+
+  // ── Accesos Rápidos ─────────────────────────────────────────────────────
+  accesosGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
   },
   accesoCard: {
-    width: '48%',
-  },
-  accesoCardInner: {
+    width: '47%',
     alignItems: 'center',
     padding: 20,
-    gap: 12,
+    gap: 10,
+    borderRadius: RADIUS,
+    borderWidth: BORDER_W,
+    borderColor: INK,
   },
   accesoLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    color: INK,
+    textAlign: 'center',
   },
+
+  // ── Actividad Reciente ──────────────────────────────────────────────────
   actividadCard: {
+    backgroundColor: COLORS.white,
     padding: 14,
-    marginBottom: 10,
+    marginBottom: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: INK,
   },
   actividadHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 8,
+    gap: 10,
   },
   actividadInfo: {
     flex: 1,
-    gap: 4,
+    gap: 5,
   },
   actividadOrden: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: '800',
+    color: INK,
   },
   actividadMesa: {
     flexDirection: 'row',
@@ -410,6 +481,7 @@ const styles = StyleSheet.create({
   },
   actividadMesaText: {
     fontSize: 13,
+    fontWeight: '600',
     color: COLORS.textSecondary,
   },
   actividadDerecha: {
@@ -417,14 +489,60 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   actividadTotal: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '800',
     color: COLORS.success,
   },
   actividadDetalle: {
     fontSize: 13,
+    fontWeight: '500',
     color: COLORS.textSecondary,
   },
+  miniBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: INK,
+    alignSelf: 'flex-start',
+  },
+  miniBadgeTexto: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    color: INK,
+    textTransform: 'uppercase',
+  },
+
+  // ── Empty actividad ─────────────────────────────────────────────────────
+  emptyActividad: {
+    alignItems: 'center',
+    padding: 32,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS,
+    borderWidth: 2,
+    borderColor: INK,
+    borderStyle: 'dashed',
+    gap: 8,
+  },
+  emptyIconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#F1F1EC',
+    borderWidth: 2,
+    borderColor: INK,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyActividadTexto: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
+  },
+
+  // ── FAB Menu ────────────────────────────────────────────────────────────
   fabContainer: {
     position: 'absolute',
     bottom: 20,
@@ -437,23 +555,20 @@ const styles = StyleSheet.create({
     left: -1000,
     right: -1000,
     bottom: -1000,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(13, 13, 13, 0.5)',
   },
   fabButton: {
     width: 64,
     height: 64,
     borderRadius: 32,
     backgroundColor: COLORS.primary,
+    borderWidth: BORDER_W,
+    borderColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
-  fabButtonRotate: {
-    backgroundColor: COLORS.danger,
+  fabButtonActivo: {
+    backgroundColor: '#FF9494',
   },
   opcionMenu: {
     position: 'absolute',
@@ -467,27 +582,23 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: COLORS.primary,
+    borderWidth: 2,
+    borderColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
   },
   labelOpcionMenu: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
     backgroundColor: COLORS.white,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    elevation: 3,
+    borderWidth: 2,
+    borderColor: INK,
+  },
+  labelOpcionMenuTexto: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    color: INK,
   },
 });

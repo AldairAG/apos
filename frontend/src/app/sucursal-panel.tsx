@@ -1,76 +1,147 @@
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { SucursalRequiredRoute } from '@/components/SucursalRequiredRoute';
 import { SucursalSelector } from '@/components/SucursalSelector';
-import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
+import { COLORS, POSIcon } from '@/components/pos';
 import { useSucursal } from '@/features/sucursal/useSucursal';
 import { ROUTES } from '@/routes/routes';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { ComponentType, useState } from 'react';
 import {
-    Dimensions,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
+// Vistas hijas del panel: se reutilizan tal cual (mismos componentes que
+// usan sus rutas propias), pero aquí se renderizan como contenido embebido
+// dentro del layout del panel, en vez de navegar a una pantalla nueva.
+import CajaHome from './caja/caja-home';
+import CategoriasScreen from './config/categorias';
+import MesasScreen from './config/mesas';
+import InventarioSucursalScreen from './inventario/existencias';
+import PosHomeScreen from './pos/home';
+import ExtrasScreen from './productos/extras';
+import ProductosScreen from './productos/productos';
 
 const { width, height } = Dimensions.get('window');
 const IS_MOBILE = width < 768;
 const IS_TABLET = width >= 768 && width < 1024;
 
+// ── Design tokens: MD3 + Neo-Brutalismo Funcional (mismos que el resto de la app) ──
+const INK = '#0D0D0D';
+const BORDER_W = 3;
+const RADIUS = 16;
+const RIPPLE = { color: 'rgba(0,0,0,0.18)', borderless: false };
+
+const hardShadow = (pressed: boolean) => ({
+  shadowColor: INK,
+  shadowOffset: { width: pressed ? 0 : 4, height: pressed ? 0 : 4 },
+  shadowOpacity: 1,
+  shadowRadius: 0,
+  elevation: pressed ? 0 : 5,
+  transform: [{ translateX: pressed ? 3 : 0 }, { translateY: pressed ? 3 : 0 }],
+});
+
+// Vista que se muestra en el área de contenido del panel
+type VistaPanel = 'caja' | 'pos' | 'inventario' | 'productos' | 'categorias' | 'mesas' | 'extras';
+
+// Componente a renderizar para cada vista del panel (mismos componentes
+// que ya existen como pantallas propias, reutilizados sin duplicar código)
+const VISTAS_PANEL: Record<VistaPanel, ComponentType> = {
+  caja: CajaHome,
+  pos: PosHomeScreen,
+  inventario: InventarioSucursalScreen,
+  productos: ProductosScreen,
+  extras: ExtrasScreen,
+  categorias: CategoriasScreen, // Reutilizamos la misma vista de productos para categorías
+  mesas: MesasScreen,
+};
+
 interface MenuOption {
   id: string;
   titulo: string;
   icono: string;
-  ruta: string;
+  vista: VistaPanel;
   color: string;
 }
 
+// Psicología del color: cada categoría conserva un color semántico estable
+// (venta = verde/afirmativo, inventario = azul/informativo, config = ámbar-cálido,
+// personal = naranja cercano, clientes = índigo confiable, caja = morado premium)
+// para que el operador reconozca la sección por color sin leer el texto.
 const MENU_OPTIONS: MenuOption[] = [
   {
     id: 'pos',
     titulo: 'Punto de Venta',
     icono: 'cart',
-    ruta: ROUTES.POS.HOME,
+    vista: 'pos',
     color: COLORS.success,
   },
   {
     id: 'inventario',
     titulo: 'Inventario',
     icono: 'cube',
-    ruta: ROUTES.INVENTARIO.EXISTENCIAS,
+    vista: 'inventario',
     color: COLORS.info,
   },
   {
     id: 'productos',
     titulo: 'Productos',
     icono: 'restaurant',
-    ruta: ROUTES.PRODUCTOS.PRODUCTOS,
+    vista: 'productos',
     color: COLORS.warning,
+  },
+  {
+    id: 'categorias',
+    titulo: 'Categorías',
+    icono: 'grid',
+    vista: 'categorias',
+    color: COLORS.primary,
+  },
+  {
+    id: 'extras',
+    titulo: 'Extras',
+    icono: 'add-circle',
+    vista: 'extras',
+    color: COLORS.primary,
   },
   {
     id: 'mesas',
     titulo: 'Configuración de Mesas',
     icono: 'grid',
-    ruta: ROUTES.CONFIG.MESAS,
+    vista: 'mesas',
     color: COLORS.primary,
   },
   {
     id: 'corte',
-    titulo: 'Corte de Caja',
+    titulo: 'Caja',
     icono: 'calculator',
-    ruta: ROUTES.REPORTES.CORTES,
+    vista: 'caja',
     color: '#9C27B0',
   },
   {
-    id: 'gastos',
-    titulo: 'Gastos',
-    icono: 'cash',
-    ruta: ROUTES.CAJA.CAJA_HOME,
-    color: COLORS.danger,
+    id: 'personal',
+    titulo: 'Personal',
+    icono: 'people',
+    vista: 'caja',
+    color: '#FF5722',
+  },
+  {
+    id: 'clientes',
+    titulo: 'Clientes Frecuentes',
+    icono: 'person',
+    vista: 'caja',
+    color: '#3F51B5',
+  },
+  {
+    id: 'descuentos',
+    titulo: 'Descuentos',
+    icono: 'pricetag',
+    vista: 'caja',
+    color: '#009688',
   },
 ];
 
@@ -81,13 +152,15 @@ export default function SucursalPanelScreen() {
   // En móvil: controla si el drawer está abierto (false = cerrado).
   // En tablet/desktop: el sidebar siempre está visible, este estado no se usa.
   const [drawerAbierto, setDrawerAbierto] = useState(false);
-  const [activeOption, setActiveOption] = useState<string | null>(null);
+  // Vista mostrada por defecto al entrar al panel: Caja (opción "corte").
+  const [activeOption, setActiveOption] = useState<string>('corte');
+  const [vistaActiva, setVistaActiva] = useState<VistaPanel>('caja');
   const [mostrarSelectorSucursal, setMostrarSelectorSucursal] = useState(false);
 
   const handleMenuClick = (option: MenuOption) => {
     setActiveOption(option.id);
-    router.push(option.ruta as any);
-    // En móvil cerramos el drawer al navegar
+    setVistaActiva(option.vista);
+    // En móvil cerramos el drawer al cambiar de vista
     if (IS_MOBILE) setDrawerAbierto(false);
   };
 
@@ -99,15 +172,20 @@ export default function SucursalPanelScreen() {
     setMostrarSelectorSucursal(false);
   };
 
+  // Componente de la vista actualmente seleccionada en el Sidebar
+  const VistaActivaComponent = VISTAS_PANEL[vistaActiva];
+
   const renderSidebarContent = () => (
     <>
       {/* Header del Sidebar */}
       <View style={styles.sidebarHeader}>
         <View style={styles.sucursalBadge}>
-          <POSIcon name="storefront" size={34} color={COLORS.white} />
+          <POSIcon name="storefront" size={30} color={INK} />
         </View>
         <View style={styles.sucursalHeaderInfo}>
-          <POSBadge label="SUCURSAL" variant="success" size="small" />
+          <View style={styles.sucursalPill}>
+            <Text style={styles.sucursalPillText}>SUCURSAL ACTIVA</Text>
+          </View>
           <Text style={styles.sucursalHeaderNombre} numberOfLines={1}>
             {sucursalActual?.nombre || 'Sin Sucursal'}
           </Text>
@@ -117,59 +195,54 @@ export default function SucursalPanelScreen() {
         </View>
       </View>
 
-      {/* Divider */}
-      <View style={styles.divider} />
-
       {/* Menú de Opciones */}
       <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
         {MENU_OPTIONS.map((option) => {
           const isActive = activeOption === option.id;
           return (
-            <TouchableOpacity
+            <Pressable
               key={option.id}
-              style={[
+              style={({ pressed }) => [
                 styles.menuItem,
-                isActive && { borderColor: option.color, backgroundColor: `${option.color}15` },
+                isActive && { backgroundColor: option.color },
+                hardShadow(pressed),
               ]}
               onPress={() => handleMenuClick(option)}
-              activeOpacity={0.7}
+              android_ripple={RIPPLE}
             >
               <View
                 style={[
                   styles.menuIconContainer,
-                  { backgroundColor: isActive ? option.color : '#F0F0F0' },
+                  { backgroundColor: isActive ? COLORS.white : option.color },
                 ]}
               >
                 <POSIcon
                   name={option.icono as any}
-                  size={20}
-                  color={isActive ? COLORS.white : COLORS.textSecondary}
+                  size={19}
+                  color={INK}
                 />
               </View>
               <Text
-                style={[
-                  styles.menuText,
-                  isActive && { color: option.color, fontWeight: '700' },
-                ]}
+                style={[styles.menuText, isActive && styles.menuTextActive]}
                 numberOfLines={1}
               >
-                {option.titulo}
+                {option.titulo.toUpperCase()}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </ScrollView>
 
       {/* Footer del Sidebar */}
       <View style={styles.sidebarFooter}>
-        <TouchableOpacity
-          style={styles.backButton}
+        <Pressable
+          style={({ pressed }) => [styles.backButton, hardShadow(pressed)]}
           onPress={handleBackToDashboard}
-          activeOpacity={0.7}
+          android_ripple={RIPPLE}
         >
-          <POSIcon name="arrow-back" size={20} color={COLORS.textSecondary} />
-          <Text style={styles.backText}>Volver al Dashboard</Text>
-        </TouchableOpacity>
+          <POSIcon name="arrow-back" size={18} color={INK} />
+          <Text style={styles.backText}>VOLVER AL DASHBOARD</Text>
+        </Pressable>
       </View>
     </>
   );
@@ -214,68 +287,31 @@ export default function SucursalPanelScreen() {
             <View style={styles.contentHeader}>
               {/* Botón de menú solo visible en móvil */}
               {IS_MOBILE ? (
-                <TouchableOpacity
-                  style={styles.menuToggle}
+                <Pressable
+                  style={({ pressed }) => [styles.menuToggle, hardShadow(pressed)]}
                   onPress={() => setDrawerAbierto(true)}
-                  activeOpacity={0.8}
+                  android_ripple={RIPPLE}
                 >
-                  <POSIcon name="menu" size={24} color={COLORS.text} />
-                </TouchableOpacity>
+                  <POSIcon name="menu" size={22} color={INK} />
+                </Pressable>
               ) : (
                 <View style={styles.headerSpacer} />
               )}
-              <Text style={styles.contentTitle}>Panel de Sucursal</Text>
-              <TouchableOpacity
-                style={styles.changeSucursalButton}
+              <Text style={styles.contentTitle} numberOfLines={1}>PANEL DE SUCURSAL</Text>
+              <Pressable
+                style={({ pressed }) => [styles.changeSucursalButton, hardShadow(pressed)]}
                 onPress={() => setMostrarSelectorSucursal(true)}
-                activeOpacity={0.8}
+                android_ripple={RIPPLE}
               >
-                <POSIcon name="swap-horizontal" size={18} color={COLORS.primary} />
-                <Text style={styles.changeSucursalText}>Cambiar</Text>
-              </TouchableOpacity>
+                <POSIcon name="swap-horizontal" size={16} color={INK} />
+                <Text style={styles.changeSucursalText}>CAMBIAR</Text>
+              </Pressable>
             </View>
 
-            {/* Estado vacío + accesos rápidos */}
-            <ScrollView
-              style={styles.scrollView}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Info de sucursal */}
-              <View style={styles.welcomeSection}>
-                <POSIcon name="location" size={48} color={COLORS.primary} />
-                <Text style={styles.emptyTitle}>
-                  {sucursalActual?.nombre || 'Panel de Sucursal'}
-                </Text>
-                <Text style={styles.emptyMessage}>
-                  Selecciona una opción del menú lateral para comenzar
-                </Text>
-              </View>
-
-              {/* Accesos rápidos */}
-              <View style={styles.seccion}>
-                <Text style={styles.tituloSeccion}>Accesos Rápidos</Text>
-                <View style={styles.quickAccessGrid}>
-                  {MENU_OPTIONS.map((option) => (
-                    <TouchableOpacity
-                      key={option.id}
-                      style={styles.quickAccessWrapper}
-                      onPress={() => handleMenuClick(option)}
-                      activeOpacity={0.8}
-                    >
-                      <POSCard style={styles.quickAccessCard} variant="elevated">
-                        <View style={[styles.quickAccessIconContainer, { backgroundColor: option.color }]}>
-                          <POSIcon name={option.icono as any} size={26} color={COLORS.white} />
-                        </View>
-                        <Text style={styles.quickAccessTitle} numberOfLines={2}>
-                          {option.titulo}
-                        </Text>
-                      </POSCard>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            </ScrollView>
+            {/* Contenedor de la vista activa (Outlet del panel) */}
+            <View style={styles.vistaActivaContainer}>
+              <VistaActivaComponent />
+            </View>
 
           </View>
         </View>
@@ -294,13 +330,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F1F1EC',
   },
 
   // ── Overlay móvil (oscurece el contenido detrás del drawer) ──────────────
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(13, 13, 13, 0.55)',
     zIndex: 9,
   },
 
@@ -310,38 +346,20 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: width * 0.78,
+    width: width * 0.82,
     height,
     backgroundColor: COLORS.white,
-    borderRightWidth: 1,
-    borderRightColor: COLORS.border,
+    borderRightWidth: BORDER_W,
+    borderRightColor: INK,
     zIndex: 10,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 4, height: 0 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-      },
-      android: { elevation: 8 },
-    }),
   },
 
   // ── Sidebar fijo tablet/desktop (ocupa espacio en el layout) ─────────────
   sidebar: {
-    width: IS_TABLET ? 240 : 280,
+    width: IS_TABLET ? 240 : 288,
     backgroundColor: COLORS.white,
-    borderRightWidth: 1,
-    borderRightColor: COLORS.border,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 2, height: 0 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-      },
-      android: { elevation: 4 },
-    }),
+    borderRightWidth: BORDER_W,
+    borderRightColor: INK,
   },
 
   // ── Header del Sidebar ────────────────────────────────────────────────────
@@ -351,102 +369,122 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     alignItems: 'center',
     gap: 12,
+    borderBottomWidth: BORDER_W,
+    borderBottomColor: INK,
   },
   sucursalBadge: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 64,
+    height: 64,
+    borderRadius: 18,
     backgroundColor: COLORS.success,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sucursalBadgeCollapsed: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.success,
+    borderWidth: BORDER_W,
+    borderColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sucursalHeaderInfo: {
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
     width: '100%',
+  },
+  sucursalPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: COLORS.success,
+    borderWidth: 2,
+    borderColor: INK,
+  },
+  sucursalPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
   },
   sucursalHeaderNombre: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: INK,
     textAlign: 'center',
   },
   sucursalHeaderCodigo: {
     fontSize: 12,
+    fontWeight: '600',
     color: COLORS.textSecondary,
   },
 
-  // ── Divider ────────────────────────────────────────────────────────────────
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginHorizontal: 12,
-    marginBottom: 12,
-  },
-
-  // ── Menú ──────────────────────────────────────────────────────────────────
+  // ── Menú — objetivos táctiles grandes, color sólido al activarse ─────────
   menuContainer: {
     flex: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
+    paddingTop: 14,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 12,
-    marginBottom: 6,
+    marginBottom: 10,
+    minHeight: 56,
     borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-    backgroundColor: '#F7F7F7',
+    borderWidth: 2,
+    borderColor: INK,
+    backgroundColor: COLORS.white,
   },
   menuIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
   },
   menuText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    color: INK,
     marginLeft: 12,
     flex: 1,
+  },
+  menuTextActive: {
+    color: INK,
   },
 
   // ── Footer del Sidebar ────────────────────────────────────────────────────
   sidebarFooter: {
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    padding: 14,
+    borderTopWidth: BORDER_W,
+    borderTopColor: INK,
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 14,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: '#F1F1EC',
     borderRadius: 12,
+    borderWidth: 2,
+    borderColor: INK,
     gap: 8,
   },
   backText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
 
   // ── Contenido Principal ───────────────────────────────────────────────────
   mainContent: {
+    flex: 1,
+  },
+  // Contenedor de la vista activa (Outlet del panel): ocupa todo el espacio
+  // restante debajo del header para que la vista hija se vea igual que
+  // cuando se accedía como pantalla independiente.
+  vistaActivaContainer: {
     flex: 1,
   },
   contentHeader: {
@@ -454,105 +492,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    gap: 10,
     backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: BORDER_W,
+    borderBottomColor: INK,
   },
   // Botón hamburguesa — solo se renderiza en móvil
   menuToggle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F0F0F0',
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: '#F1F1EC',
+    borderWidth: 2,
+    borderColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
   },
   contentTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
+    textAlign: 'center',
   },
   // Spacer invisible para centrar el título cuando no hay botón
   headerSpacer: {
-    width: 44,
-  },  changeSucursalButton: {
+    width: 46,
+  },
+  changeSucursalButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: '#E3F2FD',
-    marginLeft: 8,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    borderWidth: 2,
+    borderColor: INK,
   },
   changeSucursalText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  // ── Scroll ────────────────────────────────────────────────────────────────
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-
-  // ── Welcome / Estado vacío ────────────────────────────────────────────────
-  welcomeSection: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 20,
-    gap: 10,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    textAlign: 'center',
-  },
-  emptyMessage: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
-
-  // ── Accesos Rápidos ───────────────────────────────────────────────────────
-  seccion: {
-    padding: 16,
-  },
-  tituloSeccion: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: 12,
-  },
-  quickAccessGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  quickAccessWrapper: {
-    width: '48%',
-  },
-  quickAccessCard: {
-    alignItems: 'center',
-    padding: 20,
-    gap: 12,
-  },
-  quickAccessIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quickAccessTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
-    textAlign: 'center',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
 });

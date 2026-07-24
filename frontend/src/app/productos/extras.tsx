@@ -1,11 +1,25 @@
-import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
+import { COLORS, POSIcon } from '@/components/pos';
 import { useMateriales } from '@/features/inventario/materiales';
 import { CreateGrupoExtraDTO, CreateOpcionExtraDTO, GrupoExtra } from '@/features/producto/grupoExtra/grupoExtra.types';
 import { useExtra } from '@/features/producto/grupoExtra/useExtra';
 import { useProducto } from '@/features/producto/producto/useProducto';
-import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, FlatList, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+
+// ── Design tokens: MD3 + Neo-Brutalismo Funcional (mismos que el resto de la app) ──
+const INK = '#0D0D0D';
+const BORDER_W = 3;
+const RADIUS = 16;
+const RIPPLE = { color: 'rgba(0,0,0,0.18)', borderless: false };
+
+const hardShadow = (pressed: boolean) => ({
+  shadowColor: INK,
+  shadowOffset: { width: pressed ? 0 : 4, height: pressed ? 0 : 4 },
+  shadowOpacity: 1,
+  shadowRadius: 0,
+  elevation: pressed ? 0 : 5,
+  transform: [{ translateX: pressed ? 3 : 0 }, { translateY: pressed ? 3 : 0 }],
+});
 
 interface OpcionForm {
   tempId: string;
@@ -18,7 +32,7 @@ interface OpcionForm {
 export default function ExtrasScreen() {
   const { grupos, loading, cargarGrupos, saveGrupo } = useExtra();
   const { materiales, cargarMateriales } = useMateriales();
-  const {productos, loading: loadingProductos,cargarProductos} = useProducto(); // Hook para obtener productos desde el store
+  const { productos, loading: loadingProductos, cargarProductos } = useProducto();
 
   const [busqueda, setBusqueda] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
@@ -26,6 +40,7 @@ export default function ExtrasScreen() {
   const [modalProductosVisible, setModalProductosVisible] = useState(false);
   const [grupoEditando, setGrupoEditando] = useState<GrupoExtra | null>(null);
   const [opcionEditandoIndex, setOpcionEditandoIndex] = useState<number | null>(null);
+  const [guardando, setGuardando] = useState(false);
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -50,7 +65,7 @@ export default function ExtrasScreen() {
         descripcion: grupoEditando.descripcion,
         activo: grupoEditando.activo,
       });
-      
+
       setOpciones(
         grupoEditando.opciones.map((op) => ({
           tempId: op.id.toString(),
@@ -70,10 +85,6 @@ export default function ExtrasScreen() {
   const gruposFiltrados = grupos.filter((grupo) =>
     grupo.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
-
-/*   const productosFiltrados = productos.filter((prod) =>
-    prod.nombre.toLowerCase().includes(busquedaProducto.toLowerCase())
-  ); */
 
   const handleNuevo = () => {
     setGrupoEditando(null);
@@ -138,15 +149,14 @@ export default function ExtrasScreen() {
     }
   };
 
-  const handleGuardar = () => {
+  const handleGuardar = async () => {
     if (!formData.nombre.trim()) {
       Alert.alert('Error', 'El nombre del grupo es requerido');
       return;
     }
 
-    //const opcionesValidas = opciones.filter((op) => op.nombre.trim() && op.materialId);
     const opcionesValidas = opciones;
-    
+
     if (opcionesValidas.length === 0) {
       Alert.alert('Error', 'Debe agregar al menos una opción válida');
       return;
@@ -165,8 +175,9 @@ export default function ExtrasScreen() {
       productosIds: productosSeleccionados,
     };
 
-    saveGrupo(grupoDTO);
-    console.log('Productos seleccionados:', productosSeleccionados);
+    setGuardando(true);
+    await saveGrupo(grupoDTO);
+    setGuardando(false);
     handleCerrarModal();
   };
 
@@ -175,15 +186,16 @@ export default function ExtrasScreen() {
     const productosAsociados = Math.floor(Math.random() * 8) + 1;
 
     return (
-      <POSCard style={styles.grupoCard} variant="elevated">
+      <View style={styles.grupoCard}>
         <View style={styles.grupoHeader}>
-          <View style={styles.grupoHeaderLeft}>
-            <Text style={styles.grupoNombre}>{item.nombre}</Text>
-            <POSBadge 
-              label={item.activo ? 'ACTIVO' : 'INACTIVO'} 
-              variant={item.activo ? 'success' : 'default'}
-              size="small"
-            />
+          <Text style={styles.grupoNombre} numberOfLines={1}>{item.nombre}</Text>
+          <View
+            style={[
+              styles.estadoBadge,
+              { backgroundColor: item.activo ? COLORS.success : '#D9D9D0' },
+            ]}
+          >
+            <Text style={styles.estadoBadgeTexto}>{item.activo ? 'ACTIVO' : 'INACTIVO'}</Text>
           </View>
         </View>
 
@@ -193,36 +205,38 @@ export default function ExtrasScreen() {
 
         <View style={styles.grupoInfoGrid}>
           <View style={styles.grupoInfoItem}>
-            <POSIcon name="list-outline" size={16} color={COLORS.textSecondary} />
-            <Text style={styles.grupoInfoLabel}>Opciones</Text>
+            <POSIcon name="list-outline" size={16} color={INK} />
+            <Text style={styles.grupoInfoLabel}>OPCIONES</Text>
             <Text style={styles.grupoInfoValue}>{item.opciones.length}</Text>
           </View>
 
           <View style={styles.grupoInfoItem}>
-            <POSIcon name="fast-food-outline" size={16} color={COLORS.textSecondary} />
-            <Text style={styles.grupoInfoLabel}>Productos</Text>
+            <POSIcon name="fast-food-outline" size={16} color={INK} />
+            <Text style={styles.grupoInfoLabel}>PRODUCTOS</Text>
             <Text style={styles.grupoInfoValue}>{productosAsociados}</Text>
           </View>
         </View>
 
         <View style={styles.grupoAcciones}>
-          <TouchableOpacity
-            style={[styles.botonAccion, styles.botonEditar]}
+          <Pressable
+            style={({ pressed }) => [styles.botonAccion, styles.botonEditar, hardShadow(pressed)]}
             onPress={() => handleEditar(item)}
+            android_ripple={RIPPLE}
           >
-            <POSIcon name="create-outline" size={20} color={COLORS.primary} />
-            <Text style={styles.botonAccionTexto}>Editar</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.botonAccion, styles.botonEliminar]}
+            <POSIcon name="create-outline" size={18} color={INK} />
+            <Text style={styles.botonAccionTexto}>EDITAR</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [styles.botonAccion, styles.botonEliminar, hardShadow(pressed)]}
             onPress={() => handleEliminar(item)}
+            android_ripple={RIPPLE}
           >
-            <POSIcon name="trash-outline" size={20} color={COLORS.danger} />
-            <Text style={[styles.botonAccionTexto, styles.botonEliminarTexto]}>Eliminar</Text>
-          </TouchableOpacity>
+            <POSIcon name="trash-outline" size={18} color={INK} />
+            <Text style={styles.botonAccionTexto}>ELIMINAR</Text>
+          </Pressable>
         </View>
-      </POSCard>
+      </View>
     );
   };
 
@@ -231,44 +245,17 @@ export default function ExtrasScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.title}>Grupos de Extras</Text>
-          <POSBadge 
-            label={`${gruposFiltrados.length} grupos`} 
-            variant="info"
-          />
+          <Text style={styles.title}>GRUPOS DE EXTRAS</Text>
+          <View style={styles.countBadge}>
+            <Text style={styles.countBadgeText}>{gruposFiltrados.length}</Text>
+          </View>
         </View>
-        <Text style={styles.subtitle}>
-          Gestiona complementos para tus productos
-        </Text>
-      </View>
-
-      {/* Navegación por Tabs */}
-      <View style={styles.navigationTabs}>
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => router.push('/productos/productos')}
-        >
-          <POSIcon name="restaurant-outline" size={20} color={COLORS.textSecondary} />
-          <Text style={styles.tabText}>Productos</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => router.push('/config/categorias')}
-        >
-          <POSIcon name="grid-outline" size={20} color={COLORS.textSecondary} />
-          <Text style={styles.tabText}>Categorías</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.tabActive}>
-          <POSIcon name="add-circle-outline" size={20} color={COLORS.primary} />
-          <Text style={styles.tabTextActive}>Extras</Text>
-        </TouchableOpacity>
+        <Text style={styles.subtitle}>Gestiona complementos para tus productos</Text>
       </View>
 
       {/* Buscador */}
       <View style={styles.busquedaContainer}>
-        <POSIcon name="search" size={20} color={COLORS.textSecondary} />
+        <POSIcon name="search" size={20} color={INK} />
         <TextInput
           style={styles.busquedaInput}
           placeholder="Buscar grupo..."
@@ -277,34 +264,52 @@ export default function ExtrasScreen() {
           onChangeText={setBusqueda}
         />
         {busqueda.length > 0 && (
-          <TouchableOpacity onPress={() => setBusqueda('')}>
-            <POSIcon name="close-circle" size={20} color={COLORS.textSecondary} />
-          </TouchableOpacity>
+          <Pressable onPress={() => setBusqueda('')} hitSlop={8}>
+            <POSIcon name="close-circle" size={20} color={INK} />
+          </Pressable>
         )}
       </View>
 
+      {/* Loading */}
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Cargando grupos...</Text>
+        </View>
+      )}
+
       {/* Lista de Grupos */}
-      <FlatList
-        data={gruposFiltrados}
-        renderItem={renderGrupoItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <POSIcon name="albums-outline" size={80} color={COLORS.lightGray} />
-            <Text style={styles.emptyTexto}>No hay grupos de extras</Text>
-            <Text style={styles.emptySubtexto}>
-              {busqueda ? 'Intenta con otra búsqueda' : 'Crea tu primer grupo'}
-            </Text>
-          </View>
-        }
-      />
+      {!loading && (
+        <FlatList
+          data={gruposFiltrados}
+          renderItem={renderGrupoItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyIconBadge}>
+                <POSIcon name="albums-outline" size={44} color={INK} />
+              </View>
+              <Text style={styles.emptyTexto}>
+                {busqueda ? 'SIN RESULTADOS' : 'AÚN NO HAY GRUPOS'}
+              </Text>
+              <Text style={styles.emptySubtexto}>
+                {busqueda ? 'Intenta con otra búsqueda' : 'Toca "+" para crear el primero'}
+              </Text>
+            </View>
+          }
+        />
+      )}
 
       {/* FAB Button */}
-      <TouchableOpacity style={styles.fabButton} onPress={handleNuevo}>
-        <POSIcon name="add" size={32} color={COLORS.white} />
-      </TouchableOpacity>
+      <Pressable
+        style={({ pressed }) => [styles.fabButton, hardShadow(pressed)]}
+        onPress={handleNuevo}
+        android_ripple={RIPPLE}
+      >
+        <POSIcon name="add" size={28} color={INK} />
+      </Pressable>
 
       {/* Modal Crear/Editar Grupo */}
       <Modal
@@ -318,21 +323,25 @@ export default function ExtrasScreen() {
             {/* Header Modal */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitulo}>
-                {grupoEditando ? 'Editar Grupo' : 'Nuevo Grupo'}
+                {grupoEditando ? 'EDITAR GRUPO' : 'NUEVO GRUPO'}
               </Text>
-              <TouchableOpacity onPress={handleCerrarModal}>
-                <POSIcon name="close" size={28} color={COLORS.textSecondary} />
-              </TouchableOpacity>
+              <Pressable
+                style={({ pressed }) => [styles.modalCloseButton, hardShadow(pressed)]}
+                onPress={handleCerrarModal}
+                hitSlop={6}
+              >
+                <POSIcon name="close" size={20} color={INK} />
+              </Pressable>
             </View>
 
             {/* Contenido del Formulario */}
             <ScrollView style={styles.modalContenido} showsVerticalScrollIndicator={false}>
               {/* Sección: Información del Grupo */}
               <View style={styles.seccionFormulario}>
-                <Text style={styles.seccionTitulo}>Información del Grupo</Text>
-                
+                <Text style={styles.seccionTitulo}>INFORMACIÓN DEL GRUPO</Text>
+
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Nombre *</Text>
+                  <Text style={styles.formLabel}>NOMBRE *</Text>
                   <TextInput
                     style={styles.formInput}
                     placeholder="Ej: Ingredientes Extra"
@@ -343,7 +352,7 @@ export default function ExtrasScreen() {
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Descripción</Text>
+                  <Text style={styles.formLabel}>DESCRIPCIÓN</Text>
                   <TextInput
                     style={[styles.formInput, styles.formInputMultiline]}
                     placeholder="Describe el grupo de extras"
@@ -355,15 +364,15 @@ export default function ExtrasScreen() {
                   />
                 </View>
 
-                <View style={styles.switchContainer}>
+                <View style={styles.switchBox}>
                   <View style={styles.switchLabel}>
-                    <POSIcon name="power" size={20} color={formData.activo ? COLORS.success : COLORS.gray} />
-                    <Text style={styles.switchText}>Grupo Activo</Text>
+                    <POSIcon name="power" size={18} color={INK} />
+                    <Text style={styles.switchText}>GRUPO ACTIVO</Text>
                   </View>
                   <Switch
                     value={formData.activo}
                     onValueChange={(value) => setFormData({ ...formData, activo: value })}
-                    trackColor={{ false: COLORS.lightGray, true: COLORS.success }}
+                    trackColor={{ false: '#D9D9D0', true: COLORS.success }}
                     thumbColor={COLORS.white}
                   />
                 </View>
@@ -372,20 +381,21 @@ export default function ExtrasScreen() {
               {/* Sección: Opciones del Grupo */}
               <View style={styles.seccionFormulario}>
                 <View style={styles.seccionHeader}>
-                  <Text style={styles.seccionTitulo}>Opciones del Grupo</Text>
-                  <TouchableOpacity
-                    style={styles.botonAgregar}
+                  <Text style={styles.seccionTitulo}>OPCIONES DEL GRUPO</Text>
+                  <Pressable
+                    style={({ pressed }) => [styles.botonAgregar, hardShadow(pressed)]}
                     onPress={handleAgregarOpcion}
+                    android_ripple={RIPPLE}
                   >
-                    <POSIcon name="add-circle" size={20} color={COLORS.white} />
-                    <Text style={styles.botonAgregarTexto}>Agregar</Text>
-                  </TouchableOpacity>
+                    <POSIcon name="add-circle" size={18} color={INK} />
+                    <Text style={styles.botonAgregarTexto}>AGREGAR</Text>
+                  </Pressable>
                 </View>
 
                 {opciones.length === 0 ? (
                   <View style={styles.opcionesVacio}>
-                    <POSIcon name="cube-outline" size={48} color={COLORS.lightGray} />
-                    <Text style={styles.opcionesVacioTexto}>Sin opciones</Text>
+                    <POSIcon name="cube-outline" size={40} color={INK} />
+                    <Text style={styles.opcionesVacioTexto}>SIN OPCIONES</Text>
                     <Text style={styles.opcionesVacioSubtexto}>
                       Agrega opciones de extras
                     </Text>
@@ -394,23 +404,24 @@ export default function ExtrasScreen() {
                   <View style={styles.opcionesLista}>
                     {opciones.map((opcion, index) => {
                       const materialSeleccionado = materiales.find((m) => m.id === opcion.materialId);
-                      
+
                       return (
-                        <POSCard key={opcion.tempId} style={styles.opcionCard} variant="outlined">
+                        <View key={opcion.tempId} style={styles.opcionCard}>
                           <View style={styles.opcionHeader}>
                             <View style={styles.opcionNumero}>
                               <Text style={styles.opcionNumeroTexto}>{index + 1}</Text>
                             </View>
-                            <TouchableOpacity
+                            <Pressable
                               style={styles.botonEliminarOpcion}
                               onPress={() => handleEliminarOpcion(index)}
+                              hitSlop={8}
                             >
                               <POSIcon name="close-circle" size={24} color={COLORS.danger} />
-                            </TouchableOpacity>
+                            </Pressable>
                           </View>
 
                           <View style={styles.formGroup}>
-                            <Text style={styles.formLabel}>Nombre *</Text>
+                            <Text style={styles.formLabel}>NOMBRE *</Text>
                             <TextInput
                               style={styles.formInput}
                               placeholder="Ej: Queso Extra"
@@ -422,7 +433,7 @@ export default function ExtrasScreen() {
 
                           <View style={styles.formRow}>
                             <View style={[styles.formGroup, styles.formGroupHalf]}>
-                              <Text style={styles.formLabel}>Precio</Text>
+                              <Text style={styles.formLabel}>PRECIO</Text>
                               <View style={styles.precioContainer}>
                                 <Text style={styles.precioSimbolo}>$</Text>
                                 <TextInput
@@ -437,13 +448,14 @@ export default function ExtrasScreen() {
                             </View>
 
                             <View style={[styles.formGroup, styles.formGroupHalf]}>
-                              <Text style={styles.formLabel}>Material *</Text>
-                              <TouchableOpacity
-                                style={styles.materialSelector}
+                              <Text style={styles.formLabel}>MATERIAL *</Text>
+                              <Pressable
+                                style={({ pressed }) => [styles.materialSelector, hardShadow(pressed)]}
                                 onPress={() => {
                                   setOpcionEditandoIndex(index);
                                   setModalMaterialVisible(true);
                                 }}
+                                android_ripple={RIPPLE}
                               >
                                 {materialSeleccionado ? (
                                   <>
@@ -454,26 +466,26 @@ export default function ExtrasScreen() {
                                   </>
                                 ) : (
                                   <>
-                                    <POSIcon name="ellipse-outline" size={16} color={COLORS.textSecondary} />
+                                    <View style={styles.materialSelectorCirculo} />
                                     <Text style={[styles.materialSelectorTexto, styles.materialSelectorPlaceholder]}>
                                       Seleccionar
                                     </Text>
                                   </>
                                 )}
-                              </TouchableOpacity>
+                              </Pressable>
                             </View>
                           </View>
 
-                          <View style={styles.switchContainer}>
-                            <Text style={styles.switchTextSmall}>Opción Activa</Text>
+                          <View style={styles.switchBoxCompacto}>
+                            <Text style={styles.switchTextSmall}>OPCIÓN ACTIVA</Text>
                             <Switch
                               value={opcion.activo}
                               onValueChange={(value) => handleActualizarOpcion(index, 'activo', value)}
-                              trackColor={{ false: COLORS.lightGray, true: COLORS.success }}
+                              trackColor={{ false: '#D9D9D0', true: COLORS.success }}
                               thumbColor={COLORS.white}
                             />
                           </View>
-                        </POSCard>
+                        </View>
                       );
                     })}
                   </View>
@@ -481,38 +493,39 @@ export default function ExtrasScreen() {
               </View>
 
               {/* Sección: Productos Asociados */}
-              <View style={styles.seccionFormulario}>
+              <View style={[styles.seccionFormulario, styles.ultimaSeccion]}>
                 <View style={styles.seccionHeader}>
-                  <Text style={styles.seccionTitulo}>Productos Asociados</Text>
+                  <Text style={styles.seccionTitulo}>PRODUCTOS ASOCIADOS</Text>
                   <View style={styles.contadorProductos}>
-                    <POSIcon name="checkmark-circle" size={16} color={COLORS.success} />
+                    <POSIcon name="checkmark-circle" size={15} color={INK} />
                     <Text style={styles.contadorProductosTexto}>
-                      {productosSeleccionados.length} seleccionados
+                      {productosSeleccionados.length} SELECCIONADOS
                     </Text>
                   </View>
                 </View>
 
-                <TouchableOpacity
-                  style={styles.botonSeleccionarProductos}
+                <Pressable
+                  style={({ pressed }) => [styles.botonSeleccionarProductos, hardShadow(pressed)]}
                   onPress={() => setModalProductosVisible(true)}
+                  android_ripple={RIPPLE}
                 >
-                  <POSIcon name="fast-food-outline" size={20} color={COLORS.primary} />
+                  <POSIcon name="fast-food-outline" size={20} color={INK} />
                   <Text style={styles.botonSeleccionarProductosTexto}>
-                    Seleccionar Productos
+                    SELECCIONAR PRODUCTOS
                   </Text>
-                  <POSIcon name="chevron-forward" size={20} color={COLORS.textSecondary} />
-                </TouchableOpacity>
+                  <POSIcon name="chevron-forward" size={20} color={INK} />
+                </Pressable>
 
                 {productosSeleccionados.length > 0 && (
                   <View style={styles.productosSeleccionadosLista}>
                     {productosSeleccionados.map((prodId) => {
-                      const producto = grupos.find((p) => p.id === prodId);
+                      const producto = productos.find((p) => p.id === prodId);
                       return producto ? (
                         <View key={prodId} style={styles.chipProducto}>
-                          <Text style={styles.chipProductoTexto}>{producto.nombre}</Text>
-                          <TouchableOpacity onPress={() => handleToggleProducto(prodId)}>
-                            <POSIcon name="close" size={16} color={COLORS.textSecondary} />
-                          </TouchableOpacity>
+                          <Text style={styles.chipProductoTexto} numberOfLines={1}>{producto.nombre}</Text>
+                          <Pressable onPress={() => handleToggleProducto(prodId)} hitSlop={8}>
+                            <POSIcon name="close" size={16} color={INK} />
+                          </Pressable>
                         </View>
                       ) : null;
                     })}
@@ -523,20 +536,28 @@ export default function ExtrasScreen() {
 
             {/* Botones de Acción */}
             <View style={styles.modalAcciones}>
-              <TouchableOpacity
-                style={[styles.botonModal, styles.botonCancelar]}
+              <Pressable
+                style={({ pressed }) => [styles.botonModal, styles.botonCancelar, hardShadow(pressed)]}
                 onPress={handleCerrarModal}
+                android_ripple={RIPPLE}
+                disabled={guardando}
               >
-                <Text style={styles.botonCancelarTexto}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.botonModal, styles.botonGuardar]}
+                <Text style={styles.botonCancelarTexto}>CANCELAR</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.botonModal, styles.botonGuardar, hardShadow(pressed)]}
                 onPress={handleGuardar}
+                android_ripple={RIPPLE}
+                disabled={guardando}
               >
-                <Text style={styles.botonGuardarTexto}>
-                  {grupoEditando ? 'Actualizar' : 'Crear Grupo'}
-                </Text>
-              </TouchableOpacity>
+                {guardando ? (
+                  <ActivityIndicator color={INK} />
+                ) : (
+                  <Text style={styles.botonGuardarTexto}>
+                    {grupoEditando ? 'ACTUALIZAR' : 'CREAR GRUPO'}
+                  </Text>
+                )}
+              </Pressable>
             </View>
           </View>
         </View>
@@ -550,32 +571,39 @@ export default function ExtrasScreen() {
         onRequestClose={() => setModalMaterialVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalMaterialContainer}>
+          <View style={styles.modalSecundarioContainer}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitulo}>Seleccionar Material</Text>
-              <TouchableOpacity onPress={() => setModalMaterialVisible(false)}>
-                <POSIcon name="close" size={28} color={COLORS.textSecondary} />
-              </TouchableOpacity>
+              <Text style={styles.modalTitulo}>SELECCIONAR MATERIAL</Text>
+              <Pressable
+                style={({ pressed }) => [styles.modalCloseButton, hardShadow(pressed)]}
+                onPress={() => setModalMaterialVisible(false)}
+                hitSlop={6}
+              >
+                <POSIcon name="close" size={20} color={INK} />
+              </Pressable>
             </View>
 
             <ScrollView style={styles.materialesDisponiblesLista}>
               {materiales.map((material) => (
-                <TouchableOpacity
+                <Pressable
                   key={material.id}
-                  style={styles.materialDisponibleItem}
+                  style={({ pressed }) => [styles.materialDisponibleItem, hardShadow(pressed)]}
                   onPress={() => handleSeleccionarMaterial(material.id)}
+                  android_ripple={RIPPLE}
                 >
                   <View style={styles.materialDisponibleInfo}>
-                    <Text style={styles.materialDisponibleNombre}>{material.nombre}</Text>
+                    <Text style={styles.materialDisponibleNombre} numberOfLines={1}>{material.nombre}</Text>
                     <View style={styles.materialDisponibleDetalles}>
-                      <POSIcon name="cube-outline" size={14} color={COLORS.textSecondary} />
+                      <POSIcon name="cube-outline" size={14} color={INK} />
                       <Text style={styles.materialDisponibleUnidad}>{material.unidadMedida}</Text>
-                      <Text style={styles.materialDisponibleSeparador}>•</Text>
+                      <Text style={styles.materialDisponibleSeparador}>·</Text>
                       <Text style={styles.materialDisponibleCosto}>${material.costoUnitario.toFixed(2)}</Text>
                     </View>
                   </View>
-                  <POSIcon name="add-circle-outline" size={24} color={COLORS.primary} />
-                </TouchableOpacity>
+                  <View style={styles.materialDisponibleAddIcon}>
+                    <POSIcon name="add" size={18} color={INK} />
+                  </View>
+                </Pressable>
               ))}
             </ScrollView>
           </View>
@@ -590,17 +618,21 @@ export default function ExtrasScreen() {
         onRequestClose={() => setModalProductosVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalProductosContainer}>
+          <View style={styles.modalSecundarioContainer}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitulo}>Seleccionar Productos</Text>
-              <TouchableOpacity onPress={() => setModalProductosVisible(false)}>
-                <POSIcon name="close" size={28} color={COLORS.textSecondary} />
-              </TouchableOpacity>
+              <Text style={styles.modalTitulo}>SELECCIONAR PRODUCTOS</Text>
+              <Pressable
+                style={({ pressed }) => [styles.modalCloseButton, hardShadow(pressed)]}
+                onPress={() => setModalProductosVisible(false)}
+                hitSlop={6}
+              >
+                <POSIcon name="close" size={20} color={INK} />
+              </Pressable>
             </View>
 
             {/* Buscador de Productos */}
             <View style={styles.busquedaProductoContainer}>
-              <POSIcon name="search" size={20} color={COLORS.textSecondary} />
+              <POSIcon name="search" size={20} color={INK} />
               <TextInput
                 style={styles.busquedaInput}
                 placeholder="Buscar producto..."
@@ -611,43 +643,48 @@ export default function ExtrasScreen() {
             </View>
 
             {/* Lista de Productos */}
-             <ScrollView style={styles.productosLista}>
-              {productos.map((producto) => {
-                const isSeleccionado = productosSeleccionados.includes(producto.id);
-                
-                return (
-                  <TouchableOpacity
-                    key={producto.id}
-                    style={[
-                      styles.productoItem,
-                      isSeleccionado && styles.productoItemSeleccionado,
-                    ]}
-                    onPress={() => handleToggleProducto(producto.id)}
-                  >
-                    <View style={styles.productoItemInfo}>
-                      <Text style={styles.productoItemNombre}>{producto.nombre}</Text>
-                      <Text style={styles.productoItemCategoria}>{producto.categoria.descripcion}</Text>
-                    </View>
-                    {isSeleccionado ? (
-                      <POSIcon name="checkmark-circle" size={28} color={COLORS.success} />
-                    ) : (
-                      <POSIcon name="ellipse-outline" size={28} color={COLORS.border} />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
+            <ScrollView style={styles.productosLista}>
+              {productos
+                .filter((p) => p.nombre.toLowerCase().includes(busquedaProducto.toLowerCase()))
+                .map((producto) => {
+                  const isSeleccionado = productosSeleccionados.includes(producto.id);
+
+                  return (
+                    <Pressable
+                      key={producto.id}
+                      style={({ pressed }) => [
+                        styles.productoItem,
+                        isSeleccionado && styles.productoItemSeleccionado,
+                        hardShadow(pressed),
+                      ]}
+                      onPress={() => handleToggleProducto(producto.id)}
+                      android_ripple={RIPPLE}
+                    >
+                      <View style={styles.productoItemInfo}>
+                        <Text style={styles.productoItemNombre} numberOfLines={1}>{producto.nombre}</Text>
+                        <Text style={styles.productoItemCategoria}>{producto.categoria.descripcion}</Text>
+                      </View>
+                      {isSeleccionado ? (
+                        <POSIcon name="checkmark-circle" size={26} color={COLORS.success} />
+                      ) : (
+                        <View style={styles.productoItemCirculo} />
+                      )}
+                    </Pressable>
+                  );
+                })}
             </ScrollView>
- 
+
             {/* Botón Confirmar */}
             <View style={styles.modalAcciones}>
-              <TouchableOpacity
-                style={[styles.botonModal, styles.botonGuardar, { flex: 1 }]}
+              <Pressable
+                style={({ pressed }) => [styles.botonModal, styles.botonGuardar, { flex: 1 }, hardShadow(pressed)]}
                 onPress={() => setModalProductosVisible(false)}
+                android_ripple={RIPPLE}
               >
                 <Text style={styles.botonGuardarTexto}>
-                  Confirmar ({productosSeleccionados.length})
+                  CONFIRMAR ({productosSeleccionados.length})
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         </View>
@@ -659,16 +696,16 @@ export default function ExtrasScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F1F1EC',
   },
-  
-  // Header
+
+  // ── Header ────────────────────────────────────────────────────────────────
   header: {
     backgroundColor: COLORS.white,
     padding: 20,
     paddingTop: 60,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: BORDER_W,
+    borderBottomColor: INK,
   },
   headerTop: {
     flexDirection: 'row',
@@ -677,219 +714,244 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
+  },
+  countBadge: {
+    minWidth: 32,
+    height: 32,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    backgroundColor: COLORS.info,
+    borderWidth: 2,
+    borderColor: INK,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  countBadgeText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: INK,
   },
   subtitle: {
     fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-
-  // Navegación por Tabs
-  navigationTabs: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.white,
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 12,
-    padding: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  tab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    gap: 6,
-  },
-  tabActive: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    backgroundColor: '#E3F2FD',
-    borderRadius: 8,
-    gap: 6,
-  },
-  tabText: {
-    fontSize: 13,
     fontWeight: '600',
     color: COLORS.textSecondary,
   },
-  tabTextActive: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
 
-  // Buscador
+  // ── Buscador ─────────────────────────────────────────────────────────────
   busquedaContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
     marginHorizontal: 16,
-    marginVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    height: 50,
+    marginVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: RADIUS,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    height: 52,
+    gap: 10,
   },
   busquedaInput: {
     flex: 1,
     fontSize: 16,
-    color: COLORS.text,
-    marginLeft: 12,
+    fontWeight: '600',
+    color: INK,
   },
 
-  // Lista
+  // ── Loading ─────────────────────────────────────────────────────────────
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+
+  // ── Lista ────────────────────────────────────────────────────────────────
   listContainer: {
     padding: 16,
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
-  
-  // Tarjeta Grupo
+
+  // ── Tarjeta Grupo ───────────────────────────────────────────────────────
   grupoCard: {
+    backgroundColor: COLORS.white,
     marginBottom: 16,
     padding: 16,
+    borderRadius: RADIUS,
+    borderWidth: BORDER_W,
+    borderColor: INK,
   },
   grupoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  grupoHeaderLeft: {
-    flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    marginBottom: 8,
+    gap: 10,
   },
   grupoNombre: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 19,
+    fontWeight: '800',
+    color: INK,
     flex: 1,
+  },
+  estadoBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: INK,
+  },
+  estadoBadgeTexto: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
   grupoDescripcion: {
     fontSize: 14,
+    fontWeight: '500',
     color: COLORS.textSecondary,
     marginBottom: 16,
     lineHeight: 20,
   },
-  
-  // Grid de información
+
+  // ── Grid de información ────────────────────────────────────────────────
   grupoInfoGrid: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
     marginBottom: 16,
   },
   grupoInfoItem: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: '#F1F1EC',
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: INK,
     alignItems: 'center',
     gap: 4,
   },
   grupoInfoLabel: {
-    fontSize: 11,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
   grupoInfoValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 17,
+    fontWeight: '800',
+    color: INK,
     textAlign: 'center',
   },
 
-  // Acciones
+  // ── Acciones ─────────────────────────────────────────────────────────────
   grupoAcciones: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   botonAccion: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: INK,
     gap: 6,
   },
   botonEditar: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: COLORS.info,
   },
   botonEliminar: {
-    backgroundColor: '#FFEBEE',
+    backgroundColor: '#FF9494',
   },
   botonAccionTexto: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-  botonEliminarTexto: {
-    color: COLORS.danger,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
 
-  // FAB Button
+  // ── FAB Button ──────────────────────────────────────────────────────────
   fabButton: {
     position: 'absolute',
     bottom: 20,
     right: 20,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
     backgroundColor: COLORS.primary,
+    borderWidth: BORDER_W,
+    borderColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
 
-  // Empty State
+  // ── Empty State ─────────────────────────────────────────────────────────
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
+    gap: 8,
+  },
+  emptyIconBadge: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: COLORS.white,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   emptyTexto: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    marginTop: 16,
-    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
   },
   emptySubtexto: {
     fontSize: 14,
+    fontWeight: '500',
     color: COLORS.textSecondary,
   },
 
-  // Modal
+  // ── Modal ────────────────────────────────────────────────────────────────
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(13, 13, 13, 0.55)',
     justifyContent: 'flex-end',
   },
   modalContainer: {
     backgroundColor: COLORS.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    borderBottomWidth: 0,
     maxHeight: '95%',
+  },
+  modalSecundarioContainer: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    borderBottomWidth: 0,
+    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -897,23 +959,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: BORDER_W,
+    borderBottomColor: INK,
   },
   modalTitulo: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
+  },
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: INK,
+    backgroundColor: '#F1F1EC',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContenido: {
-    maxHeight: '65%',
+    maxHeight: '75%',
   },
 
-  // Formulario
+  // ── Formulario ──────────────────────────────────────────────────────────
   seccionFormulario: {
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: 2,
+    borderBottomColor: '#EDEDE6',
+  },
+  ultimaSeccion: {
+    borderBottomWidth: 0,
   },
   seccionHeader: {
     flexDirection: 'row',
@@ -922,9 +998,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   seccionTitulo: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
     marginBottom: 16,
   },
   formGroup: {
@@ -938,32 +1015,51 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   formLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
     marginBottom: 8,
   },
   formInput: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     fontSize: 16,
-    color: COLORS.text,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    fontWeight: '600',
+    color: INK,
+    borderWidth: 2,
+    borderColor: INK,
   },
   formInputMultiline: {
     minHeight: 80,
     textAlignVertical: 'top',
   },
 
-  // Switch
-  switchContainer: {
+  // ── Switch ──────────────────────────────────────────────────────────────
+  switchBox: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: '#F1F1EC',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: INK,
+  },
+  switchBoxCompacto: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginTop: 4,
+    backgroundColor: '#F1F1EC',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: INK,
   },
   switchLabel: {
     flexDirection: 'row',
@@ -971,57 +1067,70 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   switchText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    color: INK,
   },
   switchTextSmall: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: '700',
+    color: INK,
   },
 
-  // Botón Agregar
+  // ── Botón Agregar ───────────────────────────────────────────────────────
   botonAgregar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: INK,
     gap: 6,
   },
   botonAgregarTexto: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
 
-  // Opciones Vacío
+  // ── Opciones Vacío ──────────────────────────────────────────────────────
   opcionesVacio: {
     alignItems: 'center',
-    padding: 40,
-    backgroundColor: '#F9FAFB',
+    padding: 32,
+    backgroundColor: '#F1F1EC',
     borderRadius: 12,
+    borderWidth: 2,
+    borderColor: INK,
+    borderStyle: 'dashed',
+    gap: 4,
   },
   opcionesVacioTexto: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    marginTop: 12,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
+    marginTop: 8,
   },
   opcionesVacioSubtexto: {
     fontSize: 13,
+    fontWeight: '500',
     color: COLORS.textSecondary,
-    marginTop: 4,
   },
 
-  // Lista de Opciones
+  // ── Lista de Opciones ───────────────────────────────────────────────────
   opcionesLista: {
     gap: 16,
   },
   opcionCard: {
     padding: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: INK,
   },
   opcionHeader: {
     flexDirection: 'row',
@@ -1032,95 +1141,112 @@ const styles = StyleSheet.create({
   opcionNumero: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 10,
     backgroundColor: COLORS.primary,
+    borderWidth: 2,
+    borderColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
   },
   opcionNumeroTexto: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: COLORS.white,
+    fontWeight: '800',
+    color: INK,
   },
   botonEliminarOpcion: {
     padding: 4,
   },
 
-  // Precio
+  // ── Precio ──────────────────────────────────────────────────────────────
   precioContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: INK,
     paddingHorizontal: 16,
   },
   precioSimbolo: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: COLORS.success,
     marginRight: 8,
   },
   precioInput: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     fontSize: 16,
-    color: COLORS.text,
+    fontWeight: '700',
+    color: INK,
   },
 
-  // Material Selector
+  // ── Material Selector ───────────────────────────────────────────────────
   materialSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    paddingVertical: 14,
+    borderWidth: 2,
+    borderColor: INK,
     gap: 8,
   },
   materialSelectorTexto: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.text,
+    fontWeight: '700',
+    color: INK,
   },
   materialSelectorPlaceholder: {
     color: COLORS.textSecondary,
+    fontWeight: '500',
+  },
+  materialSelectorCirculo: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: INK,
   },
 
-  // Productos Asociados
+  // ── Productos Asociados ─────────────────────────────────────────────────
   contadorProductos: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 12,
+    backgroundColor: COLORS.success,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    gap: 6,
+    borderWidth: 2,
+    borderColor: INK,
+    gap: 5,
   },
   contadorProductosTexto: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.success,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    color: INK,
   },
   botonSeleccionarProductos: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    borderWidth: 2,
+    borderColor: INK,
+    gap: 10,
   },
   botonSeleccionarProductosTexto: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.primary,
-    marginLeft: 12,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    color: INK,
+    marginLeft: 4,
   },
   productosSeleccionadosLista: {
     flexDirection: 'row',
@@ -1131,57 +1257,60 @@ const styles = StyleSheet.create({
   chipProducto: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E3F2FD',
+    backgroundColor: COLORS.info,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: INK,
     gap: 8,
+    maxWidth: '100%',
   },
   chipProductoTexto: {
     fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.primary,
+    fontWeight: '700',
+    color: INK,
+    maxWidth: 160,
   },
 
-  // Botones Modal
+  // ── Botones Modal ────────────────────────────────────────────────────────
   modalAcciones: {
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopWidth: BORDER_W,
+    borderTopColor: INK,
   },
   botonModal: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: BORDER_W,
+    borderColor: INK,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   botonCancelar: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F1F1EC',
   },
   botonCancelarTexto: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
   botonGuardar: {
     backgroundColor: COLORS.primary,
   },
   botonGuardarTexto: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.white,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
   },
 
-  // Modal Material
-  modalMaterialContainer: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '70%',
-  },
+  // ── Modal Material ──────────────────────────────────────────────────────
   materialesDisponiblesLista: {
     padding: 20,
   },
@@ -1189,20 +1318,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    borderWidth: 2,
+    borderColor: INK,
   },
   materialDisponibleInfo: {
     flex: 1,
+    marginRight: 10,
   },
   materialDisponibleNombre: {
     fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: INK,
     marginBottom: 6,
   },
   materialDisponibleDetalles: {
@@ -1212,6 +1342,7 @@ const styles = StyleSheet.create({
   },
   materialDisponibleUnidad: {
     fontSize: 13,
+    fontWeight: '600',
     color: COLORS.textSecondary,
   },
   materialDisponibleSeparador: {
@@ -1220,28 +1351,33 @@ const styles = StyleSheet.create({
   },
   materialDisponibleCosto: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '800',
     color: COLORS.success,
   },
-
-  // Modal Productos
-  modalProductosContainer: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '80%',
+  materialDisponibleAddIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    borderWidth: 2,
+    borderColor: INK,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+
+  // ── Modal Productos ─────────────────────────────────────────────────────
   busquedaProductoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.white,
     marginHorizontal: 20,
     marginVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    paddingHorizontal: 14,
+    borderRadius: RADIUS,
+    borderWidth: 2,
+    borderColor: INK,
     height: 50,
+    gap: 10,
   },
   productosLista: {
     paddingHorizontal: 20,
@@ -1251,28 +1387,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.white,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: INK,
   },
   productoItemSeleccionado: {
-    backgroundColor: '#E8F5E9',
-    borderColor: COLORS.success,
+    backgroundColor: '#EAF7EF',
+    borderWidth: BORDER_W,
   },
   productoItemInfo: {
     flex: 1,
+    marginRight: 10,
   },
   productoItemNombre: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: '800',
+    color: INK,
     marginBottom: 4,
   },
   productoItemCategoria: {
     fontSize: 13,
+    fontWeight: '500',
     color: COLORS.textSecondary,
+  },
+  productoItemCirculo: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2,
+    borderColor: INK,
+    backgroundColor: '#F1F1EC',
   },
 });
