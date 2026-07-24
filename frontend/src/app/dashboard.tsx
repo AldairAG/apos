@@ -1,6 +1,6 @@
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { SucursalSelector } from '@/components/SucursalSelector';
-import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
+import { COLORS, POSBadge, POSIcon } from '@/components/pos';
 import { useSucursal } from '@/features/sucursal/useSucursal';
 import { useAuth } from '@/features/usuario/auth/useAuth';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
@@ -8,10 +8,10 @@ import { ROUTES, Rol } from '@/routes/routes';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -38,13 +38,7 @@ const MODULOS_PRINCIPALES: Modulo[] = [
     ruta: ROUTES.PRODUCTOS.RECETAS,
     color: COLORS.warning,
   },
-  {
-    titulo: 'Productos',
-    subtitulo: 'Catálogo de productos',
-    icono: 'restaurant',
-    ruta: ROUTES.PRODUCTOS.PRODUCTOS,
-    color: COLORS.success,
-  },
+  
 ];
 
 const REPORTES: Modulo[] = [
@@ -77,6 +71,23 @@ const REPORTES: Modulo[] = [
     color: COLORS.primary,
   },
 ];
+
+// ── Design tokens: MD3 + Neo-Brutalismo Funcional ──────────────────────────
+const INK = '#0D0D0D';
+const BORDER_W = 3;
+const RADIUS = 16;
+const RIPPLE = { color: 'rgba(0,0,0,0.18)', borderless: false };
+
+/** Sombra dura desplazada (sin blur) — se "aplana" al presionar para dar
+ * feedback físico inmediato, en vez de un fade sutil de opacidad. */
+const hardShadow = (pressed: boolean) => ({
+  shadowColor: INK,
+  shadowOffset: { width: pressed ? 0 : 5, height: pressed ? 0 : 5 },
+  shadowOpacity: 1,
+  shadowRadius: 0,
+  elevation: pressed ? 0 : 6,
+  transform: [{ translateX: pressed ? 4 : 0 }, { translateY: pressed ? 4 : 0 }],
+});
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -112,8 +123,7 @@ export default function DashboardScreen() {
     }
   };
 
-  const handleCambiarSucursal = (event?: any) => {
-    event?.stopPropagation?.();
+  const handleCambiarSucursal = () => {
     setMostrarSelectorSucursal(true);
   };
 
@@ -134,47 +144,63 @@ export default function DashboardScreen() {
     }
   };
 
-  const renderModuloCard = (modulo: Modulo) => (
-    <TouchableOpacity
+  const renderModuloCard = (modulo: Modulo, compact = false) => (
+    <Pressable
       key={modulo.ruta}
       style={styles.moduloWrapper}
       onPress={() => verificarYNavegar(modulo.ruta)}
-      activeOpacity={0.8}
+      android_ripple={RIPPLE}
+      hitSlop={4}
     >
-      <POSCard
-        style={StyleSheet.flatten([styles.moduloCard, { backgroundColor: modulo.color }])}
-        variant="elevated"
-      >
-        <POSIcon name={modulo.icono as any} size={40} color={COLORS.white} />
-        <Text style={styles.moduloTitulo}>{modulo.titulo}</Text>
-        <Text style={styles.moduloSubtitulo}>{modulo.subtitulo}</Text>
-      </POSCard>
-    </TouchableOpacity>
+      {({ pressed }) => (
+        <View
+          style={[
+            styles.moduloCard,
+            compact && styles.moduloCardCompact,
+            { backgroundColor: modulo.color },
+            hardShadow(pressed),
+          ]}
+        >
+          <View style={styles.moduloIconBadge}>
+            <POSIcon name={modulo.icono as any} size={compact ? 24 : 32} color={INK} />
+          </View>
+          <Text style={[styles.moduloTitulo, compact && styles.moduloTituloCompact]} numberOfLines={1}>
+            {modulo.titulo.toUpperCase()}
+          </Text>
+          {!compact && (
+            <Text style={styles.moduloSubtitulo} numberOfLines={2}>
+              {modulo.subtitulo}
+            </Text>
+          )}
+        </View>
+      )}
+    </Pressable>
   );
 
   return (
     <ProtectedRoute requiredRoute={ROUTES.DASHBOARD}>
       <View style={styles.container}>
 
-        {/* Header */}
+        {/* Header — bloque de color sólido, alto contraste */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <View style={styles.userInfo}>
               <View style={styles.avatarContainer}>
-                <POSIcon name="person" size={22} color={COLORS.white} />
+                <POSIcon name="person" size={24} color={COLORS.white} />
               </View>
               <View>
-                <Text style={styles.welcomeText}>Bienvenido</Text>
+                <Text style={styles.welcomeText}>BIENVENIDO</Text>
                 <Text style={styles.roleText}>{getRoleName(rol)}</Text>
               </View>
             </View>
-            <TouchableOpacity
-              style={styles.logoutButton}
+            <Pressable
+              style={({ pressed }) => [styles.logoutButton, hardShadow(pressed)]}
               onPress={handleLogout}
-              activeOpacity={0.8}
+              android_ripple={RIPPLE}
+              hitSlop={8}
             >
-              <POSIcon name="log-out" size={22} color={COLORS.danger} />
-            </TouchableOpacity>
+              <POSIcon name="log-out" size={22} color={INK} />
+            </Pressable>
           </View>
           <Text style={styles.subtitle}>
             {new Date().toLocaleDateString('es-MX', {
@@ -186,80 +212,78 @@ export default function DashboardScreen() {
           </Text>
         </View>
 
+        {/* Barra de Sucursal — fija, siempre visible, sin scroll (menos pasos) */}
+        <Pressable
+          onPress={handleSucursalCardClick}
+          android_ripple={RIPPLE}
+        >
+          {({ pressed }) => (
+            <View
+              style={[
+                styles.sucursalCard,
+                { backgroundColor: sucursalActual ? COLORS.success : COLORS.danger },
+                hardShadow(pressed),
+              ]}
+            >
+              <View style={styles.sucursalCardContent}>
+                <View style={styles.sucursalIconContainer}>
+                  <POSIcon
+                    name={sucursalActual ? 'checkmark-circle' : 'alert-circle'}
+                    size={30}
+                    color={INK}
+                  />
+                </View>
+
+                <View style={styles.sucursalInfo}>
+                  {sucursalActual ? (
+                    <>
+                      <Text style={styles.sucursalEstado}>SUCURSAL ACTIVA</Text>
+                      <Text style={styles.sucursalNombre} numberOfLines={1}>
+                        {sucursalActual.nombre}
+                      </Text>
+                      <Text style={styles.sucursalCodigo}>{sucursalActual.codigo} · Toca para ver el panel</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.sucursalEstado}>SIN SUCURSAL</Text>
+                      <Text style={styles.sucursalNombre}>Toca para seleccionar una</Text>
+                    </>
+                  )}
+                </View>
+
+                <Pressable
+                  style={({ pressed: p2 }) => [styles.changeSucursalButton, hardShadow(p2)]}
+                  onPress={handleCambiarSucursal}
+                  android_ripple={RIPPLE}
+                  hitSlop={6}
+                >
+                  <POSIcon name="swap-horizontal" size={18} color={INK} />
+                  <Text style={styles.changeSucursalText}>CAMBIAR</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+        </Pressable>
+
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
 
-          {/* Sucursal Actual */}
-          <View style={styles.seccion}>
-            <Text style={styles.tituloSeccion}>Sucursal Actual</Text>
-            <TouchableOpacity onPress={handleSucursalCardClick} activeOpacity={0.8}>
-              <POSCard
-                style={StyleSheet.flatten([
-                  styles.sucursalCard,
-                  { borderColor: sucursalActual ? COLORS.success : COLORS.danger },
-                ])}
-                variant="elevated"
-              >
-                <View style={styles.sucursalCardContent}>
-                  <View style={[
-                    styles.sucursalIconContainer,
-                    { backgroundColor: sucursalActual ? COLORS.success : COLORS.danger },
-                  ]}>
-                    <POSIcon name="storefront" size={28} color={COLORS.white} />
-                  </View>
-
-                  <View style={styles.sucursalInfo}>
-                    {sucursalActual ? (
-                      <>
-                        <POSBadge label="ACTIVA" variant="success" size="small" />
-                        <Text style={styles.sucursalNombre}>{sucursalActual.nombre}</Text>
-                        <Text style={styles.sucursalCodigo}>{sucursalActual.codigo}</Text>
-                        <Text style={styles.sucursalAccion}>Toca para entrar al panel</Text>
-                      </>
-                    ) : (
-                      <>
-                        <POSBadge label="SIN SELECCIONAR" variant="danger" size="small" />
-                        <Text style={styles.sucursalNombreInactiva}>Toca para seleccionar</Text>
-                      </>
-                    )}
-                  </View>
-
-                  <View style={styles.sucursalActions}>
-                    <TouchableOpacity
-                      style={styles.changeSucursalButton}
-                      onPress={handleCambiarSucursal}
-                      activeOpacity={0.8}
-                    >
-                      <POSIcon name="swap-horizontal" size={18} color={COLORS.primary} />
-                      <Text style={styles.changeSucursalText}>Cambiar</Text>
-                    </TouchableOpacity>
-                    <POSIcon
-                      name="chevron-forward"
-                      size={24}
-                      color={sucursalActual ? COLORS.success : COLORS.danger}
-                    />
-                  </View>
-                </View>
-              </POSCard>
-            </TouchableOpacity>
-          </View>
-
           {/* Gestión */}
           <View style={styles.seccion}>
-            <Text style={styles.tituloSeccion}>Gestión</Text>
+            <Text style={styles.tituloSeccion}>GESTIÓN</Text>
             <View style={styles.modulosGrid}>
-              {MODULOS_PRINCIPALES.map(renderModuloCard)}
+              {MODULOS_PRINCIPALES.map((m) => renderModuloCard(m))}
             </View>
           </View>
 
-          {/* Reportes */}
+          {/* Reportes — jerarquía secundaria: más compactos, misma claridad */}
           <View style={[styles.seccion, styles.ultimaSeccion]}>
-            <Text style={styles.tituloSeccion}>Reportes</Text>
+            <Text style={styles.tituloSeccion}>REPORTES</Text>
             <View style={styles.modulosGrid}>
-              {REPORTES.map(renderModuloCard)}
+              {REPORTES.map((m) => renderModuloCard(m, true))}
             </View>
           </View>
 
@@ -283,16 +307,16 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F1F1EC',
   },
 
-  // ── Header (igual que HomeScreen) ──────────────────────────────────────────
+  // ── Header ────────────────────────────────────────────────────────────────
   header: {
     backgroundColor: COLORS.white,
     padding: 20,
     paddingTop: 60,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: BORDER_W,
+    borderBottomColor: INK,
   },
   headerTop: {
     flexDirection: 'row',
@@ -306,38 +330,109 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   avatarContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: COLORS.primary,
+    borderWidth: BORDER_W,
+    borderColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
   },
   welcomeText: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.6,
     color: COLORS.textSecondary,
     marginBottom: 2,
   },
   roleText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontSize: 19,
+    fontWeight: '800',
+    color: INK,
   },
   logoutButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFEBEE',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFD8D8',
+    borderWidth: BORDER_W,
+    borderColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
   },
   subtitle: {
     fontSize: 14,
+    fontWeight: '600',
     color: COLORS.textSecondary,
     textTransform: 'capitalize',
   },
 
-  // ── Scroll ─────────────────────────────────────────────────────────────────
+  // ── Sucursal — barra fija, alto contraste, un solo tap principal ──────────
+  sucursalCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 16,
+    borderRadius: RADIUS,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+  },
+  sucursalCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  sucursalIconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderWidth: BORDER_W,
+    borderColor: INK,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sucursalInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  sucursalEstado: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    color: INK,
+    opacity: 0.75,
+  },
+  sucursalNombre: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: INK,
+  },
+  sucursalCodigo: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: INK,
+    opacity: 0.75,
+  },
+  changeSucursalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: COLORS.white,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+  },
+  changeSucursalText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: INK,
+  },
+
+  // ── Scroll ────────────────────────────────────────────────────────────────
   scrollView: {
     flex: 1,
   },
@@ -345,7 +440,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  // ── Secciones (igual que HomeScreen) ──────────────────────────────────────
+  // ── Secciones ─────────────────────────────────────────────────────────────
   seccion: {
     padding: 16,
   },
@@ -353,99 +448,60 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   tituloSeccion: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    color: INK,
     marginBottom: 12,
   },
 
-  // ── Sucursal Card ──────────────────────────────────────────────────────────
-  sucursalCard: {
-    padding: 16,
-    borderWidth: 2,
-    borderRadius: 12,
-  },
-  sucursalCardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  sucursalActions: {
-    alignItems: 'flex-end',
-    gap: 6,
-  },
-  changeSucursalButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: '#E3F2FD',
-  },
-  changeSucursalText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  sucursalIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sucursalInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  sucursalNombre: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  sucursalCodigo: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-  },
-  sucursalAccion: {
-    fontSize: 12,
-    color: COLORS.success,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  sucursalNombreInactiva: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.danger,
-    marginTop: 4,
-  },
-
-  // ── Módulos / Reportes Grid ────────────────────────────────────────────────
+  // ── Módulos / Reportes — objetivo táctil grande, color sólido ────────────
   modulosGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 14,
   },
   moduloWrapper: {
-    width: '48%',
+    width: '46.5%',
   },
   moduloCard: {
-    alignItems: 'center',
-    padding: 20,
-    gap: 10,
-    aspectRatio: 1,
+    alignItems: 'flex-start',
+    justifyContent: 'flex-end',
+    padding: 16,
+    gap: 8,
+    minHeight: 132,
+    borderRadius: RADIUS,
+    borderWidth: BORDER_W,
+    borderColor: INK,
+  },
+  moduloCardCompact: {
+    minHeight: 96,
+    padding: 12,
+    gap: 6,
+  },
+  moduloIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderWidth: 2,
+    borderColor: INK,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   moduloTitulo: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.white,
-    textAlign: 'center',
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: INK,
+  },
+  moduloTituloCompact: {
+    fontSize: 13,
   },
   moduloSubtitulo: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
-    textAlign: 'center',
+    fontWeight: '600',
+    color: INK,
+    opacity: 0.75,
   },
 });

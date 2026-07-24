@@ -30,16 +30,23 @@ export interface MaterialState {
   error: string | null;
 }
 
+/**
+ * TODO: campos nuevos para modificar el formulario de creacion de material
+ */
+
 export interface CreateMaterialDTO {
   nombre: string;
   descripcion?: string;
   proveedor?: string;
   categoriaInventario?: string;
   unidadMedida: Unidad;
-  costoUnitario: number;
+  costoUnitario: number;//retirar del formulario , determinar por el calculo
   activo?: boolean;
   perecedero?: boolean;
   diasVencimiento?: number;
+  //Campos nuevo
+  precioMaterial:number;
+  contenidoPaquete:number;
 }
 
 export interface UpdateMaterialDTO {
