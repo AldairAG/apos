@@ -4,6 +4,7 @@ import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -17,12 +18,39 @@ import {
   View,
 } from 'react-native';
 
+/**
+ * TODO[AUTH]: Rediseñar registro
+ * Cambios en el formulario de registro:
+ * - Retirar campo de nombre de usuario (username) y usar email como identificador único.
+ * - Agregar campo de nombre de usuario
+ * - Agregar campo de apellidos de usuario
+ * - Agregar campo de lada 
+ * - Agregar confirmacion de contraseña para evitar errores tipográficos.
+ * - Validar que la contraseña tenga al menos 8 caracteres.
+ * - Validar que el email tenga un formato válido.
+ * - Agregar feedback visual para campos requeridos y errores de validación.
+ * - Agregar los campos nuevo al type de RegistroRequestDTO ubicado en auth.types.ts
+ * - Agregar validación de que el nombre de usuario no contenga caracteres especiales.
+ * - Agregar validación de que el nombre de usuario tenga al menos 3 caracteres.
+ */
+
+// ─────────────────────────────────────────────────────────────────────────
+// Paleta de alto contraste (Neo-Brutalismo + MD3) — misma base que Login
+// ─────────────────────────────────────────────────────────────────────────
+const INK = '#111111';
+const SURFACE = '#FFFFFF';
+const BG = '#F2F1E8';
+const DANGER_BG = '#FFD8D8';
+const SUCCESS = '#1B7A3D';
+
 export default function RegisterScreen() {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [telefono, setTelefono] = useState('');
+  const [username, setUsername] = useState('pp@gmail.com');
+  const [email, setEmail] = useState('pp@gmail.com');
+  const [password, setPassword] = useState('12345678');
+  const [telefono, setTelefono] = useState('5523169875');
   const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [btnPressed, setBtnPressed] = useState(false);
 
   const { loading, error, registro } = useAuth();
 
@@ -35,6 +63,7 @@ export default function RegisterScreen() {
       Alert.alert('Contraseña muy corta', 'Debe tener al menos 8 caracteres.');
       return;
     }
+
     const result = await registro({
       username: username.trim(),
       email: email.trim(),
@@ -42,6 +71,7 @@ export default function RegisterScreen() {
       telefono: telefono.trim(),
       referenciado: '',
     });
+
     if (result.success) {
       Alert.alert('¡Cuenta creada!', 'Tu negocio ya está listo para operar.', [
         { text: 'Continuar', onPress: () => router.replace('/') },
@@ -51,8 +81,9 @@ export default function RegisterScreen() {
     }
   };
 
-  // Campo reutilizable
+  // Campo reutilizable — objetivo táctil grande, borde marcado, estado de foco visible
   const renderField = (
+    key: string,
     label: string,
     icon: string,
     value: string,
@@ -62,22 +93,28 @@ export default function RegisterScreen() {
       keyboard?: any;
       secure?: boolean;
       capitalize?: any;
+      returnKeyType?: any;
+      onSubmitEditing?: () => void;
     }
   ) => (
     <View style={styles.fieldGroup}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.inputWrapper}>
+      <Text style={styles.label}>{label.toUpperCase()}</Text>
+      <View style={[styles.inputWrapper, focusedField === key && styles.inputWrapperActive]}>
         <View style={styles.inputIcon}>
-          <POSIcon name={icon as any} size={18} color={COLORS.textSecondary} />
+          <POSIcon name={icon as any} size={20} color={INK} />
         </View>
         <TextInput
           value={value}
           onChangeText={onChange}
+          onFocus={() => setFocusedField(key)}
+          onBlur={() => setFocusedField(null)}
           placeholder={opts?.placeholder ?? ''}
-          placeholderTextColor={COLORS.textSecondary}
+          placeholderTextColor="#6B6B6B"
           keyboardType={opts?.keyboard ?? 'default'}
           autoCapitalize={opts?.capitalize ?? 'sentences'}
           secureTextEntry={opts?.secure && !showPassword}
+          returnKeyType={opts?.returnKeyType ?? 'next'}
+          onSubmitEditing={opts?.onSubmitEditing}
           style={[styles.input, opts?.secure && styles.inputPassword]}
           editable={!loading}
         />
@@ -85,12 +122,13 @@ export default function RegisterScreen() {
           <TouchableOpacity
             style={styles.eyeButton}
             onPress={() => setShowPassword(!showPassword)}
-            activeOpacity={0.7}
+            activeOpacity={0.6}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <POSIcon
               name={showPassword ? 'eye-off' : 'eye'}
-              size={18}
-              color={COLORS.textSecondary}
+              size={20}
+              color={INK}
             />
           </TouchableOpacity>
         )}
@@ -111,14 +149,11 @@ export default function RegisterScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Cabecera ─────────────────────────────────────────────── */}
+          {/* ── Cabecera: bloque sólido, sin círculos translúcidos ─────── */}
           <View style={styles.header}>
-            <View style={styles.circleTopRight} />
-            <View style={styles.circleBottomLeft} />
-
             <View style={styles.brandContent}>
               <View style={styles.logoContainer}>
-                <POSIcon name="storefront" size={40} color={COLORS.white} />
+                <POSIcon name="storefront" size={36} color={INK} />
               </View>
 
               <POSBadge label="NUEVO NEGOCIO" variant="success" />
@@ -127,84 +162,115 @@ export default function RegisterScreen() {
               <Text style={styles.subtitle}>
                 Configura tu operación en minutos y empieza a vender hoy.
               </Text>
+
+              {/* Trust Design */}
+              <View style={styles.trustRow}>
+                <POSIcon name="shield-checkmark" size={16} color={SUCCESS} />
+                <Text style={styles.trustText}>Registro seguro y sin costo</Text>
+              </View>
             </View>
           </View>
 
           {/* ── Formulario ───────────────────────────────────────────── */}
           <View style={styles.formWrapper}>
-            <POSCard style={styles.card} variant="elevated">
+            <View style={styles.cardShadowLayer}>
+              <View style={styles.card}>
 
-              {renderField(
-                'Nombre de usuario',
-                'person',
-                username,
-                setUsername,
-                { placeholder: 'Taquería El Buen Sabor' }
-              )}
+                {renderField(
+                  'username',
+                  'Nombre de usuario',
+                  'person',
+                  username,
+                  setUsername,
+                  { placeholder: 'Taquería El Buen Sabor' }
+                )}
 
-              {renderField(
-                'Correo',
-                'mail',
-                email,
-                setEmail,
-                { placeholder: 'tu@negocio.com', keyboard: 'email-address', capitalize: 'none' }
-              )}
+                {renderField(
+                  'email',
+                  'Correo',
+                  'mail',
+                  email,
+                  setEmail,
+                  { placeholder: 'tu@negocio.com', keyboard: 'email-address', capitalize: 'none' }
+                )}
 
-              {renderField(
-                'Teléfono',
-                'call',
-                telefono,
-                setTelefono,
-                { placeholder: '5551234567', keyboard: 'phone-pad', capitalize: 'none' }
-              )}
+                {renderField(
+                  'telefono',
+                  'Teléfono',
+                  'call',
+                  telefono,
+                  setTelefono,
+                  { placeholder: '5551234567', keyboard: 'phone-pad', capitalize: 'none' }
+                )}
 
-              {renderField(
-                'Contraseña',
-                'lock-closed',
-                password,
-                setPassword,
-                { placeholder: 'Mínimo 8 caracteres', secure: true, capitalize: 'none' }
-              )}
+                {renderField(
+                  'password',
+                  'Contraseña',
+                  'lock-closed',
+                  password,
+                  setPassword,
+                  {
+                    placeholder: 'Mínimo 8 caracteres',
+                    secure: true,
+                    capitalize: 'none',
+                    returnKeyType: 'go',
+                    onSubmitEditing: handleRegistro,
+                  }
+                )}
 
-              {/* Error */}
-              {error && (
-                <View style={styles.errorContainer}>
-                  <POSIcon name="alert-circle" size={16} color={COLORS.danger} />
-                  <Text style={styles.errorText}>{error}</Text>
-                </View>
-              )}
-
-              {/* Botón */}
-              <Pressable
-                style={({ pressed }) => [
-                  styles.primaryButton,
-                  pressed && styles.pressed,
-                  loading && styles.buttonDisabled,
-                ]}
-                onPress={handleRegistro}
-                disabled={loading}
-              >
-                {loading ? (
-                  <Text style={styles.primaryButtonText}>Creando cuenta...</Text>
-                ) : (
-                  <View style={styles.buttonContent}>
-                    <Text style={styles.primaryButtonText}>Crear cuenta</Text>
-                    <POSIcon name="arrow-forward" size={18} color={COLORS.white} />
+                {/* Error — bloque sólido, alto contraste */}
+                {error && (
+                  <View style={styles.errorContainer}>
+                    <POSIcon name="alert-circle" size={20} color={INK} />
+                    <Text style={styles.errorText}>{error}</Text>
                   </View>
                 )}
-              </Pressable>
 
-              {/* Link a login */}
-              <View style={styles.switchRow}>
-                <Text style={styles.switchText}>¿Ya tienes cuenta?</Text>
-                <Link href="/login" asChild>
-                  <Pressable>
-                    <Text style={styles.switchLink}>Inicia sesión</Text>
-                  </Pressable>
-                </Link>
+                {/* Botón — feedback de presión inmediato */}
+                <Pressable
+                  onPressIn={() => setBtnPressed(true)}
+                  onPressOut={() => setBtnPressed(false)}
+                  onPress={handleRegistro}
+                  disabled={loading}
+                  style={styles.buttonShadowLayer}
+                >
+                  <View
+                    style={[
+                      styles.primaryButton,
+                      btnPressed && styles.primaryButtonPressed,
+                      loading && styles.buttonDisabled,
+                    ]}
+                  >
+                    {loading ? (
+                      <View style={styles.buttonContent}>
+                        <ActivityIndicator color={SURFACE} />
+                        <Text style={styles.primaryButtonText}>CREANDO CUENTA...</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.buttonContent}>
+                        <Text style={styles.primaryButtonText}>CREAR CUENTA</Text>
+                        <POSIcon name="arrow-forward" size={20} color={SURFACE} />
+                      </View>
+                    )}
+                  </View>
+                </Pressable>
+
+                {/* Seguridad psicológica: qué pasa después, sin sorpresas */}
+                <Text style={styles.helperNote}>
+                  Tu contraseña se guarda cifrada. Puedes cambiarla cuando quieras.
+                </Text>
+
+                {/* Link a login */}
+                <View style={styles.switchRow}>
+                  <Text style={styles.switchText}>¿Ya tienes cuenta?</Text>
+                  <Link href="/login" asChild>
+                    <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Text style={styles.switchLink}>INICIA SESIÓN</Text>
+                    </Pressable>
+                  </Link>
+                </View>
               </View>
-
-            </POSCard>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -215,7 +281,7 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: BG,
   },
   flex: {
     flex: 1,
@@ -224,159 +290,202 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
 
-  // ── Cabecera ──────────────────────────────────────────────────────────────
+  // ── Cabecera: color sólido plano, borde inferior marcado ────────────────
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: 60,
-    paddingBottom: 80,
+    paddingTop: 56,
+    paddingBottom: 32,
     paddingHorizontal: 24,
-    overflow: 'hidden',
-  },
-  circleTopRight: {
-    position: 'absolute',
-    top: -60,
-    right: -60,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  circleBottomLeft: {
-    position: 'absolute',
-    bottom: -40,
-    left: -40,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderBottomWidth: 4,
+    borderBottomColor: INK,
   },
   brandContent: {
     gap: 10,
   },
   logoContainer: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    backgroundColor: SURFACE,
+    borderWidth: 3,
+    borderColor: INK,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 4,
   },
   title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: COLORS.white,
-    lineHeight: 38,
+    fontSize: 30,
+    fontWeight: '900',
+    color: SURFACE,
+    lineHeight: 34,
   },
   subtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.75)',
+    fontWeight: '600',
+    color: SURFACE,
     lineHeight: 20,
+  },
+  trustRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    backgroundColor: SURFACE,
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: INK,
+  },
+  trustText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: INK,
   },
 
   // ── Formulario ────────────────────────────────────────────────────────────
   formWrapper: {
-    marginTop: -48,
     paddingHorizontal: 20,
+    paddingTop: 24,
     paddingBottom: 40,
   },
-  card: {
-    padding: 24,
-    gap: 14,
+  cardShadowLayer: {
+    backgroundColor: INK,
     borderRadius: 20,
+  },
+  card: {
+    backgroundColor: SURFACE,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: INK,
+    padding: 24,
+    gap: 16,
+    marginRight: 6,
+    marginBottom: 6,
   },
 
   // ── Campos ────────────────────────────────────────────────────────────────
   fieldGroup: {
-    gap: 6,
+    gap: 8,
   },
   label: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    color: INK,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderWidth: 2.5,
+    borderColor: INK,
     borderRadius: 12,
-    backgroundColor: '#FAFAFA',
-    paddingHorizontal: 12,
+    backgroundColor: BG,
+    paddingHorizontal: 14,
+    minHeight: 56,
+  },
+  inputWrapperActive: {
+    backgroundColor: SURFACE,
+    borderColor: COLORS.primary,
+    borderWidth: 3,
   },
   inputIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   input: {
     flex: 1,
-    fontSize: 15,
-    color: COLORS.text,
-    paddingVertical: 13,
+    fontSize: 16,
+    fontWeight: '600',
+    color: INK,
+    paddingVertical: 14,
   },
   inputPassword: {
     paddingRight: 8,
   },
   eyeButton: {
-    padding: 4,
+    padding: 6,
   },
 
   // ── Error ─────────────────────────────────────────────────────────────────
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FFF0F0',
-    borderRadius: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#FFCCCC',
+    gap: 10,
+    backgroundColor: DANGER_BG,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 2.5,
+    borderColor: INK,
   },
   errorText: {
-    color: COLORS.danger,
-    fontSize: 13,
+    color: INK,
+    fontSize: 14,
+    fontWeight: '700',
     flex: 1,
   },
 
   // ── Botón ─────────────────────────────────────────────────────────────────
+  buttonShadowLayer: {
+    backgroundColor: INK,
+    borderRadius: 14,
+    marginTop: 6,
+  },
   primaryButton: {
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    paddingVertical: 15,
+    borderRadius: 14,
+    borderWidth: 3,
+    borderColor: INK,
+    paddingVertical: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    minHeight: 60,
+    marginRight: 6,
+    marginBottom: 6,
+  },
+  primaryButtonPressed: {
+    marginRight: 0,
+    marginBottom: 0,
+    opacity: 0.92,
   },
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   primaryButtonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  pressed: {
-    opacity: 0.85,
+    color: SURFACE,
+    fontSize: 17,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
 
-  // ── Registro ──────────────────────────────────────────────────────────────
+  helperNote: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4A4A4A',
+    textAlign: 'center',
+  },
+
+  // ── Link a login ────────────────────────────────────────────────────────
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
+    marginTop: 4,
   },
   switchText: {
-    color: COLORS.textSecondary,
+    color: '#4A4A4A',
     fontSize: 13,
+    fontWeight: '600',
   },
   switchLink: {
     color: COLORS.primary,
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '900',
   },
 });

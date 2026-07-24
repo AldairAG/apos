@@ -15,4 +15,5 @@ public interface MovimientoCajaService {
     List<MovimientoCaja> obtenerMovimientosPorMetodoPago(Long idCaja, MetodoPago metodoPago);
     List<MovimientoCaja> obtenerMovimientosPorFecha(Long idCaja, LocalDateTime fechaInicio, LocalDateTime fechaFin);
     MovimientoCaja aprobarMovimiento(Long id, Long idAutorizador);
+    List<MovimientoCaja> obtenerMovimientosPorCajaIdYFechas(Long idCaja, LocalDateTime fechaInicio, LocalDateTime fechaFin);
 }

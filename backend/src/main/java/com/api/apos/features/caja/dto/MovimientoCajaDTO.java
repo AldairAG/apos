@@ -25,5 +25,11 @@ public class MovimientoCajaDTO {
     private Long cajaId;
     private Long empleadoId;
     private Long ordenId;
+    private restockDTO restock;
 
+    @Data   
+    public static class restockDTO {
+        private Long materialId;
+        private BigDecimal cantidad;
+    }
 }

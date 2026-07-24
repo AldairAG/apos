@@ -32,7 +32,7 @@ public class UsuarioController {
                         .body(new ApiResponseWrapper<>(false, null, "Email y password son requeridos"));
             }
 
-            JwtResponse response = usuarioService.registrarUsuario(email, password);
+            JwtResponse response = usuarioService.registrarUsuario(request);
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, response, null));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
