@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/cajas")
+@RequestMapping("/api/caja")
 public class CajaController {
 
     private final CajaService cajaService;

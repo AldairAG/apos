@@ -5,6 +5,7 @@ export interface Caja {
     id: number;
     nombre: string;
     activa: boolean;
+    estado: EstadoCaja;
     movimientos: MovimientoCaja[];
 }
 
@@ -38,6 +39,11 @@ export enum TipoConceptoMovimiento {
     OTRO = "OTRO",
 }
 
+export enum EstadoCaja {
+    ABIERTA = "ABIERTA",
+    CERRADA = "CERRADA"
+}
+
 
 export interface CrearCajaRequest {
     nombre: string;
@@ -49,7 +55,7 @@ export interface CajaState {
     cajas: Caja[];
     cajaSeleccionada: Caja | null;
     MovimientosCaja: MovimientoCaja[];
-    corteActual: Corte | null;
+    corteActual: Corte;
     loading: boolean;
     error: string | null;
 }

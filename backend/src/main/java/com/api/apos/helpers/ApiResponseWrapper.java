@@ -3,12 +3,12 @@ package com.api.apos.helpers;
 public class ApiResponseWrapper<T> {
     private boolean success;
     private T data;
-    private String error;
+    private String message;
 
-    public ApiResponseWrapper(boolean success, T data, String error) {
+    public ApiResponseWrapper(boolean success, T data, String message) {
         this.success = success;
         this.data = data;
-        this.error = error;
+        this.message = message;
     }
 
     public boolean isSuccess() {
@@ -27,12 +27,12 @@ public class ApiResponseWrapper<T> {
         this.data = data;
     }
 
-    public String getError() {
-        return error;
+    public String getMessage() {
+        return message;
     }
 
-    public void setError(String error) {
-        this.error = error;
+    public void setMessage(String message) {
+        this.message = message;
     }
     
 }

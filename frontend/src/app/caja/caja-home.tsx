@@ -1,6 +1,7 @@
- import {
+import {
   AgregarMovimientoModal,
   CorteCajaModal,
+  CrearCajaModal,
   DetalleMovimientoModal,
   MovimientoListItem,
   PieChartCaja,
@@ -10,19 +11,17 @@ import {
   calcularDistribucionPorCategoria,
   calcularResumen,
   getMovimientosDeHoy,
-  MOCK_CAJAS,
-  MOCK_MOVIMIENTOS,
   MOCK_SALDO_INICIAL,
-  MOCK_USUARIOS,
+  MOCK_USUARIOS
 } from '@/features/caja/caja/caja.mock';
 import {
-  Caja,
   MovimientoCaja,
   TipoConceptoMovimiento,
-  TipoMovimientoCaja,
+  TipoMovimientoCaja
 } from '@/features/caja/caja/caja.types';
+import useCaja from '@/features/caja/caja/useCaja';
 import { MetodoPago } from '@/types/pos.types';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -44,27 +43,35 @@ const FECHA_HOY = new Date().toLocaleDateString('es-MX', {
 let siguienteMovimientoId = 1000;
 
 export default function CajaHome() {
-  // ─── Estado local (mock) ─────────────────────────────────────────────
-  // TODO Redux/API: reemplazar por useSelector/useDispatch cuando exista
-  // el slice de caja conectado al backend.
-  const [cajas, setCajas] = useState<Caja[]>(MOCK_CAJAS);
-  const [movimientos, setMovimientos] = useState<MovimientoCaja[]>(MOCK_MOVIMIENTOS);
-  const [cajaSeleccionadaId, setCajaSeleccionadaId] = useState<number>(MOCK_CAJAS[0].id);
+  const {
+    cajas,
+    MovimientosCaja,
+    cajaSeleccionada,
+    crearCaja,
+    loading,
+    sucursalActual, 
+    fetchCajasBySucursal,
+  } = useCaja();
 
   const [tab, setTab] = useState<TabResumen>('ingresos');
-  const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<MovimientoCaja | null>(
-    null
-  );
+  const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<MovimientoCaja | null>(null);
   const [corteModalVisible, setCorteModalVisible] = useState(false);
   const [modalMovimientoTipo, setModalMovimientoTipo] = useState<TipoMovimientoCaja | null>(null);
+  const [modalCrearCaja, setModalCrearCaja] = useState(false);
+
+  useEffect(() => {
+    if (sucursalActual) {
+      fetchCajasBySucursal(sucursalActual.id);
+    }
+  }, [sucursalActual]);
 
   // ─── Datos derivados ──────────────────────────────────────────────────
-  const cajaActual = cajas.find((c) => c.id === cajaSeleccionadaId)!;
-  const saldoInicial = MOCK_SALDO_INICIAL[cajaSeleccionadaId] ?? 0;
+  const cajaActual = cajaSeleccionada!;
+  const saldoInicial = MOCK_SALDO_INICIAL[cajaSeleccionada?.id ?? 0] ?? 0;
 
   const movimientosDeHoy = useMemo(
-    () => getMovimientosDeHoy(movimientos, cajaSeleccionadaId),
-    [movimientos, cajaSeleccionadaId]
+    () => getMovimientosDeHoy(MovimientosCaja, cajaSeleccionada?.id ?? 0),
+    [MovimientosCaja, cajaSeleccionada?.id]
   );
 
   const resumen = useMemo(
@@ -84,10 +91,6 @@ export default function CajaHome() {
   // ─── Acciones (mock) ──────────────────────────────────────────────────
   const abrirCaja = () => {
     // TODO Redux/API: dispatch(abrirCajaThunk(cajaSeleccionadaId))
-    setCajas((prev) =>
-      prev.map((c) => (c.id === cajaSeleccionadaId ? { ...c, activa: true } : c))
-    );
-    Alert.alert('Caja abierta', `${cajaActual.nombre} se abrió correctamente.`);
   };
 
   const cerrarCaja = () => {
@@ -98,9 +101,7 @@ export default function CajaHome() {
         style: 'destructive',
         onPress: () => {
           // TODO Redux/API: dispatch(cerrarCajaThunk(cajaSeleccionadaId))
-          setCajas((prev) =>
-            prev.map((c) => (c.id === cajaSeleccionadaId ? { ...c, activa: false } : c))
-          );
+          // TODO Redux/API: dispatch(cerrarCajaThunk(cajaSeleccionadaId))
         },
       },
     ]);
@@ -128,27 +129,84 @@ export default function CajaHome() {
       fecha: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       createdBy: 1,
-      cajaId: cajaSeleccionadaId,
+      cajaId: cajaSeleccionada?.id || 0,
       empleadoId: 1,
       ordenId: 0,
     };
-    setMovimientos((prev) => [...prev, nuevo]);
     setModalMovimientoTipo(null);
   };
 
   const confirmarCorte = (saldoContado: number, diferencia: number) => {
     // TODO Redux/API: dispatch(generarCorteThunk({ cajaId, saldoContado, diferencia }))
     setCorteModalVisible(false);
-    setCajas((prev) =>
-      prev.map((c) => (c.id === cajaSeleccionadaId ? { ...c, activa: false } : c))
-    );
     Alert.alert(
       'Corte generado',
-      `Saldo contado: $${saldoContado.toFixed(2)}\nDiferencia: ${
-        diferencia >= 0 ? '+' : ''
+      `Saldo contado: $${saldoContado.toFixed(2)}\nDiferencia: ${diferencia >= 0 ? '+' : ''
       }$${diferencia.toFixed(2)}`
     );
   };
+
+  const handleCrearCaja = async (nombre: string) => {
+    if (!sucursalActual) {
+      Alert.alert('Error', 'No se ha seleccionado una sucursal');
+      return;
+    }
+
+    try {
+      await crearCaja({
+        nombre,
+        activa: true,
+        sucursalId: sucursalActual.id,
+      });
+      setModalCrearCaja(false);
+      Alert.alert('Éxito', 'Caja creada correctamente');
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo crear la caja. Intenta de nuevo.');
+    }
+  };
+
+  if(loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ textAlign: 'center', marginTop: 20 }}>Cargando cajas...</Text>
+      </View>
+    );
+  }
+
+  // Vista cuando no hay cajas
+  if (cajas.length === 0) {
+    return (
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <Text style={styles.tituloPantalla}>Caja</Text>
+          </View>
+
+          <POSCard style={styles.estadoVacioCard} variant="elevated">
+            <View style={styles.estadoVacioIcono}>
+              <POSIcon name="cash-outline" size={64} color={COLORS.primary} />
+            </View>
+            <Text style={styles.estadoVacioTitulo}>No hay cajas configuradas</Text>
+            <Text style={styles.estadoVacioTexto}>
+              Para comenzar a registrar movimientos de efectivo, primero necesitas crear al menos una caja.
+            </Text>
+            <POSButton
+              title="Crear mi primera caja"
+              size="large"
+              fullWidth
+              onPress={() => setModalCrearCaja(true)}
+            />
+          </POSCard>
+        </ScrollView>
+
+        <CrearCajaModal
+          visible={modalCrearCaja}
+          onCancelar={() => setModalCrearCaja(false)}
+          onCrear={handleCrearCaja}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -167,14 +225,14 @@ export default function CajaHome() {
                 key={c.id}
                 style={[
                   styles.selectorChip,
-                  c.id === cajaSeleccionadaId && styles.selectorChipActivo,
+                  c.id === cajaSeleccionada?.id && styles.selectorChipActivo,
                 ]}
-                onPress={() => setCajaSeleccionadaId(c.id)}
+                onPress={() => { }}
               >
                 <Text
                   style={[
                     styles.selectorChipTexto,
-                    c.id === cajaSeleccionadaId && styles.selectorChipTextoActivo,
+                    c.id === cajaSeleccionada?.id && styles.selectorChipTextoActivo,
                   ]}
                 >
                   {c.nombre}
@@ -185,8 +243,8 @@ export default function CajaHome() {
 
           <View style={styles.headerInfoRow}>
             <POSBadge
-              label={cajaActual.activa ? 'Abierta' : 'Cerrada'}
-              variant={cajaActual.activa ? 'success' : 'danger'}
+              label={cajaActual.estado === 'ABIERTA' ? 'Abierta' : 'Cerrada'}
+              variant={cajaActual.estado === 'ABIERTA' ? 'success' : 'danger'}
             />
             <Text style={styles.fecha}>{FECHA_HOY}</Text>
           </View>
@@ -358,6 +416,13 @@ export default function CajaHome() {
         onCancelar={() => setCorteModalVisible(false)}
         onConfirmar={confirmarCorte}
       />
+
+      {/* Modal crear caja */}
+      <CrearCajaModal
+        visible={modalCrearCaja}
+        onCancelar={() => setModalCrearCaja(false)}
+        onCrear={handleCrearCaja}
+      />
     </View>
   );
 }
@@ -504,6 +569,35 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.text,
     textAlign: 'center',
+  },
+  estadoVacioCard: {
+    alignItems: 'center',
+    gap: 16,
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+    marginTop: 40,
+  },
+  estadoVacioIcono: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#E6F2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  estadoVacioTitulo: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  estadoVacioTexto: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 8,
   },
 });
 

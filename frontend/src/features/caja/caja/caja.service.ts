@@ -1,6 +1,6 @@
 import { apiBase } from '@/api/apiBase';
 import { Caja, CrearCajaRequest, MovimientoCaja } from './caja.types';
-const CAJA_BASE_URL = '/api/caja';
+const CAJA_BASE_URL = '/caja';
 
 const unwrapResponseData = <T>(response: any): T => {
     if (response?.data && typeof response.data === 'object' && 'data' in response.data && response.data.data !== undefined) {
