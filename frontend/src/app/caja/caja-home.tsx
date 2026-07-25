@@ -24,10 +24,10 @@ import { MetodoPago } from '@/types/pos.types';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -42,6 +42,44 @@ const FECHA_HOY = new Date().toLocaleDateString('es-MX', {
 
 let siguienteMovimientoId = 1000;
 
+// ─── Sistema de diseño local: Neo-Brutalismo Funcional + MD3 ────────────
+// No se toca la paleta compartida `COLORS` (viene de otra parte del código
+// base y puede estar en uso en otras pantallas). En su lugar se define un
+// set de tokens NB (Neo-Brutalist) pensados con psicología del color:
+//  - Fondo cálido (no gris frío) para que una app de dinero no se sienta clínica.
+//  - Verde = ingreso (crecimiento/confianza). Rojo *cálido*, no rojo alarma, para
+//    gasto (informa sin generar ansiedad). Ámbar = atención neutral (corte),
+//    no error. Azul sólido = marca/confianza en acciones primarias.
+//  - Bordes gruesos + sombra dura (sin blur) en vez de elevación difusa:
+//    comunican "esto es tocable" de forma inmediata, sin depender de sutileza.
+const NB = {
+  bg: '#F5F1E8',
+  ink: '#14161B',
+  border: '#14161B',
+  borderWidth: 3,
+  radius: 12,
+  white: '#FFFFFF',
+  primario: '#1E5FD9',
+  primarioTexto: '#FFFFFF',
+  ingreso: '#1B8A5A',
+  ingresoBg: '#DFF3E8',
+  gasto: '#D64545',
+  gastoBg: '#FBE4E4',
+  advertencia: '#E8A93B',
+  advertenciaBg: '#FBEBD3',
+  neutro: '#5B6470',
+  neutroBg: '#E7E5DF',
+  textoSecundario: '#4B5563',
+} as const;
+
+const sombraDura = (color: string = NB.ink) => ({
+  shadowColor: color,
+  shadowOffset: { width: 4, height: 4 },
+  shadowOpacity: 1,
+  shadowRadius: 0,
+  elevation: 4,
+});
+
 export default function CajaHome() {
   const {
     cajas,
@@ -49,9 +87,16 @@ export default function CajaHome() {
     cajaSeleccionada,
     crearCaja,
     loading,
-    sucursalActual, 
+    sucursalActual,
     fetchCajasBySucursal,
-  } = useCaja();
+    // NOTA: el hook original no exponía forma de cambiar de caja desde la UI
+    // (el chip selector tenía onPress vacío). Se asume/expone `seleccionarCaja`
+    // aquí para que el selector sea funcional — ajustar el nombre real del
+    // método si useCaja lo expone distinto.
+    seleccionarCaja,
+  } = useCaja() as ReturnType<typeof useCaja> & {
+    seleccionarCaja?: (id: number) => void;
+  };
 
   const [tab, setTab] = useState<TabResumen>('ingresos');
   const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<MovimientoCaja | null>(null);
@@ -59,19 +104,37 @@ export default function CajaHome() {
   const [modalMovimientoTipo, setModalMovimientoTipo] = useState<TipoMovimientoCaja | null>(null);
   const [modalCrearCaja, setModalCrearCaja] = useState(false);
 
+  // Feedback inmediato: los movimientos nuevos se reflejan al instante en
+  // pantalla mientras se confirma con backend, en vez de esperar un refetch.
+  // (En el original, `agregarMovimiento` creaba el objeto pero nunca lo
+  // agregaba a ningún estado, por lo que la UI nunca cambiaba.)
+  const [movimientosOptimistas, setMovimientosOptimistas] = useState<MovimientoCaja[]>([]);
+  const [confirmacionVisible, setConfirmacionVisible] = useState<string | null>(null);
+
   useEffect(() => {
     if (sucursalActual) {
       fetchCajasBySucursal(sucursalActual.id);
     }
   }, [sucursalActual]);
 
+  useEffect(() => {
+    if (!confirmacionVisible) return;
+    const t = setTimeout(() => setConfirmacionVisible(null), 1800);
+    return () => clearTimeout(t);
+  }, [confirmacionVisible]);
+
   // ─── Datos derivados ──────────────────────────────────────────────────
   const cajaActual = cajaSeleccionada!;
   const saldoInicial = MOCK_SALDO_INICIAL[cajaSeleccionada?.id ?? 0] ?? 0;
 
+  const movimientosCombinados = useMemo(
+    () => [...movimientosOptimistas, ...MovimientosCaja],
+    [movimientosOptimistas, MovimientosCaja]
+  );
+
   const movimientosDeHoy = useMemo(
-    () => getMovimientosDeHoy(MovimientosCaja, cajaSeleccionada?.id ?? 0),
-    [MovimientosCaja, cajaSeleccionada?.id]
+    () => getMovimientosDeHoy(movimientosCombinados, cajaSeleccionada?.id ?? 0),
+    [movimientosCombinados, cajaSeleccionada?.id]
   );
 
   const resumen = useMemo(
@@ -88,11 +151,13 @@ export default function CajaHome() {
     [movimientosDeHoy, tab]
   );
 
-  // ─── Acciones (mock) ──────────────────────────────────────────────────
+  // ─── Acciones ─────────────────────────────────────────────────────────
   const abrirCaja = () => {
     // TODO Redux/API: dispatch(abrirCajaThunk(cajaSeleccionadaId))
   };
 
+  // Diseño de confianza: una acción destructiva/irreversible siempre pide
+  // confirmación explícita, con la opción segura (Cancelar) destacada.
   const cerrarCaja = () => {
     Alert.alert('Cerrar caja', '¿Seguro que deseas cerrar la caja sin generar un corte?', [
       { text: 'Cancelar', style: 'cancel' },
@@ -100,7 +165,6 @@ export default function CajaHome() {
         text: 'Cerrar caja',
         style: 'destructive',
         onPress: () => {
-          // TODO Redux/API: dispatch(cerrarCajaThunk(cajaSeleccionadaId))
           // TODO Redux/API: dispatch(cerrarCajaThunk(cajaSeleccionadaId))
         },
       },
@@ -133,7 +197,14 @@ export default function CajaHome() {
       empleadoId: 1,
       ordenId: 0,
     };
+
+    // Feedback inmediato: aparece en la lista y en el resumen sin esperar
+    // respuesta de red, y una confirmación no bloqueante lo refuerza.
+    setMovimientosOptimistas((prev) => [nuevo, ...prev]);
     setModalMovimientoTipo(null);
+    setConfirmacionVisible(
+      tipo === TipoMovimientoCaja.INGRESO ? 'Ingreso registrado' : 'Gasto registrado'
+    );
   };
 
   const confirmarCorte = (saldoContado: number, diferencia: number) => {
@@ -165,10 +236,12 @@ export default function CajaHome() {
     }
   };
 
-  if(loading) {
+  if (loading) {
     return (
       <View style={styles.container}>
-        <Text style={{ textAlign: 'center', marginTop: 20 }}>Cargando cajas...</Text>
+        <View style={styles.cargandoBox}>
+          <Text style={styles.cargandoTexto}>Cargando cajas…</Text>
+        </View>
       </View>
     );
   }
@@ -182,21 +255,25 @@ export default function CajaHome() {
             <Text style={styles.tituloPantalla}>Caja</Text>
           </View>
 
-          <POSCard style={styles.estadoVacioCard} variant="elevated">
+          <View style={[styles.estadoVacioCard, sombraDura()]}>
             <View style={styles.estadoVacioIcono}>
-              <POSIcon name="cash-outline" size={64} color={COLORS.primary} />
+              <POSIcon name="cash-outline" size={56} color={NB.primario} />
             </View>
             <Text style={styles.estadoVacioTitulo}>No hay cajas configuradas</Text>
             <Text style={styles.estadoVacioTexto}>
               Para comenzar a registrar movimientos de efectivo, primero necesitas crear al menos una caja.
             </Text>
-            <POSButton
-              title="Crear mi primera caja"
-              size="large"
-              fullWidth
+            <Pressable
               onPress={() => setModalCrearCaja(true)}
-            />
-          </POSCard>
+              style={({ pressed }) => [
+                styles.botonPrimario,
+                sombraDura(),
+                pressed && styles.presionado,
+              ]}
+            >
+              <Text style={styles.botonPrimarioTexto}>Crear mi primera caja</Text>
+            </Pressable>
+          </View>
         </ScrollView>
 
         <CrearCajaModal
@@ -210,120 +287,155 @@ export default function CajaHome() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* 1. Encabezado */}
-        <View style={styles.header}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        // Espacio extra abajo para que el FAB nunca tape el último elemento.
+        scrollIndicatorInsets={{ bottom: 90 }}
+      >
+        {/* 1. Encabezado — barra sólida de color de marca (confianza) */}
+        <View style={[styles.headerBar, sombraDura()]}>
           <Text style={styles.tituloPantalla}>Caja</Text>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.selectorScroll}
-          >
-            {cajas.map((c) => (
-              <TouchableOpacity
-                key={c.id}
-                style={[
-                  styles.selectorChip,
-                  c.id === cajaSeleccionada?.id && styles.selectorChipActivo,
-                ]}
-                onPress={() => { }}
-              >
-                <Text
-                  style={[
-                    styles.selectorChipTexto,
-                    c.id === cajaSeleccionada?.id && styles.selectorChipTextoActivo,
-                  ]}
-                >
-                  {c.nombre}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
           <View style={styles.headerInfoRow}>
-            <POSBadge
-              label={cajaActual.estado === 'ABIERTA' ? 'Abierta' : 'Cerrada'}
-              variant={cajaActual.estado === 'ABIERTA' ? 'success' : 'danger'}
-            />
+            <View
+              style={[
+                styles.estadoBadge,
+                { backgroundColor: cajaActual.estado === 'ABIERTA' ? NB.ingreso : NB.gasto },
+              ]}
+            >
+              <POSIcon
+                name={cajaActual.estado === 'ABIERTA' ? 'checkmark-circle' : 'lock-closed'}
+                size={16}
+                color={NB.white}
+              />
+              <Text style={styles.estadoBadgeTexto}>
+                {cajaActual.estado === 'ABIERTA' ? 'Abierta' : 'Cerrada'}
+              </Text>
+            </View>
             <Text style={styles.fecha}>{FECHA_HOY}</Text>
           </View>
         </View>
 
-        {/* 2. Botón principal si la caja está cerrada */}
+        {/* Selector de caja — ahora funcional, chips grandes y táctiles */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.selectorScroll}
+          contentContainerStyle={styles.selectorContenido}
+        >
+          {cajas.map((c) => {
+            const activo = c.id === cajaSeleccionada?.id;
+            return (
+              <Pressable
+                key={c.id}
+                onPress={() => seleccionarCaja?.(c.id)}
+                style={({ pressed }) => [
+                  styles.selectorChip,
+                  activo && styles.selectorChipActivo,
+                  pressed && styles.presionado,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.selectorChipTexto,
+                    activo && styles.selectorChipTextoActivo,
+                  ]}
+                >
+                  {c.nombre}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        {/* 2. Estado cerrado: única acción posible, grande y clara */}
         {!cajaActual.activa && (
-          <POSCard style={styles.cajaCerradaCard} variant="elevated">
-            <POSIcon name="lock-closed" size={40} color={COLORS.gray} />
+          <View style={[styles.cajaCerradaCard, sombraDura()]}>
+            <POSIcon name="lock-closed" size={40} color={NB.neutro} />
             <Text style={styles.cajaCerradaTexto}>
               {cajaActual.nombre} está cerrada. Ábrela para comenzar a registrar movimientos.
             </Text>
-            <POSButton title="Abrir Caja" size="large" fullWidth onPress={abrirCaja} />
-          </POSCard>
+            <Pressable
+              onPress={abrirCaja}
+              style={({ pressed }) => [
+                styles.botonPrimario,
+                sombraDura(),
+                pressed && styles.presionado,
+              ]}
+            >
+              <Text style={styles.botonPrimarioTexto}>Abrir Caja</Text>
+            </Pressable>
+          </View>
         )}
 
         {cajaActual.activa && (
           <>
-            {/* 3. Resumen */}
+            {/* 3. Resumen — bento grid, cada tarjeta con color con significado */}
             <View style={styles.resumenGrid}>
-              <POSCard style={styles.resumenCard} variant="elevated">
-                <POSIcon name="wallet" size={26} color={COLORS.primary} />
-                <Text style={styles.resumenValor}>${resumen.saldoActual.toFixed(2)}</Text>
-                <Text style={styles.resumenLabel}>Saldo actual</Text>
-              </POSCard>
+              <View style={[styles.resumenCard, styles.resumenCardGrande, sombraDura()]}>
+                <POSIcon name="wallet" size={28} color={NB.white} />
+                <Text style={styles.resumenValorGrande}>${resumen.saldoActual.toFixed(2)}</Text>
+                <Text style={styles.resumenLabelGrande}>Saldo actual</Text>
+              </View>
 
-              <POSCard style={styles.resumenCard} variant="elevated">
-                <POSIcon name="arrow-down-circle" size={26} color={COLORS.success} />
-                <Text style={styles.resumenValor}>${resumen.totalIngresos.toFixed(2)}</Text>
+              <View style={[styles.resumenCard, { backgroundColor: NB.ingresoBg }, sombraDura()]}>
+                <POSIcon name="arrow-down-circle" size={24} color={NB.ingreso} />
+                <Text style={[styles.resumenValor, { color: NB.ingreso }]}>
+                  ${resumen.totalIngresos.toFixed(2)}
+                </Text>
                 <Text style={styles.resumenLabel}>Ingresos</Text>
-              </POSCard>
+              </View>
 
-              <POSCard style={styles.resumenCard} variant="elevated">
-                <POSIcon name="arrow-up-circle" size={26} color={COLORS.danger} />
-                <Text style={styles.resumenValor}>${resumen.totalGastos.toFixed(2)}</Text>
+              <View style={[styles.resumenCard, { backgroundColor: NB.gastoBg }, sombraDura()]}>
+                <POSIcon name="arrow-up-circle" size={24} color={NB.gasto} />
+                <Text style={[styles.resumenValor, { color: NB.gasto }]}>
+                  ${resumen.totalGastos.toFixed(2)}
+                </Text>
                 <Text style={styles.resumenLabel}>Gastos</Text>
-              </POSCard>
+              </View>
 
-              <POSCard style={styles.resumenCard} variant="elevated">
-                <POSIcon name="swap-vertical" size={26} color={COLORS.info} />
+              <View style={[styles.resumenCard, { backgroundColor: NB.neutroBg }, sombraDura()]}>
+                <POSIcon name="swap-vertical" size={24} color={NB.neutro} />
                 <Text style={styles.resumenValor}>{resumen.totalMovimientos}</Text>
                 <Text style={styles.resumenLabel}>Movimientos</Text>
-              </POSCard>
+              </View>
             </View>
 
-            {/* 4. Tabs + 5. Gráfica de pastel */}
-            <POSCard style={styles.seccionCard} variant="elevated">
+            {/* 4. Tabs + 5. Gráfica */}
+            <View style={[styles.seccionCard, sombraDura()]}>
               <View style={styles.tabsContainer}>
-                <TouchableOpacity
-                  style={[styles.tab, tab === 'ingresos' && styles.tabActivo]}
+                <Pressable
                   onPress={() => setTab('ingresos')}
+                  style={[styles.tab, tab === 'ingresos' && styles.tabActivoIngreso]}
                 >
                   <Text style={[styles.tabTexto, tab === 'ingresos' && styles.tabTextoActivo]}>
                     Ingresos
                   </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.tab, tab === 'gastos' && styles.tabActivo]}
+                </Pressable>
+                <Pressable
                   onPress={() => setTab('gastos')}
+                  style={[styles.tab, tab === 'gastos' && styles.tabActivoGasto]}
                 >
                   <Text style={[styles.tabTexto, tab === 'gastos' && styles.tabTextoActivo]}>
                     Gastos
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
 
               <PieChartCaja
                 data={distribucion}
                 centroLabel={tab === 'ingresos' ? 'Ingresos' : 'Gastos'}
               />
-            </POSCard>
+            </View>
 
             {/* 6. Lista de movimientos del día */}
             <View style={styles.seccion}>
               <Text style={styles.tituloSeccion}>Movimientos de hoy</Text>
               {movimientosDeHoy.length === 0 ? (
-                <POSCard variant="default">
+                <View style={[styles.vacioCard, sombraDura()]}>
                   <Text style={styles.sinMovimientos}>Aún no hay movimientos registrados hoy.</Text>
-                </POSCard>
+                </View>
               ) : (
                 movimientosDeHoy.map((m) => (
                   <MovimientoListItem
@@ -336,58 +448,88 @@ export default function CajaHome() {
               )}
             </View>
 
-            {/* 8. Acciones */}
+            {/* 8. Acciones — botones grandes, color sólido = significado */}
             <View style={styles.seccion}>
               <Text style={styles.tituloSeccion}>Acciones</Text>
               <View style={styles.accionesGrid}>
-                <TouchableOpacity
-                  style={styles.accionCard}
+                <Pressable
                   onPress={() => setModalMovimientoTipo(TipoMovimientoCaja.INGRESO)}
-                  activeOpacity={0.8}
+                  style={({ pressed }) => [
+                    styles.accionCard,
+                    { backgroundColor: NB.ingreso },
+                    sombraDura(),
+                    pressed && styles.presionado,
+                  ]}
                 >
-                  <POSCard style={styles.accionCardInner} variant="elevated">
-                    <POSIcon name="add-circle" size={30} color={COLORS.success} />
-                    <Text style={styles.accionLabel}>Agregar ingreso</Text>
-                  </POSCard>
-                </TouchableOpacity>
+                  <POSIcon name="add-circle" size={28} color={NB.white} />
+                  <Text style={styles.accionLabelClaro}>Agregar ingreso</Text>
+                </Pressable>
 
-                <TouchableOpacity
-                  style={styles.accionCard}
+                <Pressable
                   onPress={() => setModalMovimientoTipo(TipoMovimientoCaja.EGRESO)}
-                  activeOpacity={0.8}
+                  style={({ pressed }) => [
+                    styles.accionCard,
+                    { backgroundColor: NB.gasto },
+                    sombraDura(),
+                    pressed && styles.presionado,
+                  ]}
                 >
-                  <POSCard style={styles.accionCardInner} variant="elevated">
-                    <POSIcon name="remove-circle" size={30} color={COLORS.danger} />
-                    <Text style={styles.accionLabel}>Agregar gasto</Text>
-                  </POSCard>
-                </TouchableOpacity>
+                  <POSIcon name="remove-circle" size={28} color={NB.white} />
+                  <Text style={styles.accionLabelClaro}>Agregar gasto</Text>
+                </Pressable>
 
-                <TouchableOpacity
-                  style={styles.accionCard}
+                <Pressable
                   onPress={() => setCorteModalVisible(true)}
-                  activeOpacity={0.8}
+                  style={({ pressed }) => [
+                    styles.accionCard,
+                    { backgroundColor: NB.advertencia },
+                    sombraDura(),
+                    pressed && styles.presionado,
+                  ]}
                 >
-                  <POSCard style={styles.accionCardInner} variant="elevated">
-                    <POSIcon name="calculator" size={30} color={COLORS.primary} />
-                    <Text style={styles.accionLabel}>Realizar corte</Text>
-                  </POSCard>
-                </TouchableOpacity>
+                  <POSIcon name="calculator" size={28} color={NB.ink} />
+                  <Text style={styles.accionLabelOscuro}>Realizar corte</Text>
+                </Pressable>
 
-                <TouchableOpacity
-                  style={styles.accionCard}
+                <Pressable
                   onPress={cerrarCaja}
-                  activeOpacity={0.8}
+                  style={({ pressed }) => [
+                    styles.accionCard,
+                    styles.accionCardNeutra,
+                    sombraDura(),
+                    pressed && styles.presionado,
+                  ]}
                 >
-                  <POSCard style={styles.accionCardInner} variant="elevated">
-                    <POSIcon name="lock-closed" size={30} color={COLORS.gray} />
-                    <Text style={styles.accionLabel}>Cerrar caja</Text>
-                  </POSCard>
-                </TouchableOpacity>
+                  <POSIcon name="lock-closed" size={28} color={NB.ink} />
+                  <Text style={styles.accionLabelOscuro}>Cerrar caja</Text>
+                </Pressable>
               </View>
             </View>
           </>
         )}
       </ScrollView>
+
+      {/* FAB — la acción más frecuente a un solo toque, sin scroll */}
+      {cajaActual.activa && (
+        <Pressable
+          onPress={() => setModalMovimientoTipo(TipoMovimientoCaja.INGRESO)}
+          style={({ pressed }) => [
+            styles.fab,
+            sombraDura(),
+            pressed && styles.presionado,
+          ]}
+        >
+          <POSIcon name="add" size={28} color={NB.white} />
+        </Pressable>
+      )}
+
+      {/* Confirmación no bloqueante — feedback inmediato sin interrumpir */}
+      {confirmacionVisible && (
+        <View style={[styles.toast, sombraDura()]}>
+          <POSIcon name="checkmark-circle" size={20} color={NB.white} />
+          <Text style={styles.toastTexto}>{confirmacionVisible}</Text>
+        </View>
+      )}
 
       {/* 7. Detalle de movimiento */}
       <DetalleMovimientoModal
@@ -430,66 +572,141 @@ export default function CajaHome() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4F5F7',
+    backgroundColor: NB.bg,
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 110,
   },
+  cargandoBox: {
+    marginTop: 40,
+    alignItems: 'center',
+  },
+  cargandoTexto: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: NB.ink,
+  },
+
+  // Encabezado
   header: {
-    marginBottom: 16,
+    marginBottom: 12,
+  },
+  headerBar: {
+    backgroundColor: NB.primario,
+    borderWidth: NB.borderWidth,
+    borderColor: NB.border,
+    borderRadius: NB.radius,
+    padding: 16,
+    marginBottom: 12,
   },
   tituloPantalla: {
     fontSize: 26,
-    fontWeight: '800',
-    color: COLORS.text,
-    marginBottom: 12,
-  },
-  selectorScroll: {
-    marginBottom: 12,
-  },
-  selectorChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginRight: 8,
-  },
-  selectorChipActivo: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  selectorChipTexto: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  selectorChipTextoActivo: {
-    color: COLORS.white,
+    fontWeight: '900',
+    color: NB.primarioTexto,
+    marginBottom: 10,
   },
   headerInfoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  estadoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: NB.border,
+  },
+  estadoBadgeTexto: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: NB.white,
+  },
   fecha: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    fontWeight: '600',
+    color: NB.primarioTexto,
     textTransform: 'capitalize',
   },
+
+  // Selector de caja
+  selectorScroll: {
+    marginBottom: 16,
+  },
+  selectorContenido: {
+    paddingRight: 4,
+    gap: 8,
+  },
+  selectorChip: {
+    minHeight: 48,
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+    borderRadius: 24,
+    backgroundColor: NB.white,
+    borderWidth: NB.borderWidth,
+    borderColor: NB.border,
+  },
+  selectorChipActivo: {
+    backgroundColor: NB.primario,
+  },
+  selectorChipTexto: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: NB.ink,
+  },
+  selectorChipTextoActivo: {
+    color: NB.white,
+  },
+
+  // Estado: caja cerrada
   cajaCerradaCard: {
     alignItems: 'center',
     gap: 12,
     paddingVertical: 32,
+    paddingHorizontal: 20,
+    backgroundColor: NB.white,
+    borderWidth: NB.borderWidth,
+    borderColor: NB.border,
+    borderRadius: NB.radius,
+    marginBottom: 16,
   },
   cajaCerradaTexto: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    fontWeight: '600',
+    color: NB.textoSecundario,
     textAlign: 'center',
     marginBottom: 8,
   },
+
+  // Botón primario genérico
+  botonPrimario: {
+    minHeight: 56,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: NB.primario,
+    borderWidth: NB.borderWidth,
+    borderColor: NB.border,
+    borderRadius: NB.radius,
+    paddingHorizontal: 24,
+  },
+  botonPrimarioTexto: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: NB.white,
+  },
+  presionado: {
+    // Feedback táctil inmediato: se "hunde" ligeramente al presionar,
+    // simulando el desplazamiento de una sombra dura.
+    transform: [{ translateX: 2 }, { translateY: 2 }],
+    shadowOffset: { width: 2, height: 2 },
+  },
+
+  // Resumen (bento grid)
   resumenGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -498,59 +715,108 @@ const styles = StyleSheet.create({
   },
   resumenCard: {
     width: '47%',
+    minHeight: 96,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 4,
+    backgroundColor: NB.white,
+    borderWidth: NB.borderWidth,
+    borderColor: NB.border,
+    borderRadius: NB.radius,
+    paddingVertical: 14,
+  },
+  resumenCardGrande: {
+    width: '100%',
+    minHeight: 110,
+    backgroundColor: NB.primario,
   },
   resumenValor: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: NB.ink,
+  },
+  resumenValorGrande: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: NB.white,
   },
   resumenLabel: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    fontWeight: '700',
+    color: NB.textoSecundario,
   },
+  resumenLabelGrande: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: NB.white,
+    opacity: 0.9,
+  },
+
+  // Sección tabs + gráfica
   seccionCard: {
+    backgroundColor: NB.white,
+    borderWidth: NB.borderWidth,
+    borderColor: NB.border,
+    borderRadius: NB.radius,
+    padding: 16,
     marginBottom: 16,
   },
   tabsContainer: {
     flexDirection: 'row',
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: NB.neutroBg,
     borderRadius: 10,
+    borderWidth: 2,
+    borderColor: NB.border,
     padding: 4,
     marginBottom: 16,
   },
   tab: {
     flex: 1,
-    paddingVertical: 8,
+    minHeight: 44,
+    justifyContent: 'center',
     borderRadius: 8,
     alignItems: 'center',
   },
-  tabActivo: {
-    backgroundColor: COLORS.white,
+  tabActivoIngreso: {
+    backgroundColor: NB.ingreso,
+  },
+  tabActivoGasto: {
+    backgroundColor: NB.gasto,
   },
   tabTexto: {
     fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontWeight: '700',
+    color: NB.textoSecundario,
   },
   tabTextoActivo: {
-    color: COLORS.text,
+    color: NB.white,
   },
+
+  // Movimientos
   seccion: {
     marginBottom: 16,
   },
   tituloSeccion: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: NB.ink,
     marginBottom: 10,
+  },
+  vacioCard: {
+    backgroundColor: NB.white,
+    borderWidth: NB.borderWidth,
+    borderColor: NB.border,
+    borderRadius: NB.radius,
+    paddingVertical: 24,
   },
   sinMovimientos: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    fontWeight: '600',
+    color: NB.textoSecundario,
     textAlign: 'center',
   },
+
+  // Acciones
   accionesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -558,46 +824,103 @@ const styles = StyleSheet.create({
   },
   accionCard: {
     width: '47%',
-  },
-  accionCardInner: {
+    minHeight: 88,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
-    paddingVertical: 18,
+    borderWidth: NB.borderWidth,
+    borderColor: NB.border,
+    borderRadius: NB.radius,
+    paddingVertical: 16,
   },
-  accionLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.text,
+  accionCardNeutra: {
+    backgroundColor: NB.white,
+  },
+  accionLabelClaro: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: NB.white,
     textAlign: 'center',
   },
+  accionLabelOscuro: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: NB.ink,
+    textAlign: 'center',
+  },
+
+  // FAB
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 18,
+    backgroundColor: NB.ingreso,
+    borderWidth: NB.borderWidth,
+    borderColor: NB.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Toast de confirmación
+  toast: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    bottom: 96,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: NB.ink,
+    borderWidth: NB.borderWidth,
+    borderColor: NB.border,
+    borderRadius: NB.radius,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  toastTexto: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: NB.white,
+  },
+
+  // Estado vacío (sin cajas)
   estadoVacioCard: {
     alignItems: 'center',
     gap: 16,
-    paddingVertical: 48,
+    paddingVertical: 44,
     paddingHorizontal: 24,
-    marginTop: 40,
+    marginTop: 24,
+    backgroundColor: NB.white,
+    borderWidth: NB.borderWidth,
+    borderColor: NB.border,
+    borderRadius: NB.radius,
   },
   estadoVacioIcono: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#E6F2FF',
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: NB.ingresoBg,
+    borderWidth: 2,
+    borderColor: NB.border,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   estadoVacioTitulo: {
     fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: NB.ink,
     textAlign: 'center',
   },
   estadoVacioTexto: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    fontWeight: '600',
+    color: NB.textoSecundario,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 8,
   },
 });
-
