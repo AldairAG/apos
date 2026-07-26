@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.api.apos.domain.caja.caja.Caja;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -53,6 +54,7 @@ public class CorteCaja {
     
     @ManyToOne
     @JoinColumn(name = "caja_id")
+    @JsonIgnore
     private Caja caja;
     
 }

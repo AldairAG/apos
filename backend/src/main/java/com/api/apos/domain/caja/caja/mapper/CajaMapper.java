@@ -9,6 +9,7 @@ public class CajaMapper {
                 .id(caja.getId())
                 .nombre(caja.getNombre())
                 .activa(caja.getActiva())
+                .estado(caja.getEstado())
                 .build();
     }
 }

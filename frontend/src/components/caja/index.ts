@@ -2,6 +2,7 @@
 export { AgregarMovimientoModal } from './AgregarMovimientoModal';
 export { CalculadoraEfectivo } from './CalculadoraEfectivo';
 export { CorteCajaModal } from './CorteCajaModal';
+export { CrearCajaModal } from './CrearCajaModal';
 export { DetalleMovimientoModal } from './DetalleMovimientoModal';
 export { MovimientoListItem } from './MovimientoListItem';
 export { PieChartCaja } from './PieChartCaja';

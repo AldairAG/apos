@@ -22,7 +22,7 @@ public class AbrirCajaUseCase {
     private final CorteCajaService corteCajaService;
 
     @Transactional
-    public void abrirCajaUseCase(Long cajaId, Long empleadoId) {
+    public Caja execute(Long cajaId, Long empleadoId) {
         // Obtener la caja por su id
         Caja caja = cajaService.obtenerCajaPorId(cajaId);
 
@@ -44,5 +44,6 @@ public class AbrirCajaUseCase {
         // Actualizar el estado de la caja a "abierta"
         caja.setEstado(EstadoCaja.ABIERTA);
         cajaService.actualizarCaja(caja.getId(), caja);
+        return caja;
     }
 }
