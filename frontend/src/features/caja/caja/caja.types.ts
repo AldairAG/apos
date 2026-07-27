@@ -35,6 +35,7 @@ export interface RestockDTO {
 export enum TipoMovimientoCaja {
     INGRESO = "INGRESO",
     EGRESO = "EGRESO",
+    GASTO = "GASTO",
 }
 
 export enum TipoConceptoMovimiento {
