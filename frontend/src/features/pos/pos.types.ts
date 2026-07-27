@@ -6,7 +6,7 @@ export interface OrdenResponseDTO {
     id: number;
     folio: string;
     tipo: string;
-    estado: string;
+    estado: EstadoOrden;
     numeroPersonas: number;
     tiempoPreparacion: number;
     observaciones: string;
@@ -116,11 +116,12 @@ export enum TipoOrden {
 }
 
 export enum EstadoOrden {
-    PENDIENTE= "PENDIENTE",
-    EN_PREPARACION= "EN_PREPARACION",
-    LISTA= "LISTA",
-    ENTREGADA= "ENTREGADA",
-    CANCELADA= "CANCELADA"
+    PENDIENTE= "PENDIENTE",//Orden tomada pero aun no esta siendo preparada en cocina
+    EN_PREPARACION= "EN_PREPARACION",// orden que esta siendo preparada en cocina
+    LISTA= "LISTA",//orden lista pero no entregada al cliente
+    ENTREGADA= "ENTREGADA",//orden entregada al cliente
+    COBRADA="COBRADA",//ORDEN PAGADA    
+    CANCELADA= "CANCELADA"//orden cancelada
 }
 
 export interface MesaPosResponseDTO {

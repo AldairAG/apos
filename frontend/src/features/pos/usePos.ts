@@ -76,7 +76,7 @@ const usePos = () => {
         }
     };
 
-    const actualizarEstadoOrden = async (ordenId: number, estado: "PENDIENTE" | "EN_PREPARACION" | "LISTA" | "ENTREGADA" | "CANCELADA") => {
+    const actualizarEstadoOrden = async (ordenId: number, estado: "PENDIENTE" | "EN_PREPARACION" | "LISTA" | "ENTREGADA" | "COBRADA" | "CANCELADA") => {
         try {
             const orden = await dispatch(updateOrdenEstadoThunk({ ordenId, estado })).unwrap();
             return orden;

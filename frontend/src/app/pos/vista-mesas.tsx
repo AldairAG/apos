@@ -6,13 +6,13 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
-  FlatList,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    Alert,
+    FlatList,
+    Modal,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
 /* ============================================================
@@ -72,6 +72,25 @@ const tap = (style: 'light' | 'medium' | 'success' | 'warning' = 'light') => {
     else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   } catch {
     // Haptics no disponible (web/simulador) — no bloquea el flujo.
+  }
+};
+
+const estadoOrdenInfo = (estado: EstadoOrden) => {
+  switch (estado) {
+    case EstadoOrden.PENDIENTE:
+      return { color: PALETTE.warning, label: 'PENDIENTE' };
+    case EstadoOrden.EN_PREPARACION:
+      return { color: PALETTE.info, label: 'EN PREPARACIÓN' };
+    case EstadoOrden.LISTA:
+      return { color: PALETTE.success, label: 'LISTA' };
+    case EstadoOrden.ENTREGADA:
+      return { color: PALETTE.neutral, label: 'ENTREGADA' };
+    case EstadoOrden.COBRADA:
+      return { color: '#B8860B', label: 'COBRADA' };
+    case EstadoOrden.CANCELADA:
+      return { color: PALETTE.danger, label: 'CANCELADA' };
+    default:
+      return { color: PALETTE.neutral, label: String(estado).replace('_', ' ') };
   }
 };
 
@@ -213,16 +232,11 @@ export default function VistaMesasScreen() {
                   style={[
                     styles.miniBadge,
                     {
-                      backgroundColor:
-                        item.ordenActualDTO.estado === EstadoOrden.PENDIENTE
-                          ? PALETTE.warning
-                          : item.ordenActualDTO.estado === EstadoOrden.EN_PREPARACION
-                            ? PALETTE.info
-                            : PALETTE.neutral,
+                      backgroundColor: estadoOrdenInfo(item.ordenActualDTO.estado).color,
                     },
                   ]}
                 >
-                  <Text style={styles.miniBadgeText}>{item.ordenActualDTO.estado.replace('_', ' ')}</Text>
+                  <Text style={styles.miniBadgeText}>{estadoOrdenInfo(item.ordenActualDTO.estado).label}</Text>
                 </View>
               </View>
             </View>

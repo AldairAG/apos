@@ -81,6 +81,8 @@ const estadoInfo = (estado: EstadoOrden) => {
       return { solid: PALETTE.success, dark: PALETTE.successDark, label: 'LISTA' };
     case EstadoOrden.ENTREGADA:
       return { solid: PALETTE.neutral, dark: '#4A4A44', label: 'ENTREGADA' };
+    case EstadoOrden.COBRADA:
+      return { solid: '#B8860B', dark: '#8B6914', label: 'COBRADA' };
     case EstadoOrden.CANCELADA:
       return { solid: PALETTE.danger, dark: PALETTE.dangerDark, label: 'CANCELADA' };
     default:
@@ -123,7 +125,9 @@ export default function OrdenesScreen() {
         (o) => o.tipo === TipoOrden.PARA_LLEVAR || o.tipo === TipoOrden.DELIVERY
       );
     } else if (filtroActivo === 'entregadas') {
-      ordenesFiltradas = ordenesFiltradas.filter((o) => o.estado === EstadoOrden.ENTREGADA);
+      ordenesFiltradas = ordenesFiltradas.filter(
+        (o) => o.estado === EstadoOrden.ENTREGADA || o.estado === EstadoOrden.COBRADA
+      );
     }
 
     if (busqueda.trim()) {
@@ -181,15 +185,16 @@ export default function OrdenesScreen() {
     ]);
   };
 
-  const calcularTiempoTranscurrido = (fechaCreacion: Date) => {
-    const diffMs = Date.now() - new Date(fechaCreacion).getTime();
+  const calcularTiempoTranscurrido = (fechaCreacion: string): number => {
+    const fecha = new Date(fechaCreacion);
+    const diffMs = Date.now() - fecha.getTime();
     return Math.floor(diffMs / 60000);
   };
 
   const renderOrdenCard = ({ item: orden }: { item: OrdenResponseDTO }) => {
     const tiempoTranscurrido = calcularTiempoTranscurrido(orden.createdAt);
     const estado = estadoInfo(orden.estado);
-    const esFinal = orden.estado === EstadoOrden.CANCELADA || orden.estado === EstadoOrden.ENTREGADA;
+    const esFinal = orden.estado === EstadoOrden.CANCELADA || orden.estado === EstadoOrden.ENTREGADA || orden.estado === EstadoOrden.COBRADA;
 
     return (
       <Pressable
@@ -293,8 +298,24 @@ export default function OrdenesScreen() {
                   onPress={() => cobrarOrden(orden)}
                   style={({ pressed }) => [
                     styles.accionButtonFlex,
-                    { backgroundColor: PALETTE.success, borderColor: PALETTE.successDark },
-                    hardShadow(PALETTE.successDark, pressed ? 1 : 3),
+                    { backgroundColor: '#B8860B', borderColor: '#8B6914' },
+                    hardShadow('#8B6914', pressed ? 1 : 3),
+                    pressed && { transform: [{ translateX: 2 }, { translateY: 2 }] },
+                    styles.accionButtonFlex,
+                  ]}
+                >
+                  <POSIcon name="cash" size={17} color="#FFF" />
+                  <Text style={styles.accionButtonText}>Cobrar</Text>
+                </Pressable>
+              )}
+
+              {orden.estado === EstadoOrden.ENTREGADA && (
+                <Pressable
+                  onPress={() => cobrarOrden(orden)}
+                  style={({ pressed }) => [
+                    styles.accionButtonFlex,
+                    { backgroundColor: '#B8860B', borderColor: '#8B6914' },
+                    hardShadow('#8B6914', pressed ? 1 : 3),
                     pressed && { transform: [{ translateX: 2 }, { translateY: 2 }] },
                     styles.accionButtonFlex,
                   ]}
