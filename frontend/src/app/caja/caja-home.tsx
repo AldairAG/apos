@@ -6,7 +6,7 @@ import {
   MovimientoListItem,
   PieChartCaja,
 } from '@/components/caja';
-import { COLORS, POSBadge, POSButton, POSCard, POSIcon } from '@/components/pos';
+import { POSIcon } from '@/components/pos';
 import {
   calcularDistribucionPorCategoria,
   calcularResumen,
@@ -19,8 +19,8 @@ import {
   TipoConceptoMovimiento,
   TipoMovimientoCaja
 } from '@/features/caja/caja/caja.types';
-import { useMateriales } from '@/features/inventario/materiales';
 import useCaja from '@/features/caja/caja/useCaja';
+import { useMateriales } from '@/features/inventario/materiales';
 import { MetodoPago } from '@/types/pos.types';
 import { useEffect, useMemo, useState } from 'react';
 import {

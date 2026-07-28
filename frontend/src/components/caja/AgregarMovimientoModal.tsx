@@ -18,9 +18,9 @@ import {
   TipoMovimientoCaja,
 } from '@/features/caja/caja/caja.types';
 import { MetodoPago } from '@/types/pos.types';
-import React, { useEffect, useMemo, useState } from 'react';
-import type { ComponentProps } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Modal,
   ScrollView,
