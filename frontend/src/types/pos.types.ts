@@ -95,3 +95,7 @@ export interface Pago {
   monto: number;
   referencia?: string;
 }
+
+export function MetodoPago(MetodoPago: any) {
+  throw new Error('Function not implemented.');
+}
