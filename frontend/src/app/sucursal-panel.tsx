@@ -25,6 +25,8 @@ import InventarioSucursalScreen from './inventario/existencias';
 import PosHomeScreen from './pos/home';
 import ExtrasScreen from './productos/extras';
 import ProductosScreen from './productos/productos';
+import EmployeesScreen from './admin/empleados';
+import descuentosScreen from './admin/descuentos';
 
 const { width, height } = Dimensions.get('window');
 const IS_MOBILE = width < 768;
@@ -46,7 +48,7 @@ const hardShadow = (pressed: boolean) => ({
 });
 
 // Vista que se muestra en el área de contenido del panel
-type VistaPanel = 'caja' | 'pos' | 'inventario' | 'productos' | 'categorias' | 'mesas' | 'extras';
+type VistaPanel = 'caja' | 'pos' | 'inventario' | 'productos' | 'categorias' | 'mesas' | 'extras' | 'empleados' | 'descuentos';
 
 // Componente a renderizar para cada vista del panel (mismos componentes
 // que ya existen como pantallas propias, reutilizados sin duplicar código)
@@ -58,6 +60,8 @@ const VISTAS_PANEL: Record<VistaPanel, ComponentType> = {
   extras: ExtrasScreen,
   categorias: CategoriasScreen, // Reutilizamos la misma vista de productos para categorías
   mesas: MesasScreen,
+  empleados: EmployeesScreen,
+  descuentos: descuentosScreen,
 };
 
 interface MenuOption {
@@ -126,7 +130,7 @@ const MENU_OPTIONS: MenuOption[] = [
     id: 'personal',
     titulo: 'Personal',
     icono: 'people',
-    vista: 'caja',
+    vista: 'empleados',
     color: '#FF5722',
   },
   {
@@ -140,7 +144,7 @@ const MENU_OPTIONS: MenuOption[] = [
     id: 'descuentos',
     titulo: 'Descuentos',
     icono: 'pricetag',
-    vista: 'caja',
+    vista: 'descuentos',
     color: '#009688',
   },
 ];

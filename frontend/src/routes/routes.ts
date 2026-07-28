@@ -24,6 +24,7 @@ export const ROUTES = {
     EMPLEADOS: '/admin/empleados',
     ROLES: '/admin/roles',
     SUCURSALES: '/admin/sucursales',
+    DESCUENTOS: '/admin/descuentos',
   },
 
   // Módulo de Configuración
