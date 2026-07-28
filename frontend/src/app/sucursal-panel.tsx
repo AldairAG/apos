@@ -68,7 +68,8 @@ interface MenuOption {
   id: string;
   titulo: string;
   icono: string;
-  vista: VistaPanel;
+  vista?: VistaPanel;   // opcional ahora
+  ruta?: string;         // nuevo: para secciones con su propio stack, como clientes
   color: string;
 }
 
@@ -137,7 +138,7 @@ const MENU_OPTIONS: MenuOption[] = [
     id: 'clientes',
     titulo: 'Clientes Frecuentes',
     icono: 'person',
-    vista: 'caja',
+    ruta: ROUTES.CLIENTES.BUSCAR,   // en vez de vista: 'personal'
     color: '#3F51B5',
   },
   {
@@ -163,7 +164,9 @@ export default function SucursalPanelScreen() {
 
   const handleMenuClick = (option: MenuOption) => {
     setActiveOption(option.id);
-    setVistaActiva(option.vista);
+    if (option.vista) {
+      setVistaActiva(option.vista);
+    }
     // En móvil cerramos el drawer al cambiar de vista
     if (IS_MOBILE) setDrawerAbierto(false);
   };

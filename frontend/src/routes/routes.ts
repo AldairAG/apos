@@ -59,6 +59,14 @@ export const ROUTES = {
     HOME: '/pos/home',
   },
 
+  // Módulo de Clientes Frecuentes (fidelización)
+  CLIENTES: {
+    BUSCAR: '/clientes',
+    // Ruta dinámica: al navegar usa `/clientes/${clienteId}`, no esta constante literal
+    DETALLE: '/clientes/[clienteId]',
+    REGISTRAR: '/clientes/registrar',
+  },
+
   // Módulo de Gestión de Caja
   CAJA: {
     CAJA_HOME: '/caja/caja-home',
