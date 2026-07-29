@@ -1,6 +1,9 @@
-package com.api.apos.features.caja.dto;
+package com.api.apos.domain.caja.caja.dto;
 
 import java.util.List;
+
+import com.api.apos.features.caja.dto.MovimientoCajaDTO;
+
 import java.math.BigDecimal;
 
 

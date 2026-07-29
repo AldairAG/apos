@@ -91,7 +91,7 @@ const estadoInfo = (estado: EstadoOrden) => {
 };
 
 export default function OrdenesScreen() {
-  const { getOrdenesBySucursal, actualizarEstadoOrden, cancelarOrden, loading } = usePos();
+  const { getOrdenesBySucursal, actualizarEstadoOrden, cancelarOrden, loading,seleccionarOrden } = usePos();
   const { sucursalActual } = useSucursal();
   const [ordenes, setOrdenes] = useState<OrdenResponseDTO[]>([]);
   const [filtroActivo, setFiltroActivo] = useState<FiltroTipo>('todas');
@@ -156,7 +156,8 @@ export default function OrdenesScreen() {
 
   const cobrarOrden = (orden: OrdenResponseDTO) => {
     tap('medium');
-    router.push(`/pos/cobro?ordenId=${orden.id}` as any);
+    seleccionarOrden(orden.id);
+    router.push('/pos/pagar-orden');
   };
 
   const continuarOrden = (orden: OrdenResponseDTO) => {
@@ -279,7 +280,7 @@ export default function OrdenesScreen() {
             <View style={styles.ordenAcciones}>
               {orden.estado === EstadoOrden.PENDIENTE && (
                 <Pressable
-                  onPress={() => enviarACocina(orden)}
+                  onPress={() => cobrarOrden(orden)}
                   style={({ pressed }) => [
                     styles.accionButtonFlex,
                     { backgroundColor: PALETTE.info, borderColor: PALETTE.infoDark },
@@ -289,7 +290,7 @@ export default function OrdenesScreen() {
                   ]}
                 >
                   <POSIcon name="send" size={17} color="#FFF" />
-                  <Text style={styles.accionButtonText}>A cocina</Text>
+                  <Text style={styles.accionButtonText}>Cobrar</Text>
                 </Pressable>
               )}
 

@@ -1,14 +1,82 @@
 package com.api.apos.domain.sucursal.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-import com.api.apos.domain.sucursal.Sucursal;
+import org.springframework.stereotype.Service;
 
-public interface SucursalService {
-    Sucursal crearSucursal(Sucursal sucursal);
-    Sucursal obtenerSucursalPorId(Long idSucursal);
-    List<Sucursal> obtenerSucursalesPorIdUsuario(Long idUsuario);
-    Sucursal actualizarSucursal(Sucursal sucursal);
-    void eliminarSucursal(Long idSucursal);
-    List<Sucursal> obtenerSucursalesParaColaborador(Long colaboradorId);
+import com.api.apos.domain.sucursal.Sucursal;
+import com.api.apos.domain.sucursal.SucursalRepository;
+
+import lombok.AllArgsConstructor;
+
+@Service
+@AllArgsConstructor
+public class SucursalService {
+
+    private final SucursalRepository sucursalRepository;
+
+    public Sucursal crearSucursal(Sucursal sucursal) {
+        return sucursalRepository.save(sucursal);
+    }
+
+    public List<Sucursal> obtenerSucursalesPorIdUsuario(Long idUsuario) {
+        if (idUsuario == null) {
+            throw new IllegalArgumentException("El id del usuario es requerido");
+        }
+
+        return sucursalRepository.findByUsuarioId(idUsuario);
+    }
+
+    public Sucursal actualizarSucursal(Sucursal sucursal) {
+        if (sucursal == null || sucursal.getId() == null) {
+            throw new IllegalArgumentException("El id de la sucursal es requerido");
+        }
+
+        Sucursal existente = sucursalRepository.findById(sucursal.getId())
+                .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
+
+        existente.setNombre(sucursal.getNombre());
+        existente.setDireccion(sucursal.getDireccion());
+        existente.setCodigo(sucursal.getCodigo());
+        existente.setTelefono(sucursal.getTelefono());
+        existente.setEmail(sucursal.getEmail());
+        existente.setHorarioApertura(sucursal.getHorarioApertura());
+        existente.setHorarioCierre(sucursal.getHorarioCierre());
+        existente.setTimezone(sucursal.getTimezone());
+        existente.setActiva(sucursal.getActiva());
+        existente.setLatitud(sucursal.getLatitud());
+        existente.setLongitud(sucursal.getLongitud());
+        existente.setUpdatedBy(sucursal.getUpdatedBy());
+        existente.setUpdatedAt(LocalDateTime.now());
+
+        if (sucursal.getUsuario() != null) {
+            existente.setUsuario(sucursal.getUsuario());
+        }
+
+        return sucursalRepository.save(existente);
+    }
+
+    public void eliminarSucursal(Long idSucursal) {
+        if (idSucursal == null) {
+            throw new IllegalArgumentException("El id de la sucursal es requerido");
+        }
+
+        Sucursal sucursal = sucursalRepository.findById(idSucursal)
+                .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
+
+        sucursalRepository.delete(sucursal);
+    }
+
+    public Sucursal obtenerSucursalPorId(Long idSucursal) {
+        if (idSucursal == null) {
+            throw new IllegalArgumentException("El id de la sucursal es requerido");
+        }
+
+        return sucursalRepository.findById(idSucursal)
+                .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
+    }
+
+
+
 }

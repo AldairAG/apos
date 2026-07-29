@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.sucursal.service.SucursalService;
 import com.api.apos.domain.sucursal.usecase.CrearSucursalUseCase;
+import com.api.apos.domain.sucursal.usecase.GetSucursalesForColaborador;
 import com.api.apos.enums.Rol;
 import com.api.apos.helpers.ApiResponseWrapper;
 
@@ -28,6 +29,8 @@ import lombok.AllArgsConstructor;
 public class SucursalController {
 
 	private final SucursalService sucursalService;
+
+	private final GetSucursalesForColaborador getSucursalesForColaborador;
 
 	//Casos de uso 
 	private final CrearSucursalUseCase crearSucursalUseCase;
@@ -57,7 +60,7 @@ public class SucursalController {
 			Rol rol = ((Usuario) authentication.getPrincipal()).getRol();
 
 			if(rol != Rol.ADMINISTRADOR) {
-				List<Sucursal> sucursalesColaborador = sucursalService.obtenerSucursalesParaColaborador(((Usuario) authentication.getPrincipal()).getId());
+				List<Sucursal> sucursalesColaborador = getSucursalesForColaborador.execute(((Usuario) authentication.getPrincipal()).getId());
 				return ResponseEntity.status(403).body(new ApiResponseWrapper<>(false, sucursalesColaborador, "Sucursales de colaborador obtenidas"));
 			}
 

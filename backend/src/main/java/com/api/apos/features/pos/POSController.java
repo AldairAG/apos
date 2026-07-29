@@ -6,8 +6,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.api.apos.features.pos.dto.CrearOrdenDTO;
 import com.api.apos.features.pos.dto.MesaResponseDTO;
 import com.api.apos.features.pos.dto.OrdenResponseDTO;
+import com.api.apos.features.pos.dto.PagarOrdenDTO;
 import com.api.apos.features.pos.dto.ProductosBySucursalResponse;
 import com.api.apos.features.pos.service.POSService;
+import com.api.apos.features.pos.useCase.CobrarOrdenUseCase;
 import com.api.apos.features.pos.useCase.CrearOrdenUseCase;
 import com.api.apos.helpers.ApiResponseWrapper;
 
@@ -30,6 +32,8 @@ public class POSController {
     private final POSService posService;
 
     private final CrearOrdenUseCase crearOrdenUseCase;
+
+    private final CobrarOrdenUseCase cobrarOrdenUseCase;
 
     @PostMapping("/crear-orden")
     public ResponseEntity<ApiResponseWrapper<OrdenResponseDTO>> crearOrden(@RequestBody CrearOrdenDTO crearOrdenDTO) {
@@ -72,6 +76,18 @@ public class POSController {
         try {
             List<MesaResponseDTO> mesas = posService.obtenerMesasPorSucursal(sucursalId);
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, mesas, null));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiResponseWrapper<>(false, null, e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.internalServerError().body(new ApiResponseWrapper<>(false, null, e.getMessage()));
+        }
+    }
+
+    @PostMapping("/cobrar-orden")
+    public ResponseEntity<ApiResponseWrapper<OrdenResponseDTO>> cobrarOrden(@RequestBody PagarOrdenDTO pagarOrdenDTO) {
+        try {
+            OrdenResponseDTO ordenResponseDTO = cobrarOrdenUseCase.execute(pagarOrdenDTO);
+            return ResponseEntity.ok(new ApiResponseWrapper<>(true, ordenResponseDTO, null));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ApiResponseWrapper<>(false, null, e.getMessage()));
         } catch (RuntimeException e) {

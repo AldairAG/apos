@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { posService } from "./pos.service";
-import { CrearOrdenDTO, EstadoOrden, MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from "./pos.types";
+import { CrearOrdenDTO, EstadoOrden, MesaPosResponseDTO, OrdenResponseDTO, PagarOrdenDTO, ProductosBySucursalResponse } from "./pos.types";
 
 export const createOrdenThunk = createAsyncThunk<
     OrdenResponseDTO,
@@ -89,6 +89,21 @@ export const cancelOrdenThunk = createAsyncThunk<
     } catch (error: any) {
         return rejectWithValue(
             error.response?.data?.message || 'Error al cancelar la orden'
+        );
+    }
+});
+
+export const pagarOrdenThunk = createAsyncThunk<
+    OrdenResponseDTO,
+    PagarOrdenDTO,
+    { rejectValue: string }
+>('pos/pagarOrden', async (data, { rejectWithValue }) => {
+    try {
+        const orden = await posService.pagarOrden(data);
+        return orden;
+    } catch (error: any) {
+        return rejectWithValue(
+            error.response?.data?.message || 'Error al pagar la orden'
         );
     }
 });

@@ -109,50 +109,71 @@ export interface DetalleOrdenExtra {
     opcionExtra: OpcionExtra;
 }
 export enum TipoOrden {
-    EN_MESA= "EN_MESA",
-    PARA_LLEVAR= "PARA_LLEVAR",
-    DELIVERY= "DELIVERY",
-    RECOGER= "RECOGER"
+    EN_MESA = "EN_MESA",
+    PARA_LLEVAR = "PARA_LLEVAR",
+    DELIVERY = "DELIVERY",
+    RECOGER = "RECOGER"
 }
 
 export enum EstadoOrden {
-    PENDIENTE= "PENDIENTE",//Orden tomada pero aun no esta siendo preparada en cocina
-    EN_PREPARACION= "EN_PREPARACION",// orden que esta siendo preparada en cocina
-    LISTA= "LISTA",//orden lista pero no entregada al cliente
-    ENTREGADA= "ENTREGADA",//orden entregada al cliente
-    COBRADA="COBRADA",//ORDEN PAGADA    
-    CANCELADA= "CANCELADA"//orden cancelada
+    PENDIENTE = "PENDIENTE",//Orden tomada pero aun no esta siendo preparada en cocina
+    EN_PREPARACION = "EN_PREPARACION",// orden que esta siendo preparada en cocina
+    LISTA = "LISTA",//orden lista pero no entregada al cliente
+    ENTREGADA = "ENTREGADA",//orden entregada al cliente
+    COBRADA = "COBRADA",//ORDEN PAGADA    
+    CANCELADA = "CANCELADA"//orden cancelada
 }
 
 export interface MesaPosResponseDTO {
     id: number;
-    
+
     nombre: string;
     codigo: string;
-    
+
     estado: EstadoMesa;
-    
+
     activa: boolean;
     ordenActual: number;
-    
+
     ordenActualDTO: OrdenResponseDTO;
 }
 
-    export interface DetalleOrdenResponseDTO {
-        id: number;
-        nombreProducto: string;
-        cantidad: number;
-        precioUnitario: number;
-        total: number;
-        extras: DetalleOrdenExtraResponseDTO[];
+export interface DetalleOrdenResponseDTO {
+    id: number;
+    nombreProducto: string;
+    cantidad: number;
+    precioUnitario: number;
+    total: number;
+    extras: DetalleOrdenExtraResponseDTO[];
 
-    }
+}
 
-    export interface DetalleOrdenExtraResponseDTO {
-        id: number;
-        nombreExtra: string;
-        precioExtra: number;
-        opcionId: number;
-        cantidad: number;
-        total: number;
-    }
+export interface DetalleOrdenExtraResponseDTO {
+    id: number;
+    nombreExtra: string;
+    precioExtra: number;
+    opcionId: number;
+    cantidad: number;
+    total: number;
+}
+
+export interface PagarOrdenDTO {
+    ordenId: number;
+    cajaId: number;
+    pagoMixto: boolean;
+    pagos: PagoDto[];
+
+}
+export interface PagoDto {
+    metodoPago: TipoPago;
+    monto: number;
+
+}
+
+export enum TipoPago {
+    EFECTIVO = "EFECTIVO",
+    TARJETA_DEBITO = "TARJETA_DEBITO",
+    TRANSFERENCIA_BANCARIA = "TRANSFERENCIA_BANCARIA",
+    MIXTO = "MIXTO",
+    GRATIS = "GRATIS"
+}

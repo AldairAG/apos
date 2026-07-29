@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import java.util.List;
 
 import com.api.apos.domain.caja.caja.Caja;
-import com.api.apos.domain.caja.caja.service.CajaService;
+import com.api.apos.domain.caja.caja.CajaService;
 import com.api.apos.domain.caja.corte.CorteCaja;
 import com.api.apos.domain.caja.corte.service.CorteCajaService;
 import com.api.apos.domain.caja.movimeinto.MovimientoCaja;

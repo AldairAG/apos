@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.api.apos.domain.caja.caja.service.CajaService;
+import com.api.apos.domain.caja.caja.CajaService;
 import com.api.apos.domain.caja.movimeinto.MovimientoCaja;
 import com.api.apos.domain.caja.movimeinto.mapper.MovimientoMapper;
 import com.api.apos.domain.caja.movimeinto.service.MovimientoCajaService;
