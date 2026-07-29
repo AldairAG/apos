@@ -22,7 +22,6 @@ import CajaHome from './caja/caja-home';
 import CategoriasScreen from './config/categorias';
 import MesasScreen from './config/mesas';
 import InventarioSucursalScreen from './inventario/existencias';
-import PosHomeScreen from './pos/home';
 import ExtrasScreen from './productos/extras';
 import ProductosScreen from './productos/productos';
 
@@ -46,13 +45,12 @@ const hardShadow = (pressed: boolean) => ({
 });
 
 // Vista que se muestra en el área de contenido del panel
-type VistaPanel = 'caja' | 'pos' | 'inventario' | 'productos' | 'categorias' | 'mesas' | 'extras';
+type VistaPanel = 'caja' | 'inventario' | 'productos' | 'categorias' | 'mesas' | 'extras';
 
 // Componente a renderizar para cada vista del panel (mismos componentes
 // que ya existen como pantallas propias, reutilizados sin duplicar código)
 const VISTAS_PANEL: Record<VistaPanel, ComponentType> = {
   caja: CajaHome,
-  pos: PosHomeScreen,
   inventario: InventarioSucursalScreen,
   productos: ProductosScreen,
   extras: ExtrasScreen,
@@ -77,7 +75,7 @@ const MENU_OPTIONS: MenuOption[] = [
     id: 'pos',
     titulo: 'Punto de Venta',
     icono: 'cart',
-    vista: 'pos',
+    vista: 'caja',
     color: COLORS.success,
   },
   {
@@ -158,6 +156,13 @@ export default function SucursalPanelScreen() {
   const [mostrarSelectorSucursal, setMostrarSelectorSucursal] = useState(false);
 
   const handleMenuClick = (option: MenuOption) => {
+    // POS se abre en su propia ruta; no se renderiza dentro del layout del panel.
+    if (option.id === 'pos') {
+      if (IS_MOBILE) setDrawerAbierto(false);
+      router.push(ROUTES.POS.HOME);
+      return;
+    }
+
     setActiveOption(option.id);
     setVistaActiva(option.vista);
     // En móvil cerramos el drawer al cambiar de vista

@@ -1,6 +1,6 @@
 import { COLORS, POSIcon } from '@/components/pos';
 import { EstadoMesa } from '@/features/mesas/mesas.types';
-import { EstadoOrden } from '@/features/pos/pos.types';
+import { EstadoOrden, TipoOrden } from '@/features/pos/pos.types';
 import usePos from '@/features/pos/usePos';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -41,6 +41,15 @@ export default function HomeScreen() {
   const ordenesEnCocina = ordenes.filter(o => o.estado === EstadoOrden.EN_PREPARACION).length;
   const ordenesPendientesCobro = ordenes.filter(o => o.estado === EstadoOrden.LISTA).length;
 
+  const iniciarNuevaOrden = (tipo: TipoOrden) => {
+    if (tipo === TipoOrden.EN_MESA) {
+      router.push('/pos/vista-mesas');
+      return;
+    }
+
+    router.push(`/pos/crear-orden?tipo=${tipo}`);
+  };
+
   const toggleMenu = () => {
     const toValue = menuAbierto ? 0 : 1;
     Animated.spring(animacionMenu, {
@@ -60,9 +69,6 @@ export default function HomeScreen() {
     }).start();
 
     switch (accion) {
-      case 'nueva-orden':
-        router.push('/pos/crear-orden');
-        break;
       case 'mesas':
         router.push('/pos/vista-mesas');
         break;
@@ -71,9 +77,6 @@ export default function HomeScreen() {
         break;
       case 'cocina':
         router.push('/pos/cocina');
-        break;
-      case 'historial':
-        console.log('Navegar a historial');
         break;
     }
   };
@@ -138,93 +141,77 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* Resumen de Mesas */}
+        {/* Iniciar Orden (flujo directo sin pantalla intermedia) */}
+        <View style={styles.seccion}>
+          <Text style={styles.tituloSeccion}>INICIAR ORDEN</Text>
+          <View style={styles.iniciarOrdenGrid}>
+            <Pressable
+              style={({ pressed }) => [styles.iniciarOrdenCard, { backgroundColor: COLORS.success }, hardShadow(pressed)]}
+              onPress={() => iniciarNuevaOrden(TipoOrden.EN_MESA)}
+              android_ripple={RIPPLE}
+            >
+              <POSIcon name="restaurant" size={30} color={INK} />
+              <Text style={styles.iniciarOrdenTitulo}>ORDEN EN MESA</Text>
+              <Text style={styles.iniciarOrdenSubtitulo}>Seleccionar mesa y continuar</Text>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [styles.iniciarOrdenCard, { backgroundColor: COLORS.primary }, hardShadow(pressed)]}
+              onPress={() => iniciarNuevaOrden(TipoOrden.PARA_LLEVAR)}
+              android_ripple={RIPPLE}
+            >
+              <POSIcon name="bag-handle" size={30} color={INK} />
+              <Text style={styles.iniciarOrdenTitulo}>PARA LLEVAR</Text>
+              <Text style={styles.iniciarOrdenSubtitulo}>Agregar productos de inmediato</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Estado de Mesas (compacto) */}
         <View style={styles.seccion}>
           <Text style={styles.tituloSeccion}>ESTADO DE MESAS</Text>
-          <View style={styles.estadisticasGrid}>
-            <View style={[styles.estadisticaCard, { backgroundColor: COLORS.success }]}>
-              <POSIcon name="checkmark-circle" size={28} color={INK} />
-              <Text style={styles.estadisticaNumero}>{mesasLibres}</Text>
-              <Text style={styles.estadisticaLabel}>LIBRES</Text>
+          <View style={styles.estadisticasCompactas}>
+            <View style={[styles.statChip, { backgroundColor: COLORS.success }]}>
+              <POSIcon name="checkmark-circle" size={18} color={INK} />
+              <Text style={styles.statChipNumero}>{mesasLibres}</Text>
+              <Text style={styles.statChipLabel}>LIBRES</Text>
             </View>
 
-            <View style={[styles.estadisticaCard, { backgroundColor: COLORS.warning }]}>
-              <POSIcon name="restaurant" size={28} color={INK} />
-              <Text style={styles.estadisticaNumero}>{mesasOcupadas}</Text>
-              <Text style={styles.estadisticaLabel}>OCUPADAS</Text>
+            <View style={[styles.statChip, { backgroundColor: COLORS.warning }]}>
+              <POSIcon name="restaurant" size={18} color={INK} />
+              <Text style={styles.statChipNumero}>{mesasOcupadas}</Text>
+              <Text style={styles.statChipLabel}>OCUPADAS</Text>
             </View>
 
-            <View style={[styles.estadisticaCard, { backgroundColor: COLORS.info }]}>
-              <POSIcon name="time" size={28} color={INK} />
-              <Text style={styles.estadisticaNumero}>{mesasReservadas}</Text>
-              <Text style={styles.estadisticaLabel}>RESERVADAS</Text>
+            <View style={[styles.statChip, { backgroundColor: COLORS.info }]}>
+              <POSIcon name="time" size={18} color={INK} />
+              <Text style={styles.statChipNumero}>{mesasReservadas}</Text>
+              <Text style={styles.statChipLabel}>RESERVADAS</Text>
             </View>
           </View>
         </View>
 
-        {/* Resumen de Órdenes */}
+        {/* Estado de Órdenes (compacto) */}
         <View style={styles.seccion}>
           <Text style={styles.tituloSeccion}>ESTADO DE ÓRDENES</Text>
-          <View style={styles.estadisticasGrid}>
-            <View style={[styles.estadisticaCard, { backgroundColor: COLORS.primary }]}>
-              <POSIcon name="receipt" size={28} color={INK} />
-              <Text style={styles.estadisticaNumero}>{ordenesActivas}</Text>
-              <Text style={styles.estadisticaLabel}>ACTIVAS</Text>
+          <View style={styles.estadisticasCompactas}>
+            <View style={[styles.statChip, { backgroundColor: COLORS.primary }]}>
+              <POSIcon name="receipt" size={18} color={INK} />
+              <Text style={styles.statChipNumero}>{ordenesActivas}</Text>
+              <Text style={styles.statChipLabel}>ACTIVAS</Text>
             </View>
 
-            <View style={[styles.estadisticaCard, { backgroundColor: '#FFB37A' }]}>
-              <POSIcon name="flame" size={28} color={INK} />
-              <Text style={styles.estadisticaNumero}>{ordenesEnCocina}</Text>
-              <Text style={styles.estadisticaLabel}>EN COCINA</Text>
+            <View style={[styles.statChip, { backgroundColor: '#FFB37A' }]}>
+              <POSIcon name="flame" size={18} color={INK} />
+              <Text style={styles.statChipNumero}>{ordenesEnCocina}</Text>
+              <Text style={styles.statChipLabel}>EN COCINA</Text>
             </View>
 
-            <View style={[styles.estadisticaCard, { backgroundColor: COLORS.warning }]}>
-              <POSIcon name="cash" size={28} color={INK} />
-              <Text style={styles.estadisticaNumero}>{ordenesPendientesCobro}</Text>
-              <Text style={styles.estadisticaLabel}>POR COBRAR</Text>
+            <View style={[styles.statChip, { backgroundColor: COLORS.warning }]}>
+              <POSIcon name="cash" size={18} color={INK} />
+              <Text style={styles.statChipNumero}>{ordenesPendientesCobro}</Text>
+              <Text style={styles.statChipLabel}>POR COBRAR</Text>
             </View>
-          </View>
-        </View>
-
-        {/* Accesos Rápidos */}
-        <View style={styles.seccion}>
-          <Text style={styles.tituloSeccion}>ACCESOS RÁPIDOS</Text>
-          <View style={styles.accesosGrid}>
-            <Pressable
-              style={({ pressed }) => [styles.accesoCard, { backgroundColor: COLORS.success }, hardShadow(pressed)]}
-              onPress={() => router.push('/pos/crear-orden')}
-              android_ripple={RIPPLE}
-            >
-              <POSIcon name="add-circle" size={38} color={INK} />
-              <Text style={styles.accesoLabel}>NUEVA ORDEN</Text>
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [styles.accesoCard, { backgroundColor: COLORS.primary }, hardShadow(pressed)]}
-              onPress={() => router.push('/pos/vista-mesas')}
-              android_ripple={RIPPLE}
-            >
-              <POSIcon name="grid" size={38} color={INK} />
-              <Text style={styles.accesoLabel}>MESAS</Text>
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [styles.accesoCard, { backgroundColor: COLORS.info }, hardShadow(pressed)]}
-              onPress={() => router.push('/pos/ordenes')}
-              android_ripple={RIPPLE}
-            >
-              <POSIcon name="list" size={38} color={INK} />
-              <Text style={styles.accesoLabel}>ÓRDENES</Text>
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [styles.accesoCard, { backgroundColor: '#FFB37A' }, hardShadow(pressed)]}
-              onPress={() => router.push('/pos/cocina')}
-              android_ripple={RIPPLE}
-            >
-              <POSIcon name="flame" size={38} color={INK} />
-              <Text style={styles.accesoLabel}>COCINA</Text>
-            </Pressable>
           </View>
         </View>
 
@@ -260,7 +247,7 @@ export default function HomeScreen() {
                         <View style={styles.actividadMesa}>
                           <POSIcon name="restaurant" size={13} color={INK} />
                           <Text style={styles.actividadMesaText}>
-                            Mesa {orden?.mesa?.numero || orden?.mesa?.nombre}
+                            Mesa {orden?.mesa?.nombre}
                           </Text>
                         </View>
                       )}
@@ -295,11 +282,9 @@ export default function HomeScreen() {
         )}
 
         {/* Opciones del menú */}
-        {renderOpcionMenu('add-circle', 'Nueva Orden', 'nueva-orden', 4, COLORS.success)}
-        {renderOpcionMenu('grid', 'Mesas', 'mesas', 3, COLORS.primary)}
-        {renderOpcionMenu('list', 'Órdenes', 'ordenes', 2, COLORS.info)}
-        {renderOpcionMenu('flame', 'Cocina', 'cocina', 1, '#FFB37A')}
-        {renderOpcionMenu('time', 'Historial', 'historial', 0, COLORS.warning)}
+        {renderOpcionMenu('grid', 'Mesas', 'mesas', 2, COLORS.primary)}
+        {renderOpcionMenu('list', 'Órdenes', 'ordenes', 1, COLORS.info)}
+        {renderOpcionMenu('flame', 'Cocina', 'cocina', 0, '#FFB37A')}
 
         {/* Botón principal */}
         <Pressable
@@ -321,7 +306,7 @@ export default function HomeScreen() {
               }],
             }}
           >
-            <POSIcon name="menu" size={26} color={INK} />
+            <POSIcon name="apps" size={24} color={INK} />
           </Animated.View>
         </Pressable>
       </View>
@@ -399,51 +384,57 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // ── Estadísticas ────────────────────────────────────────────────────────
-  estadisticasGrid: {
+  iniciarOrdenGrid: {
     flexDirection: 'row',
     gap: 12,
   },
-  estadisticaCard: {
+  iniciarOrdenCard: {
     flex: 1,
-    alignItems: 'center',
-    padding: 14,
-    gap: 6,
+    minHeight: 110,
     borderRadius: RADIUS,
     borderWidth: BORDER_W,
     borderColor: INK,
+    padding: 12,
+    justifyContent: 'space-between',
   },
-  estadisticaNumero: {
-    fontSize: 28,
-    fontWeight: '800',
+  iniciarOrdenTitulo: {
+    fontSize: 13,
+    fontWeight: '900',
     color: INK,
-  },
-  estadisticaLabel: {
-    fontSize: 11,
-    fontWeight: '800',
     letterSpacing: 0.2,
+  },
+  iniciarOrdenSubtitulo: {
+    fontSize: 11,
+    fontWeight: '600',
     color: INK,
-    textAlign: 'center',
+    opacity: 0.85,
   },
 
-  // ── Accesos Rápidos ─────────────────────────────────────────────────────
-  accesosGrid: {
+  // ── Estadísticas compactas ──────────────────────────────────────────────
+  estadisticasCompactas: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+    gap: 8,
   },
-  accesoCard: {
-    width: '47%',
-    alignItems: 'center',
-    padding: 20,
-    gap: 10,
-    borderRadius: RADIUS,
-    borderWidth: BORDER_W,
+  statChip: {
+    flex: 1,
+    minHeight: 64,
+    borderRadius: 12,
+    borderWidth: 2,
     borderColor: INK,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
   },
-  accesoLabel: {
-    fontSize: 14,
-    fontWeight: '800',
+  statChipNumero: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: INK,
+  },
+  statChipLabel: {
+    fontSize: 10,
+    fontWeight: '900',
     letterSpacing: 0.2,
     color: INK,
     textAlign: 'center',
