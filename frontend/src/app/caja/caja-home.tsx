@@ -6,7 +6,7 @@ import {
   MovimientoListItem,
   PieChartCaja,
 } from '@/components/caja';
-import { COLORS, POSBadge, POSButton, POSCard, POSIcon } from '@/components/pos';
+import { POSIcon } from '@/components/pos';
 import {
   calcularDistribucionPorCategoria,
   calcularResumen,
@@ -20,6 +20,7 @@ import {
   TipoMovimientoCaja
 } from '@/features/caja/caja/caja.types';
 import useCaja from '@/features/caja/caja/useCaja';
+import { useMateriales } from '@/features/inventario/materiales';
 import { MetodoPago } from '@/types/pos.types';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -39,6 +40,20 @@ const FECHA_HOY = new Date().toLocaleDateString('es-MX', {
   month: 'long',
   day: 'numeric',
 });
+
+type MovimientoCajaFormPayload = {
+  tipoMovimiento: TipoMovimientoCaja;
+  conceptoMovimiento: TipoConceptoMovimiento;
+  metodoPago: MetodoPago | null;
+  concepto: string;
+  referencia: string;
+  monto: number;
+  fecha: string;
+  cajaId: number;
+  empleadoId: number;
+  ordenId: number | null;
+  restock: { materialId: number; cantidad: number } | null;
+};
 
 let siguienteMovimientoId = 1000;
 
@@ -104,6 +119,8 @@ export default function CajaHome() {
   const [modalMovimientoTipo, setModalMovimientoTipo] = useState<TipoMovimientoCaja | null>(null);
   const [modalCrearCaja, setModalCrearCaja] = useState(false);
 
+  const { materiales, cargarMateriales: cargarMaterialesInventario } = useMateriales();
+
   // Feedback inmediato: los movimientos nuevos se reflejan al instante en
   // pantalla mientras se confirma con backend, en vez de esperar un refetch.
   // (En el original, `agregarMovimiento` creaba el objeto pero nunca lo
@@ -116,6 +133,12 @@ export default function CajaHome() {
       fetchCajasBySucursal(sucursalActual.id);
     }
   }, [sucursalActual]);
+
+  useEffect(() => {
+    if (sucursalActual) {
+      cargarMaterialesInventario();
+    }
+  }, [sucursalActual, cargarMaterialesInventario]);
 
   useEffect(() => {
     if (!confirmacionVisible) return;
@@ -171,31 +194,24 @@ export default function CajaHome() {
     ]);
   };
 
-  const agregarMovimiento = (
-    tipo: TipoMovimientoCaja,
-    categoria: string,
-    monto: number,
-    referencia: string
-  ) => {
+  const agregarMovimiento = (movimiento: MovimientoCajaFormPayload) => {
     // TODO Redux/API: dispatch(registrarMovimientoThunk({ ...movimiento }))
     const nuevo: MovimientoCaja = {
       id: siguienteMovimientoId++,
-      tipoMovimiento: tipo,
-      conceptoMovimiento:
-        tipo === TipoMovimientoCaja.INGRESO
-          ? TipoConceptoMovimiento.VENTA
-          : TipoConceptoMovimiento.GASTO,
-      metodoPago: 'efectivo' as MetodoPago,
-      concepto: categoria,
-      referencia: referencia || 'Registrado manualmente',
-      monto,
+      tipoMovimiento: movimiento.tipoMovimiento,
+      conceptoMovimiento: movimiento.conceptoMovimiento,
+      metodoPago: movimiento.metodoPago ?? ('efectivo' as MetodoPago),
+      concepto: movimiento.concepto,
+      referencia: movimiento.referencia || 'Registrado manualmente',
+      monto: movimiento.monto,
       aprobado: true,
-      fecha: new Date().toISOString(),
+      fecha: movimiento.fecha || new Date().toISOString(),
       createdAt: new Date().toISOString(),
       createdBy: 1,
-      cajaId: cajaSeleccionada?.id || 0,
-      empleadoId: 1,
-      ordenId: 0,
+      cajaId: movimiento.cajaId || cajaSeleccionada?.id || 0,
+      empleadoId: movimiento.empleadoId,
+      ordenId: movimiento.ordenId ?? 0,
+      restock: movimiento.restock,
     };
 
     // Feedback inmediato: aparece en la lista y en el resumen sin esperar
@@ -203,7 +219,7 @@ export default function CajaHome() {
     setMovimientosOptimistas((prev) => [nuevo, ...prev]);
     setModalMovimientoTipo(null);
     setConfirmacionVisible(
-      tipo === TipoMovimientoCaja.INGRESO ? 'Ingreso registrado' : 'Gasto registrado'
+      movimiento.tipoMovimiento === TipoMovimientoCaja.INGRESO ? 'Ingreso registrado' : 'Gasto registrado'
     );
   };
 
@@ -543,10 +559,15 @@ export default function CajaHome() {
       <AgregarMovimientoModal
         visible={modalMovimientoTipo !== null}
         tipo={modalMovimientoTipo ?? TipoMovimientoCaja.INGRESO}
+        cajaId={cajaSeleccionada?.id ?? 0}
+        empleadoId={1}
         onCancelar={() => setModalMovimientoTipo(null)}
-        onGuardar={(categoria, monto, referencia) =>
-          agregarMovimiento(modalMovimientoTipo ?? TipoMovimientoCaja.INGRESO, categoria, monto, referencia)
-        }
+        onGuardar={(movimiento) => agregarMovimiento(movimiento)}
+        materiales={materiales.map((material) => ({
+          id: material.id,
+          nombre: material.nombre,
+          unidadMedida: material.unidadMedida,
+        }))}
       />
 
       {/* 9-12. Corte de caja */}
