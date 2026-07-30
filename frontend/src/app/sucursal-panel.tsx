@@ -24,6 +24,8 @@ import MesasScreen from './config/mesas';
 import InventarioSucursalScreen from './inventario/existencias';
 import ExtrasScreen from './productos/extras';
 import ProductosScreen from './productos/productos';
+import EmployeesScreen from './admin/empleados';
+import descuentosScreen from './admin/descuentos';
 
 const { width, height } = Dimensions.get('window');
 const IS_MOBILE = width < 768;
@@ -45,7 +47,7 @@ const hardShadow = (pressed: boolean) => ({
 });
 
 // Vista que se muestra en el área de contenido del panel
-type VistaPanel = 'caja' | 'inventario' | 'productos' | 'categorias' | 'mesas' | 'extras';
+type VistaPanel = 'caja' | 'pos' | 'inventario' | 'productos' | 'categorias' | 'mesas' | 'extras' | 'empleados' | 'descuentos';
 
 // Componente a renderizar para cada vista del panel (mismos componentes
 // que ya existen como pantallas propias, reutilizados sin duplicar código)
@@ -56,13 +58,16 @@ const VISTAS_PANEL: Record<VistaPanel, ComponentType> = {
   extras: ExtrasScreen,
   categorias: CategoriasScreen, // Reutilizamos la misma vista de productos para categorías
   mesas: MesasScreen,
+  empleados: EmployeesScreen,
+  descuentos: descuentosScreen,
 };
 
 interface MenuOption {
   id: string;
   titulo: string;
   icono: string;
-  vista: VistaPanel;
+  vista?: VistaPanel;   // opcional ahora
+  ruta?: string;         // nuevo: para secciones con su propio stack, como clientes
   color: string;
 }
 
@@ -124,21 +129,21 @@ const MENU_OPTIONS: MenuOption[] = [
     id: 'personal',
     titulo: 'Personal',
     icono: 'people',
-    vista: 'caja',
+    vista: 'empleados',
     color: '#FF5722',
   },
   {
     id: 'clientes',
     titulo: 'Clientes Frecuentes',
     icono: 'person',
-    vista: 'caja',
+    ruta: ROUTES.CLIENTES.BUSCAR,   // en vez de vista: 'personal'
     color: '#3F51B5',
   },
   {
     id: 'descuentos',
     titulo: 'Descuentos',
     icono: 'pricetag',
-    vista: 'caja',
+    vista: 'descuentos',
     color: '#009688',
   },
 ];
@@ -164,7 +169,9 @@ export default function SucursalPanelScreen() {
     }
 
     setActiveOption(option.id);
-    setVistaActiva(option.vista);
+    if (option.vista) {
+      setVistaActiva(option.vista);
+    }
     // En móvil cerramos el drawer al cambiar de vista
     if (IS_MOBILE) setDrawerAbierto(false);
   };

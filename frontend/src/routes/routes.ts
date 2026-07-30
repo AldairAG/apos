@@ -24,6 +24,7 @@ export const ROUTES = {
     EMPLEADOS: '/admin/empleados',
     ROLES: '/admin/roles',
     SUCURSALES: '/admin/sucursales',
+    DESCUENTOS: '/admin/descuentos',
   },
 
   // Módulo de Configuración
@@ -56,6 +57,14 @@ export const ROUTES = {
     DETALLE_ORDEN: '/pos/detalle-orden',
     COCINA: '/pos/cocina',
     HOME: '/pos/home',
+  },
+
+  // Módulo de Clientes Frecuentes (fidelización)
+  CLIENTES: {
+    BUSCAR: '/clientes',
+    // Ruta dinámica: al navegar usa `/clientes/${clienteId}`, no esta constante literal
+    DETALLE: '/clientes/[clienteId]',
+    REGISTRAR: '/clientes/registrar',
   },
 
   // Módulo de Gestión de Caja
