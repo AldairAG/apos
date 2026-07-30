@@ -4,8 +4,9 @@ import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
     abrirCajaThunk, cerrarCajaThunk, crearCajaThunk,
-    fetchCajasBySucursalThunk, fetchMovimientosByCajaThunk,
-    hacerCorteCajaThunk, registrarGastoThunk
+    fetchCajasBySucursalThunk, fetchCorteActualByCajaThunk, fetchMovimientosByCajaThunk,
+    hacerCorteCajaThunk, registrarGastoThunk,
+    registrarIngresoThunk
 } from "./caja.thunk";
 import { CrearCajaRequest, MovimientoCaja } from "./caja.types";
 
@@ -89,6 +90,26 @@ const useCaja = () => {
         }
     };
 
+    const registrarIngreso = async (movimiento: MovimientoCaja) => {
+        try {
+            const ingreso = await dispatch(registrarIngresoThunk(movimiento)).unwrap();
+            return ingreso;
+        } catch (error) {
+            console.error('Error al registrar el ingreso:', error);
+            throw error;
+        }
+    };
+
+    const fetchMovimientosDelCorteActual = async (cajaId: number) => {
+        try {
+            const movimientos = await dispatch(fetchCorteActualByCajaThunk(cajaId)).unwrap();
+            return movimientos;
+        } catch (error) {
+            console.error('Error al cargar los movimientos del corte actual de la caja:', error);
+            throw error;
+        }
+    };
+
     return {
         sucursalActual,
         loading,
@@ -105,6 +126,8 @@ const useCaja = () => {
         cerrarCaja,
         hacerCorteCaja,
         registrarGasto,
+        registrarIngreso,
+        fetchMovimientosDelCorteActual,
     };
 };
 

@@ -11,7 +11,7 @@ import com.api.apos.domain.caja.caja.CajaService;
 import com.api.apos.domain.caja.corte.CorteCaja;
 import com.api.apos.domain.caja.corte.service.CorteCajaService;
 import com.api.apos.domain.caja.movimeinto.MovimientoCaja;
-import com.api.apos.domain.caja.movimeinto.service.MovimientoCajaService;
+import com.api.apos.domain.caja.movimeinto.MovimientoCajaService;
 import com.api.apos.enums.MetodoPago;
 import com.api.apos.enums.TipoConceptoMovimiento;
 import com.api.apos.enums.TipoMovimientoCaja;

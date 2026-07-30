@@ -11,6 +11,8 @@ import com.api.apos.enums.EstadoCaja;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,6 +39,7 @@ public class Caja {
     
     private String nombre;
     private Boolean activa;
+    @Enumerated(EnumType.STRING)
     private EstadoCaja estado;
     private BigDecimal montoActual;
     private Long corteActualId;

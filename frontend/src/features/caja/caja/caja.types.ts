@@ -13,7 +13,7 @@ export interface MovimientoCaja {
     id: number;
     tipoMovimiento: TipoMovimientoCaja;
     conceptoMovimiento: TipoConceptoMovimiento;
-    metodoPago: MetodoPago;
+    metodoPago: MetodoPago | null;
     concepto: string;
     referencia: string;
     monto: number;

@@ -295,7 +295,7 @@ export const AgregarMovimientoModal: React.FC<AgregarMovimientoModalProps> = ({
   const montoValido = montoNumerico > 0;
   const restockValido = !esRestock || (materialSeleccionado !== null && cantidadRestock > 0);
   const metodoPagoValido = !requiereMetodoPago || metodoPago !== null;
-  const esValido = conceptoMovimiento !== null && montoValido && restockValido && metodoPagoValido;
+  const esValido = conceptoMovimiento !== null && montoValido && restockValido ;
 
   const materialesFiltrados = materiales.filter((m) =>
     m.nombre.toLowerCase().includes(busquedaMaterial.toLowerCase())
@@ -442,7 +442,7 @@ export const AgregarMovimientoModal: React.FC<AgregarMovimientoModalProps> = ({
               )}
 
               {/* ── Método de pago — se oculta para retiro/ingreso de caja (siempre efectivo interno) ── */}
-              {requiereMetodoPago && (
+              {/*requiereMetodoPago && (
                 <>
                   <Text style={styles.label}>MÉTODO DE PAGO</Text>
                   <View style={styles.chipsWrap}>
@@ -466,7 +466,7 @@ export const AgregarMovimientoModal: React.FC<AgregarMovimientoModalProps> = ({
                     <Text style={styles.errorHint}>Selecciona un método de pago.</Text>
                   )}
                 </>
-              )}
+              )*/}
 
               {/* ── Monto ── */}
               <Text style={styles.label}>MONTO *</Text>

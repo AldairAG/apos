@@ -19,8 +19,16 @@ public class CajaService {
     }
 
     public Caja actualizarCaja(Long id, Caja caja) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'actualizarCaja'");
+        Caja cajaExistente = cajaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Caja no encontrada con ID: " + id));
+
+        cajaExistente.setCorteActualId(caja.getCorteActualId());
+        cajaExistente.setNombre(caja.getNombre());
+        cajaExistente.setMontoActual(caja.getMontoActual());
+        cajaExistente.setEstado(caja.getEstado());
+        cajaExistente.setSucursal(caja.getSucursal());
+
+        return cajaRepository.save(cajaExistente);
     }
 
     public void eliminarCaja(Long id) {
@@ -29,8 +37,8 @@ public class CajaService {
     }
 
     public Caja obtenerCajaPorId(Long id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'obtenerCajaPorId'");
+        return cajaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Caja no encontrada con ID: " + id));
     }
 
     public List<Caja> obtenerCajasPorSucursal(Long idSucursal) {

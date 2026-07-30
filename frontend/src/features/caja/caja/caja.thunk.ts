@@ -107,3 +107,33 @@ export const registrarGastoThunk = createAsyncThunk<
         );
     }
 });
+
+export const registrarIngresoThunk = createAsyncThunk<
+    MovimientoCaja,
+    MovimientoCaja,
+    { rejectValue: string }
+>('caja/registrarIngreso', async (movimiento, { rejectWithValue }) => {
+    try {
+        const ingreso = await cajaService.registrarIngreso(movimiento);
+        return ingreso;
+    } catch (error: any) {
+        return rejectWithValue(
+            error.response?.data?.message || 'Error al registrar el ingreso'
+        );
+    }
+});
+
+export const fetchCorteActualByCajaThunk = createAsyncThunk<
+    MovimientoCaja[],
+    number,
+    { rejectValue: string }
+>('caja/fetchCorteActualByCaja', async (cajaId, { rejectWithValue }) => {
+    try {
+        const caja = await cajaService.getMovimientosDelCorteActual(cajaId);
+        return caja;
+    } catch (error: any) {
+        return rejectWithValue(
+            error.response?.data?.message || 'Error al cargar el corte actual de la caja'
+        );
+    }
+});

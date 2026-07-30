@@ -15,6 +15,7 @@ import com.api.apos.features.caja.usecase.CerrarCajaUseCase;
 import com.api.apos.features.caja.usecase.CrearCajaUseCase;
 import com.api.apos.features.caja.usecase.HacerCorteCajaUseCase;
 import com.api.apos.features.caja.usecase.RegistrarGastoUseCase;
+import com.api.apos.features.caja.usecase.RegistrarIngresoUseCase;
 import com.api.apos.helpers.ApiResponseWrapper;
 
 import lombok.AllArgsConstructor;
@@ -47,6 +48,8 @@ public class CajaController {
 
     private final CrearCajaUseCase crearCajaUseCase;
 
+    private final RegistrarIngresoUseCase registrarIngresoUseCase;
+
     //Query Use Cases
 
     private final GetCajasBySucursal getCajasBySucursal;
@@ -76,8 +79,8 @@ public class CajaController {
      * @param cajaId
      * @return ResponseEntity con la lista de movimientos de caja
      */
-    @GetMapping("/getMovimientosByCaja")
-    public ResponseEntity<ApiResponseWrapper<List<MovimientoCajaDTO>>> getMovimientosDeCaja(@RequestParam Long cajaId) {
+    @GetMapping("/getMovimientosByCorteActual/{cajaId}")
+    public ResponseEntity<ApiResponseWrapper<List<MovimientoCajaDTO>>> getMovimientosDeCaja(@PathVariable Long cajaId) {
         try {
             List<MovimientoCajaDTO> movimientos = GetMovimientosDeCorteActualByCajaId.execute(cajaId);
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, movimientos, "Movimientos obtenidos exitosamente"));
@@ -143,6 +146,22 @@ public class CajaController {
         try {
             MovimientoCajaDTO movimientoCaja = registrarGastoUseCase.execute(movimiento);
             return ResponseEntity.ok(new ApiResponseWrapper<>(true, movimientoCaja, "Gasto registrado exitosamente"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponseWrapper<>(false, null, e.getMessage()));
+        }
+    }
+
+    /**
+     * Metodo para registrar un ingreso en una caja
+     * @param cajaId
+     * @param ingreso
+     * @return ResponseEntity con la caja con el ingreso registrado
+     */
+    @PostMapping("/registrarIngreso")
+    public ResponseEntity<ApiResponseWrapper<MovimientoCajaDTO>> registrarIngreso(@RequestBody MovimientoCajaDTO movimiento) {
+        try {
+            MovimientoCajaDTO movimientoCaja = registrarIngresoUseCase.execute(movimiento);
+            return ResponseEntity.ok(new ApiResponseWrapper<>(true, movimientoCaja, "Ingreso registrado exitosamente"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ApiResponseWrapper<>(false, null, e.getMessage()));
         }

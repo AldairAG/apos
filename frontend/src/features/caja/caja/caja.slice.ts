@@ -1,7 +1,9 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Caja, CajaState, MovimientoCaja, Corte } from "./caja.types";
 import { crearCajaThunk, fetchCajasBySucursalThunk, fetchMovimientosByCajaThunk,
-     abrirCajaThunk,cerrarCajaThunk,hacerCorteCajaThunk,registrarGastoThunk } from "./caja.thunk";
+     abrirCajaThunk,cerrarCajaThunk,hacerCorteCajaThunk,registrarGastoThunk, 
+     registrarIngresoThunk,
+     fetchCorteActualByCajaThunk} from "./caja.thunk";
 
 const initialState: CajaState = {
     cajas: [],
@@ -68,8 +70,8 @@ const cajaSlice = createSlice({
             })
             .addCase(fetchCajasBySucursalThunk.fulfilled, (state, action: PayloadAction<Caja[]>) => {
                 state.loading = false;
-                state.cajas = action.payload;
-                state.cajaSeleccionada = action.payload.length > 0 ? action.payload[0] : null;
+                state.cajas = action.payload|| [];
+                state.cajaSeleccionada = (state.cajas|| []).length > 0 ? state.cajas[0] : null;
             })
             .addCase(fetchCajasBySucursalThunk.rejected, (state, action) => {
                 state.loading = false;
@@ -122,6 +124,42 @@ const cajaSlice = createSlice({
             .addCase(hacerCorteCajaThunk.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload || "Error al hacer el corte de caja";
+            })
+            .addCase(registrarGastoThunk.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(registrarGastoThunk.fulfilled, (state, action: PayloadAction<MovimientoCaja>) => {
+                state.loading = false;
+                state.MovimientosCaja.push(action.payload);
+            })
+            .addCase(registrarGastoThunk.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || "Error al registrar el gasto";
+            })
+            .addCase(registrarIngresoThunk.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(registrarIngresoThunk.fulfilled, (state, action: PayloadAction<MovimientoCaja>) => {
+                state.loading = false;
+                state.MovimientosCaja.push(action.payload);
+            })
+            .addCase(registrarIngresoThunk.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || "Error al registrar el ingreso";
+            })
+            .addCase(fetchCorteActualByCajaThunk.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchCorteActualByCajaThunk.fulfilled, (state, action: PayloadAction<MovimientoCaja[]>) => {
+                state.loading = false;
+                state.MovimientosCaja = action.payload;
+            })
+            .addCase(fetchCorteActualByCajaThunk.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || "Error al cargar el corte actual de la caja";
             });
 
                 

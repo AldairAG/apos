@@ -55,6 +55,7 @@ public class MovimientoCaja {
     
     private Boolean aprobado;
     private Long autorizadoPor;
+    private Long corteCajaId;
     
     private LocalDateTime fecha;
     private LocalDateTime createdAt;
