@@ -378,7 +378,7 @@ export default function CrearOrdenScreen() {
   };
 
   const productosFiltrados = useMemo(() => {
-    let resultado = productos.filter((p: ProductosBySucursalResponse) => p.disponible && p.activo);
+    let resultado = productos.filter((p: ProductosBySucursalResponse) => p.activo);
 
     if (busqueda.trim()) {
       resultado = resultado.filter((p: ProductosBySucursalResponse) =>

@@ -61,6 +61,7 @@ public class CrearProductoUseCase {
                 .margen(BigDecimal.valueOf(productoDto.getMargen()))
                 .tiempoPreparacion(productoDto.getTiempoPreparacion())
                 .activo(productoDto.isActivo())
+                .disponible(false)
                 .destacado(productoDto.isDestacado())
                 .createdAt(LocalDateTime.now())
                 .build();
