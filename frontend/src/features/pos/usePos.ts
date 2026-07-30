@@ -2,13 +2,13 @@ import { AppDispatch, RootState } from "@/store";
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSucursal } from "../sucursal/useSucursal";
-import { cancelOrdenThunk, createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk, updateOrdenEstadoThunk } from "./pos.thunks";
-import { CrearOrdenDTO, MesaPosResponseDTO } from "./pos.types";
+import { cancelOrdenThunk, createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk, pagarOrdenThunk, updateOrdenEstadoThunk } from "./pos.thunks";
+import { CrearOrdenDTO, EstadoOrden, MesaPosResponseDTO, PagarOrdenDTO } from "./pos.types";
 
 
 const usePos = () => {
     const dispatch = useDispatch<AppDispatch>();
-    const { loading, error, productos, mesas, selectedMesa, ordenes } = useSelector((state: RootState) => state.pos);
+    const { loading, error, success, productos, mesas, selectedMesa, ordenes, ordenSelected } = useSelector((state: RootState) => state.pos);
     const { sucursalActual } = useSucursal();
 
     const cargarProductos = useCallback(() => {
@@ -36,15 +36,10 @@ const usePos = () => {
         }
     };
 
-    const cancelOrden = async (ordenId: number, motivo: string) => {
-        try {
-            const result = await dispatch(cancelOrdenThunk({ id: ordenId, motivo })).unwrap();
-            return result;
-        } catch (error) {
-            console.error('Error al cancelar la orden:', error);
-            throw error;
-        }
-    };
+    const selectOrden = (ordenId: number) => {
+        const orden = ordenes.find((o) => o.id === ordenId) || null;
+        dispatch({ type: 'pos/selectOrden', payload: orden });
+    }
 
     const fetchOrdenesBySucursal = async (sucursalId: number) => {
         try {
@@ -76,7 +71,7 @@ const usePos = () => {
         }
     };
 
-    const actualizarEstadoOrden = async (ordenId: number, estado: "PENDIENTE" | "EN_PREPARACION" | "LISTA" | "ENTREGADA" | "CANCELADA") => {
+    const actualizarEstadoOrden = async (ordenId: number, estado: EstadoOrden) => {
         try {
             const orden = await dispatch(updateOrdenEstadoThunk({ ordenId, estado })).unwrap();
             return orden;
@@ -96,6 +91,16 @@ const usePos = () => {
         }
     };
 
+    const pagarOrden = async (data: PagarOrdenDTO) => {
+        try {
+            const orden = await dispatch(pagarOrdenThunk(data)).unwrap();
+            return orden;
+        } catch (error) {
+            console.error('Error al pagar la orden:', error);
+            throw error;
+        }
+    };
+
     const selectMesa = (mesaId: number) => {
         const mesa = mesas.find((m: MesaPosResponseDTO) => m.id === mesaId) || null;
         dispatch({ type: 'pos/setSelectedMesa', payload: mesa });
@@ -107,11 +112,13 @@ const usePos = () => {
         selectedMesa,
         loading,
         error,
+        success,
         productos,
         ordenes,
+        ordenSelected,
         crearOrden: createOrden,
         getOrdenesBySucursal: fetchOrdenesBySucursal,
-        cancelOrden,
+        cancelOrden: cancelarOrden,
         getProductosBySucursal: fetchProductosBySucursal,
         cargarProductos,
         cargarOrdenes,
@@ -119,7 +126,9 @@ const usePos = () => {
         seleccionarMesa: selectMesa,
         getMesasBySucursal: fetchMesasBySucursal,
         actualizarEstadoOrden,
-        cancelarOrden,
+        cancelarOrden: cancelarOrden,
+        seleccionarOrden: selectOrden,
+        pagarOrden,
     };
 };
 

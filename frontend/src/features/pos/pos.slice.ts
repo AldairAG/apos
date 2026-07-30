@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { cancelOrdenThunk, createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk, updateOrdenEstadoThunk } from "./pos.thunks";
+import { cancelOrdenThunk, createOrdenThunk, fetchMesasBySucursalThunk, fetchOrdenesBySucursalThunk, fetchProductosBySucursalThunk, pagarOrdenThunk, updateOrdenEstadoThunk } from "./pos.thunks";
 import { EstadoOrden, MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from "./pos.types";
 
 interface POSState {
@@ -11,7 +11,9 @@ interface POSState {
     ordenSelected: OrdenResponseDTO | null;
     loading: boolean;
     error: string | null;
+    success: boolean;
     searchQuery: string;
+    
 }
 
 const initialState: POSState = {
@@ -23,6 +25,7 @@ const initialState: POSState = {
     ordenSelected: null,
     loading: false,
     error: null,
+    success: false,
     searchQuery: '',
 };
 
@@ -54,7 +57,11 @@ const posSlice = createSlice({
             if (index >= 0) {
                 state.ordenes[index] =action.payload;
             }
+        },
+        selectOrden: (state, action: PayloadAction<OrdenResponseDTO | null>) => {
+            state.ordenSelected = action.payload;
         }
+
     },
     extraReducers: (builder) => {
         // Fetch productos by sucursal
@@ -62,6 +69,7 @@ const posSlice = createSlice({
             .addCase(fetchProductosBySucursalThunk.pending, (state) => {
                 state.loading = true;
                 state.error = null;
+                state.success = false;
             })
             .addCase(fetchProductosBySucursalThunk.fulfilled, (state, action) => {
                 state.loading = false;
@@ -70,11 +78,13 @@ const posSlice = createSlice({
             .addCase(fetchProductosBySucursalThunk.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
+                state.success = false;
             });
         builder
             .addCase(fetchOrdenesBySucursalThunk.pending, (state) => {
                 state.loading = true;
                 state.error = null;
+                state.success = false;
             })
             .addCase(fetchOrdenesBySucursalThunk.fulfilled, (state, action) => {
                 state.loading = false;
@@ -83,11 +93,13 @@ const posSlice = createSlice({
             .addCase(fetchOrdenesBySucursalThunk.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
+                state.success = false;
             });
         builder
             .addCase(createOrdenThunk.pending, (state) => {
                 state.loading = true;
                 state.error = null;
+                state.success = false;
             })
             .addCase(createOrdenThunk.fulfilled, (state, action) => {
                 state.loading = false;
@@ -96,11 +108,13 @@ const posSlice = createSlice({
             .addCase(createOrdenThunk.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
+                state.success = false;
             });
         builder
             .addCase(fetchMesasBySucursalThunk.pending, (state) => {
                 state.loading = true;
                 state.error = null;
+                state.success = false;
             })
             .addCase(fetchMesasBySucursalThunk.fulfilled, (state, action) => {
                 state.loading = false;
@@ -109,11 +123,13 @@ const posSlice = createSlice({
             .addCase(fetchMesasBySucursalThunk.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
+                state.success = false;
             });
         builder
             .addCase(updateOrdenEstadoThunk.pending, (state) => {
                 state.loading = true;
                 state.error = null;
+                state.success = false;
             })
             .addCase(updateOrdenEstadoThunk.fulfilled, (state, action) => {
                 state.loading = false;
@@ -124,26 +140,51 @@ const posSlice = createSlice({
             .addCase(updateOrdenEstadoThunk.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
+                state.success = false;
             });
         builder
             .addCase(cancelOrdenThunk.pending, (state) => {
                 state.loading = true;
                 state.error = null;
+                state.success = false;
             })
             .addCase(cancelOrdenThunk.fulfilled, (state, action) => {
                 state.loading = false;
                 state.ordenes = state.ordenes.map((orden) =>
                     orden.id === action.payload
-                        ? { ...orden, estado: 'CANCELADA' }
+                        ? { ...orden, estado: EstadoOrden.CANCELADA }
                         : orden
                 );
             })
             .addCase(cancelOrdenThunk.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
+                state.success = false;
+            });
+
+        builder
+            .addCase(pagarOrdenThunk.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+                state.success = false;
+            })
+            .addCase(pagarOrdenThunk.fulfilled, (state, action: PayloadAction<OrdenResponseDTO>) => {
+                state.loading = false;
+                state.success = true;
+                state.ordenes = state.ordenes.map((orden) =>
+                    orden.id === action.payload.id ? action.payload : orden
+                );
+                if (state.ordenSelected?.id === action.payload.id) {
+                    state.ordenSelected = action.payload;
+                }
+            })
+            .addCase(pagarOrdenThunk.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+                state.success = false;
             });
 
     }
 })
-export const { setSearchQuery, setSelectedMesa, clearError, clearProductos, setSelectedProducto, agregarOrden, actualizarOrden } = posSlice.actions;
+export const { setSearchQuery, setSelectedMesa, clearError, clearProductos, setSelectedProducto, agregarOrden, actualizarOrden, selectOrden } = posSlice.actions;
 export default posSlice.reducer;

@@ -2,7 +2,7 @@ package com.api.apos.features.caja.usecase;
 
 import org.springframework.stereotype.Service;
 import com.api.apos.domain.caja.caja.Caja;
-import com.api.apos.domain.caja.caja.service.CajaService;
+import com.api.apos.domain.caja.caja.CajaService;
 import com.api.apos.enums.EstadoCaja;
 
 import lombok.AllArgsConstructor;

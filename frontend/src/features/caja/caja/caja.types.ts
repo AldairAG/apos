@@ -13,7 +13,7 @@ export interface MovimientoCaja {
     id: number;
     tipoMovimiento: TipoMovimientoCaja;
     conceptoMovimiento: TipoConceptoMovimiento;
-    metodoPago: MetodoPago;
+    metodoPago: MetodoPago | null;
     concepto: string;
     referencia: string;
     monto: number;
@@ -35,6 +35,7 @@ export interface RestockDTO {
 export enum TipoMovimientoCaja {
     INGRESO = "INGRESO",
     EGRESO = "EGRESO",
+    GASTO = "GASTO",
 }
 
 export enum TipoConceptoMovimiento {

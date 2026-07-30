@@ -6,7 +6,7 @@ import {
   MovimientoListItem,
   PieChartCaja,
 } from '@/components/caja';
-import { COLORS, POSBadge, POSButton, POSCard, POSIcon } from '@/components/pos';
+import { POSIcon } from '@/components/pos';
 import {
   calcularDistribucionPorCategoria,
   calcularResumen,
@@ -15,11 +15,13 @@ import {
   MOCK_USUARIOS
 } from '@/features/caja/caja/caja.mock';
 import {
+  EstadoCaja,
   MovimientoCaja,
   TipoConceptoMovimiento,
   TipoMovimientoCaja
 } from '@/features/caja/caja/caja.types';
 import useCaja from '@/features/caja/caja/useCaja';
+import { useMateriales } from '@/features/inventario/materiales';
 import { MetodoPago } from '@/types/pos.types';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -40,18 +42,20 @@ const FECHA_HOY = new Date().toLocaleDateString('es-MX', {
   day: 'numeric',
 });
 
-let siguienteMovimientoId = 1000;
+type MovimientoCajaFormPayload = {
+  tipoMovimiento: TipoMovimientoCaja;
+  conceptoMovimiento: TipoConceptoMovimiento;
+  metodoPago: MetodoPago | null;
+  concepto: string;
+  referencia: string;
+  monto: number;
+  fecha: string;
+  cajaId: number;
+  empleadoId: number;
+  ordenId: number | null;
+  restock: { materialId: number; cantidad: number } | null;
+};
 
-// ─── Sistema de diseño local: Neo-Brutalismo Funcional + MD3 ────────────
-// No se toca la paleta compartida `COLORS` (viene de otra parte del código
-// base y puede estar en uso en otras pantallas). En su lugar se define un
-// set de tokens NB (Neo-Brutalist) pensados con psicología del color:
-//  - Fondo cálido (no gris frío) para que una app de dinero no se sienta clínica.
-//  - Verde = ingreso (crecimiento/confianza). Rojo *cálido*, no rojo alarma, para
-//    gasto (informa sin generar ansiedad). Ámbar = atención neutral (corte),
-//    no error. Azul sólido = marca/confianza en acciones primarias.
-//  - Bordes gruesos + sombra dura (sin blur) en vez de elevación difusa:
-//    comunican "esto es tocable" de forma inmediata, sin depender de sutileza.
 const NB = {
   bg: '#F5F1E8',
   ink: '#14161B',
@@ -89,25 +93,20 @@ export default function CajaHome() {
     loading,
     sucursalActual,
     fetchCajasBySucursal,
-    // NOTA: el hook original no exponía forma de cambiar de caja desde la UI
-    // (el chip selector tenía onPress vacío). Se asume/expone `seleccionarCaja`
-    // aquí para que el selector sea funcional — ajustar el nombre real del
-    // método si useCaja lo expone distinto.
     seleccionarCaja,
-  } = useCaja() as ReturnType<typeof useCaja> & {
-    seleccionarCaja?: (id: number) => void;
-  };
+    registrarIngreso,
+    fetchMovimientosDelCorteActual,
+    abrirCaja,
+    cerrarCaja,
+    registrarGasto,
+  } = useCaja();
 
   const [tab, setTab] = useState<TabResumen>('ingresos');
   const [movimientoSeleccionado, setMovimientoSeleccionado] = useState<MovimientoCaja | null>(null);
   const [corteModalVisible, setCorteModalVisible] = useState(false);
   const [modalMovimientoTipo, setModalMovimientoTipo] = useState<TipoMovimientoCaja | null>(null);
   const [modalCrearCaja, setModalCrearCaja] = useState(false);
-
-  // Feedback inmediato: los movimientos nuevos se reflejan al instante en
-  // pantalla mientras se confirma con backend, en vez de esperar un refetch.
-  // (En el original, `agregarMovimiento` creaba el objeto pero nunca lo
-  // agregaba a ningún estado, por lo que la UI nunca cambiaba.)
+  const { materiales, cargarMateriales: cargarMaterialesInventario } = useMateriales();
   const [movimientosOptimistas, setMovimientosOptimistas] = useState<MovimientoCaja[]>([]);
   const [confirmacionVisible, setConfirmacionVisible] = useState<string | null>(null);
 
@@ -118,10 +117,21 @@ export default function CajaHome() {
   }, [sucursalActual]);
 
   useEffect(() => {
+    if (sucursalActual) {
+      cargarMaterialesInventario();
+    }
+  }, [sucursalActual, cargarMaterialesInventario]);
+
+  useEffect(() => {
     if (!confirmacionVisible) return;
     const t = setTimeout(() => setConfirmacionVisible(null), 1800);
     return () => clearTimeout(t);
   }, [confirmacionVisible]);
+
+  useEffect(() => {
+    if (!cajaSeleccionada) return;
+    fetchMovimientosDelCorteActual(cajaSeleccionada.id);
+  }, [cajaSeleccionada, fetchMovimientosDelCorteActual]);
 
   // ─── Datos derivados ──────────────────────────────────────────────────
   const cajaActual = cajaSeleccionada!;
@@ -152,59 +162,66 @@ export default function CajaHome() {
   );
 
   // ─── Acciones ─────────────────────────────────────────────────────────
-  const abrirCaja = () => {
-    // TODO Redux/API: dispatch(abrirCajaThunk(cajaSeleccionadaId))
+  const handleAbrirCaja = () => {
+    Alert.alert('Abrir caja', '¿Seguro que deseas abrir la caja?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Abrir caja',
+        style: 'default',
+        onPress: () => {
+          abrirCaja(cajaSeleccionada?.id ?? 0);
+        },
+      },
+    ]);
   };
 
-  // Diseño de confianza: una acción destructiva/irreversible siempre pide
-  // confirmación explícita, con la opción segura (Cancelar) destacada.
-  const cerrarCaja = () => {
+  const handleCerrarCaja = () => {
     Alert.alert('Cerrar caja', '¿Seguro que deseas cerrar la caja sin generar un corte?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Cerrar caja',
         style: 'destructive',
         onPress: () => {
-          // TODO Redux/API: dispatch(cerrarCajaThunk(cajaSeleccionadaId))
+          cerrarCaja(cajaSeleccionada?.id ?? 0);
         },
       },
     ]);
   };
 
-  const agregarMovimiento = (
-    tipo: TipoMovimientoCaja,
-    categoria: string,
-    monto: number,
-    referencia: string
-  ) => {
-    // TODO Redux/API: dispatch(registrarMovimientoThunk({ ...movimiento }))
+  const agregarMovimiento = (movimiento: MovimientoCajaFormPayload) => {
+
     const nuevo: MovimientoCaja = {
-      id: siguienteMovimientoId++,
-      tipoMovimiento: tipo,
-      conceptoMovimiento:
-        tipo === TipoMovimientoCaja.INGRESO
-          ? TipoConceptoMovimiento.VENTA
-          : TipoConceptoMovimiento.GASTO,
-      metodoPago: 'efectivo' as MetodoPago,
-      concepto: categoria,
-      referencia: referencia || 'Registrado manualmente',
-      monto,
+      id: 0,
+      tipoMovimiento: movimiento.tipoMovimiento,
+      conceptoMovimiento: movimiento.conceptoMovimiento,
+      metodoPago: movimiento.metodoPago || null,
+      concepto: movimiento.concepto,
+      referencia: movimiento.referencia || 'Registrado manualmente',
+      monto: movimiento.monto,
       aprobado: true,
-      fecha: new Date().toISOString(),
+      fecha: movimiento.fecha || new Date().toISOString(),
       createdAt: new Date().toISOString(),
-      createdBy: 1,
-      cajaId: cajaSeleccionada?.id || 0,
-      empleadoId: 1,
-      ordenId: 0,
+      createdBy: 0,
+      cajaId: movimiento.cajaId || cajaSeleccionada?.id || 0,
+      empleadoId: movimiento.empleadoId,
+      ordenId: movimiento.ordenId ?? 0,
+      restock: movimiento.restock,
     };
 
-    // Feedback inmediato: aparece en la lista y en el resumen sin esperar
-    // respuesta de red, y una confirmación no bloqueante lo refuerza.
-    setMovimientosOptimistas((prev) => [nuevo, ...prev]);
-    setModalMovimientoTipo(null);
+
+    if (movimiento.tipoMovimiento === TipoMovimientoCaja.INGRESO) {
+      registrarIngreso(nuevo)
+    } else {
+      registrarGasto(nuevo)
+    }
+
+    //setModalMovimientoTipo(null);
     setConfirmacionVisible(
-      tipo === TipoMovimientoCaja.INGRESO ? 'Ingreso registrado' : 'Gasto registrado'
+      movimiento.tipoMovimiento === TipoMovimientoCaja.INGRESO ? 'Ingreso registrado' : 'Gasto registrado'
     );
+
+
+
   };
 
   const confirmarCorte = (saldoContado: number, diferencia: number) => {
@@ -301,16 +318,16 @@ export default function CajaHome() {
             <View
               style={[
                 styles.estadoBadge,
-                { backgroundColor: cajaActual.estado === 'ABIERTA' ? NB.ingreso : NB.gasto },
+                { backgroundColor: cajaActual.estado === EstadoCaja.ABIERTA ? NB.ingreso : NB.gasto },
               ]}
             >
               <POSIcon
-                name={cajaActual.estado === 'ABIERTA' ? 'checkmark-circle' : 'lock-closed'}
+                name={cajaActual.estado === EstadoCaja.ABIERTA ? 'checkmark-circle' : 'lock-closed'}
                 size={16}
                 color={NB.white}
               />
               <Text style={styles.estadoBadgeTexto}>
-                {cajaActual.estado === 'ABIERTA' ? 'Abierta' : 'Cerrada'}
+                {cajaActual.estado === EstadoCaja.ABIERTA ? 'Abierta' : 'Cerrada'}
               </Text>
             </View>
             <Text style={styles.fecha}>{FECHA_HOY}</Text>
@@ -350,14 +367,14 @@ export default function CajaHome() {
         </ScrollView>
 
         {/* 2. Estado cerrado: única acción posible, grande y clara */}
-        {!cajaActual.activa && (
+        {cajaActual.estado.match(EstadoCaja.CERRADA) && (
           <View style={[styles.cajaCerradaCard, sombraDura()]}>
             <POSIcon name="lock-closed" size={40} color={NB.neutro} />
             <Text style={styles.cajaCerradaTexto}>
               {cajaActual.nombre} está cerrada. Ábrela para comenzar a registrar movimientos.
             </Text>
             <Pressable
-              onPress={abrirCaja}
+              onPress={handleAbrirCaja}
               style={({ pressed }) => [
                 styles.botonPrimario,
                 sombraDura(),
@@ -492,7 +509,7 @@ export default function CajaHome() {
                 </Pressable>
 
                 <Pressable
-                  onPress={cerrarCaja}
+                  onPress={handleCerrarCaja}
                   style={({ pressed }) => [
                     styles.accionCard,
                     styles.accionCardNeutra,
@@ -543,10 +560,15 @@ export default function CajaHome() {
       <AgregarMovimientoModal
         visible={modalMovimientoTipo !== null}
         tipo={modalMovimientoTipo ?? TipoMovimientoCaja.INGRESO}
+        cajaId={cajaSeleccionada?.id ?? 0}
+        empleadoId={1}
         onCancelar={() => setModalMovimientoTipo(null)}
-        onGuardar={(categoria, monto, referencia) =>
-          agregarMovimiento(modalMovimientoTipo ?? TipoMovimientoCaja.INGRESO, categoria, monto, referencia)
-        }
+        onGuardar={(movimiento) => agregarMovimiento(movimiento)}
+        materiales={materiales.map((material) => ({
+          id: material.id,
+          nombre: material.nombre,
+          unidadMedida: material.unidadMedida,
+        }))}
       />
 
       {/* 9-12. Corte de caja */}

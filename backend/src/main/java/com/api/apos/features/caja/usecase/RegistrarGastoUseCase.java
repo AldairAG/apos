@@ -5,10 +5,11 @@ import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.api.apos.domain.caja.caja.service.CajaService;
+import com.api.apos.domain.caja.caja.Caja;
+import com.api.apos.domain.caja.caja.CajaService;
 import com.api.apos.domain.caja.movimeinto.MovimientoCaja;
+import com.api.apos.domain.caja.movimeinto.MovimientoCajaService;
 import com.api.apos.domain.caja.movimeinto.mapper.MovimientoMapper;
-import com.api.apos.domain.caja.movimeinto.service.MovimientoCajaService;
 import com.api.apos.domain.inventario.existencias.entity.ExistenciaMaterial;
 import com.api.apos.domain.inventario.material.Material;
 import com.api.apos.domain.inventario.material.service.MaterialService;
@@ -30,8 +31,10 @@ public class RegistrarGastoUseCase {
     @Transactional
     public MovimientoCajaDTO execute(MovimientoCajaDTO movimiento) {
 
+        Caja caja = cajaService.obtenerCajaPorId(movimiento.getCajaId());
+
         MovimientoCaja movimientoCaja = MovimientoCaja.builder()
-                .caja(cajaService.obtenerCajaPorId(movimiento.getCajaId()))
+                .caja(caja)
                 .tipoMovimiento(movimiento.getTipoMovimiento())
                 .monto(movimiento.getMonto())
                 .metodoPago(movimiento.getMetodoPago())
@@ -42,6 +45,7 @@ public class RegistrarGastoUseCase {
                 .aprobado(false)
                 .createdAt(LocalDateTime.now())
                 .createdBy(movimiento.getEmpleadoId())
+                .corteCajaId(caja.getCorteActualId())
                 .build();
 
         MovimientoCaja nuevoMovimiento = movimientoCajaService.registrarMovimiento(movimientoCaja);

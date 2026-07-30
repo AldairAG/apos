@@ -77,7 +77,27 @@ export const cajaService = {
     registrarGasto: async (movimiento:MovimientoCaja): Promise<MovimientoCaja> => {
         const response = await apiBase.post<any>(`${CAJA_BASE_URL}/registrarGasto`, movimiento);
         return unwrapResponseData<MovimientoCaja>(response);
-    }
+    },
 
+    /**
+     * Metodo para registrar un ingreso en una caja
+     * @param cajaId
+     * @param ingreso
+     * @return ResponseEntity con la caja con el ingreso registrado
+     */
+    registrarIngreso: async (movimiento:MovimientoCaja): Promise<MovimientoCaja> => {
+        const response = await apiBase.post<any>(`${CAJA_BASE_URL}/registrarIngreso`, movimiento);  
+        return unwrapResponseData<MovimientoCaja>(response);
+    },
+
+    /**
+     * Metodo para obtener los movimientos del corte actual de una caja
+     * @param cajaId
+     * @return ResponseEntity con la lista de movimientos de caja
+     */
+    getMovimientosDelCorteActual: async (cajaId: number): Promise<MovimientoCaja[]> => {
+        const response = await apiBase.get<any>(`${CAJA_BASE_URL}/getMovimientosByCorteActual/${cajaId}`);
+        return unwrapResponseData<MovimientoCaja[]>(response);
+    }
 
 }

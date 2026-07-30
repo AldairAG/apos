@@ -7,9 +7,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.api.apos.domain.caja.caja.Caja;
-import com.api.apos.domain.caja.caja.service.CajaService;
+import com.api.apos.domain.caja.caja.CajaService;
 import com.api.apos.domain.caja.movimeinto.MovimientoCaja;
-import com.api.apos.domain.caja.movimeinto.service.MovimientoCajaService;
+import com.api.apos.domain.caja.movimeinto.MovimientoCajaService;
 import com.api.apos.domain.orden.entity.Orden;
 import com.api.apos.domain.orden.service.OrdenService;
 import com.api.apos.enums.EstadoOrden;
@@ -33,7 +33,7 @@ public class CobrarOrdenUseCase {
     private MovimientoCajaService movimientoCajaService;
 
     @Transactional
-    public OrdenResponseDTO cobrarOrdenUseCase(PagarOrdenDTO pagarOrdenDTO) {
+    public OrdenResponseDTO execute(PagarOrdenDTO pagarOrdenDTO) {
 
         // Obtener la orden por
         Orden orden = ordenService.obtenerOrdenPorId(pagarOrdenDTO.getOrdenId())

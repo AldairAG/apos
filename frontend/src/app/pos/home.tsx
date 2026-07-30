@@ -37,7 +37,7 @@ export default function HomeScreen() {
   const mesasOcupadas = mesas.filter((m: any) => m.estado === EstadoMesa.OCUPADA).length;
   const mesasReservadas = mesas.filter((m: any) => m.estado === EstadoMesa.RESERVADA).length;
 
-  const ordenesActivas = ordenes.filter(o => o.estado !== EstadoOrden.CANCELADA && o.estado !== EstadoOrden.ENTREGADA).length;
+  const ordenesActivas = ordenes.filter(o => o.estado !== EstadoOrden.CANCELADA && o.estado !== EstadoOrden.ENTREGADA && o.estado !== EstadoOrden.COBRADA).length;
   const ordenesEnCocina = ordenes.filter(o => o.estado === EstadoOrden.EN_PREPARACION).length;
   const ordenesPendientesCobro = ordenes.filter(o => o.estado === EstadoOrden.LISTA).length;
 

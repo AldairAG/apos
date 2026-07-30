@@ -1,5 +1,5 @@
 import { apiBase } from '@/api/apiBase';
-import { CrearOrdenDTO, EstadoOrden, MesaPosResponseDTO, OrdenResponseDTO, ProductosBySucursalResponse } from './pos.types';
+import { CrearOrdenDTO, EstadoOrden, MesaPosResponseDTO, OrdenResponseDTO, PagarOrdenDTO, ProductosBySucursalResponse } from './pos.types';
 
 const POS_BASE_URL = '/pos';
 const ORDENES_BASE_URL = '/ordenes';
@@ -64,6 +64,11 @@ export const posService = {
             : `${ORDENES_BASE_URL}/${ordenId}/cancelar`;
 
         await apiBase.patch<any>(url);
+    },
+
+    pagarOrden:async (pagarOrdenDto:PagarOrdenDTO):Promise<OrdenResponseDTO>=>{
+        const response = await apiBase.post<any>(`${POS_BASE_URL}/cobrar-orden`, pagarOrdenDto);
+        return unwrapResponseData<OrdenResponseDTO>(response);
     }
 
 }

@@ -62,6 +62,8 @@ const estadoInfo = (estado: EstadoOrden) => {
       return { solid: PALETTE.success, dark: PALETTE.successDark, label: 'LISTA' };
     case EstadoOrden.ENTREGADA:
       return { solid: PALETTE.neutral, dark: '#4A4A44', label: 'ENTREGADA' };
+    case EstadoOrden.COBRADA:
+      return { solid: '#B8860B', dark: '#8B6914', label: 'COBRADA' };
     case EstadoOrden.CANCELADA:
       return { solid: PALETTE.danger, dark: PALETTE.dangerDark, label: 'CANCELADA' };
     default:
@@ -160,8 +162,8 @@ export default function DetalleOrdenScreen() {
 
   const tiempoTranscurrido = calcularTiempoTranscurrido();
   const puedeEditar = orden.estado === EstadoOrden.PENDIENTE || orden.estado === EstadoOrden.EN_PREPARACION;
-  const puedeCobrar = orden.estado === EstadoOrden.LISTA;
-  const puedeCancelar = orden.estado !== EstadoOrden.CANCELADA && orden.estado !== EstadoOrden.ENTREGADA;
+  const puedeCobrar = orden.estado === EstadoOrden.LISTA || orden.estado === EstadoOrden.ENTREGADA;
+  const puedeCancelar = orden.estado !== EstadoOrden.CANCELADA && orden.estado !== EstadoOrden.ENTREGADA && orden.estado !== EstadoOrden.COBRADA;
   const estado = estadoInfo(orden.estado);
 
   return (
@@ -407,8 +409,8 @@ export default function DetalleOrdenScreen() {
             onPress={cobrarOrden}
             style={({ pressed }) => [
               styles.actionButton,
-              { flex: 2, backgroundColor: PALETTE.success, borderColor: PALETTE.successDark },
-              hardShadow(PALETTE.successDark, pressed ? 1 : 3),
+              { flex: 2, backgroundColor: '#B8860B', borderColor: '#8B6914' },
+              hardShadow('#8B6914', pressed ? 1 : 3),
               pressed && { transform: [{ translateX: 2 }, { translateY: 2 }] },
             ]}
           >

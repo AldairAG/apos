@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.api.apos.domain.caja.caja.Caja;
-import com.api.apos.domain.caja.caja.service.CajaService;
+import com.api.apos.domain.caja.caja.CajaService;
 import com.api.apos.domain.caja.corte.CorteCaja;
 import com.api.apos.domain.caja.corte.service.CorteCajaService;
 import com.api.apos.enums.EstadoCaja;
@@ -39,10 +39,11 @@ public class AbrirCajaUseCase {
                 .build();
 
         // Guardar el corte de caja en la base de datos
-        corteCajaService.guardarCorteCaja(corteCaja);
+        CorteCaja corteCajaGuardado = corteCajaService.guardarCorteCaja(corteCaja);
 
         // Actualizar el estado de la caja a "abierta"
         caja.setEstado(EstadoCaja.ABIERTA);
+        caja.setCorteActualId(corteCajaGuardado.getId());
         cajaService.actualizarCaja(caja.getId(), caja);
         return caja;
     }
