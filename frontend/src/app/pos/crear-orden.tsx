@@ -1,4 +1,4 @@
-import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
+import { COLORS, POSIcon } from '@/components/pos';
 import { EstadoMesa } from '@/features/mesas/mesas.types';
 import { CrearOrdenDTO, DetalleOrdenDTO, ProductosBySucursalResponse, TipoOrden } from '@/features/pos/pos.types';
 import usePos from '@/features/pos/usePos';
@@ -6,7 +6,6 @@ import { useSucursal } from '@/features/sucursal/useSucursal';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { Mesa } from '@/types/pos.types';
 
 type PasoCreacion = 'seleccion' | 'agregar-productos';
 
@@ -51,8 +50,8 @@ const hardShadow = (elevationLevel: number = 4) => ({
 });
 
 export default function CrearOrdenScreen() {
-  const { ordenId } = useLocalSearchParams<{ ordenId?: string }>();
-  const { productos, mesas, cargarProductos, cargarMesas, cargarOrdenes, crearOrden, seleccionarMesa } = usePos();
+  const { ordenId, tipo, mesaId } = useLocalSearchParams<{ ordenId?: string; tipo?: string; mesaId?: string }>();
+  const { productos, mesas, selectedMesa, cargarProductos, cargarMesas, cargarOrdenes, crearOrden, seleccionarMesa } = usePos();
   const { sucursalActual } = useSucursal();
 
   const [paso, setPaso] = useState<PasoCreacion>('seleccion');
@@ -73,6 +72,7 @@ export default function CrearOrdenScreen() {
   const [productoRecienAgregado, setProductoRecienAgregado] = useState<number | null>(null);
   const [carritoAbierto, setCarritoAbierto] = useState(false);
   const feedbackTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inicioDirectoAplicado = useRef(false);
 
   useEffect(() => {
     cargarProductos();
@@ -84,6 +84,34 @@ export default function CrearOrdenScreen() {
       if (feedbackTimeout.current) clearTimeout(feedbackTimeout.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (inicioDirectoAplicado.current || mesas.length === 0) return;
+
+    const tipoParam = tipo as TipoOrden | undefined;
+    const mesaIdParam = mesaId ? Number(mesaId) : selectedMesa?.id;
+
+    if (tipoParam === TipoOrden.PARA_LLEVAR || tipoParam === TipoOrden.RECOGER) {
+      setTipoOrden(tipoParam);
+      setMesaSeleccionada(null);
+      setPaso('agregar-productos');
+      inicioDirectoAplicado.current = true;
+      return;
+    }
+
+    if ((tipoParam === TipoOrden.EN_MESA || mesaIdParam) && mesaIdParam) {
+      const mesa = mesas.find((m: any) => m.id === mesaIdParam);
+      if (mesa?.activa && mesa.estado !== EstadoMesa.OCUPADA && !mesa.ordenActualDTO) {
+        seleccionarMesa(mesaIdParam);
+        setMesaSeleccionada(mesaIdParam);
+        setTipoOrden(TipoOrden.EN_MESA);
+        setPaso('agregar-productos');
+        inicioDirectoAplicado.current = true;
+      }
+    }
+  }, [tipo, mesaId, mesas, selectedMesa, seleccionarMesa]);
+
+  const flujoDirecto = Boolean(tipo) || Boolean(mesaId);
 
   const totales = useMemo(() => {
     let subtotal = 0;
@@ -471,6 +499,11 @@ export default function CrearOrdenScreen() {
           style={styles.backButton}
           activeOpacity={0.6}
           onPress={() => {
+            if (flujoDirecto) {
+              router.back();
+              return;
+            }
+
             setPaso('seleccion');
             setTipoOrden(null);
             setMesaSeleccionada(null);

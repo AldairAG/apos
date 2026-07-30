@@ -6,13 +6,13 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    Alert,
-    FlatList,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  FlatList,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 
 /* ============================================================
@@ -149,7 +149,7 @@ export default function VistaMesasScreen() {
       router.push(`/pos/detalle-orden?ordenId=${mesa.ordenActualDTO.id}`);
     } else {
       seleccionarMesa(mesa.id);
-      router.push('/pos/crear-orden');
+      router.push(`/pos/crear-orden?tipo=EN_MESA&mesaId=${mesa.id}`);
     }
   };
 
@@ -393,7 +393,7 @@ export default function VistaMesasScreen() {
         <Pressable
           onPress={() => {
             tap('medium');
-            router.push('/pos/crear-orden');
+            router.push('/pos/crear-orden?tipo=PARA_LLEVAR');
           }}
           style={({ pressed }) => [
             styles.fabPrimary,
