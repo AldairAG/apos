@@ -59,6 +59,7 @@ const cajaSlice = createSlice({
             .addCase(crearCajaThunk.fulfilled, (state, action: PayloadAction<Caja>) => {
                 state.loading = false;
                 state.cajas.push(action.payload);
+                state.cajaSeleccionada = action.payload;
             })
             .addCase(crearCajaThunk.rejected, (state, action) => {
                 state.loading = false;
