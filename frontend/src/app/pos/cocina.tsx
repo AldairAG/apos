@@ -73,7 +73,7 @@ const COLUMNAS: { titulo: string; estado: EstadoOrden; key: ColumnaKDS; solid: s
 ];
 
 export default function CocinaScreen() {
-  const { ordenes } = usePos();
+  const { ordenes,actualizarEstadoOrden } = usePos();
   const { cargarOrdenes } = useCocina();
   const [tiempos, setTiempos] = useState<{ [key: number]: number }>({});
 
@@ -109,7 +109,7 @@ export default function CocinaScreen() {
 
   const cambiarEstado = (ordenId: number, nuevoEstado: EstadoOrden) => {
     tap('success');
-    // Aquí iría la lógica de actualización de estado
+    actualizarEstadoOrden(ordenId,nuevoEstado)
   };
 
   // Terracota en vez de rojo puro: una orden tardía debe alertar,
