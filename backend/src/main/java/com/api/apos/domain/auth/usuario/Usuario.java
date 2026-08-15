@@ -1,10 +1,5 @@
 package com.api.apos.domain.auth.usuario;
 
-import com.api.apos.domain.catalogo.categoria.entity.Categoria;
-import com.api.apos.domain.catalogo.extra.entity.GrupoExtra;
-import com.api.apos.domain.catalogo.receta.entity.Receta;
-import com.api.apos.domain.inventario.material.Material;
-import com.api.apos.domain.sucursal.Sucursal;
 import com.api.apos.enums.Rol;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -37,7 +32,7 @@ public class Usuario implements UserDetails {
     private String password;
     private String telefono;
     private String lada;
-    private Boolean activo;
+    private Boolean active;
     
     private LocalDateTime fechaRegistro;
     private LocalDateTime ultimoAcceso;
@@ -50,21 +45,21 @@ public class Usuario implements UserDetails {
     private Rol rol;
 
 
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Material> materiales;
+    //Domain metodos
 
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Receta> recetas;
+    public void actualizarUltimoAcceso() {
+        this.ultimoAcceso = LocalDateTime.now();
+    }
 
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Sucursal> sucursales;
+    public void actualizarDatos(String nombre, String telefono, String lada) {
+        this.nombre = nombre;
+        this.telefono = telefono;
+        this.lada = lada;
+    }
     
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Categoria> categorias;
-    
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<GrupoExtra> gruposExtra;
-
+    public void delete() {
+        this.active = false;
+    }
 
     
     // UserDetails implementation
@@ -100,6 +95,6 @@ public class Usuario implements UserDetails {
     
     @Override
     public boolean isEnabled() {
-        return activo;
+        return active;
     }
 }
