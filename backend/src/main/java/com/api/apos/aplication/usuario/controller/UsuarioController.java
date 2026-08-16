@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.api.apos.aplication.usuario.dto.UsuarioDto;
+import com.api.apos.aplication.usuario.usecase.CompletarPerfilUseCase;
 import com.api.apos.aplication.usuario.usecase.LoginUseCase;
 import com.api.apos.aplication.usuario.usecase.RegistrarUsuarioUseCase;
 import com.api.apos.dto.request.AuthRequest;
@@ -24,16 +26,25 @@ public class UsuarioController {
 
     private final RegistrarUsuarioUseCase registrarUsuario;
 
+    private final CompletarPerfilUseCase completarPerfilUseCase;
+
     @PostMapping("/auth/registro")
     public ResponseEntity<ApiResponseWrapper<JwtResponse>> registrar(@RequestBody AuthRequest request) {
         JwtResponse response = registrarUsuario.execute(request);
         return ResponseEntity.ok(new ApiResponseWrapper<>(true, response, SuccessCode.REGISTRO_EXITOSO.name(), null));
     }
 
-    @PostMapping("/login")
+    @PostMapping("/auth/login")
     public ResponseEntity<ApiResponseWrapper<JwtResponse>> login(@RequestBody AuthRequest request) {
         JwtResponse response = loginUseCase.execute(request.getEmail(), request.getPassword());
         return ResponseEntity.ok(new ApiResponseWrapper<>(true, response, SuccessCode.LOGIN_EXITOSO.name(), null));
     }
+
+    @PostMapping("/completar-perfil")
+    public ResponseEntity<ApiResponseWrapper<UsuarioDto>> completarPerfil(@RequestBody AuthRequest entity) {
+        UsuarioDto response = completarPerfilUseCase.execute(entity);
+        return ResponseEntity.ok(new ApiResponseWrapper<>(true, response, SuccessCode.PERFIL_COMPLETADO.name(), null));
+    }
+    
 
 }

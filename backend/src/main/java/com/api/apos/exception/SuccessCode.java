@@ -5,4 +5,5 @@ public enum SuccessCode {
     USUARIO_ACTUALIZADO,
     USUARIO_ELIMINADO,
     LOGIN_EXITOSO,
+    PERFIL_COMPLETADO
 }
