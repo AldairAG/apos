@@ -1,7 +1,6 @@
-import { useAuth } from '@/features/usuario/auth/useAuth';
+import { useAuth } from '@/features/usuario/auth/presentation/hook/useAuth';
 import { ROUTES } from '@/routes/routes';
 import { Redirect } from 'expo-router';
-import { useEffect } from 'react';
 
 export default function IndexScreen() {
   const { verificarInicioSesion } = useAuth();

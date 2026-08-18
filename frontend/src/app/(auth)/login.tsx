@@ -1,21 +1,20 @@
-import { COLORS, POSBadge, POSCard, POSIcon } from '@/components/pos';
-import { useAuth } from '@/features/usuario/auth/useAuth';
+import { useAuth } from '@/features/usuario/auth/presentation/hook/useAuth';
 import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 /**
@@ -77,10 +76,8 @@ export default function LoginScreen() {
           <View style={styles.header}>
             <View style={styles.brandContent}>
               <View style={styles.logoContainer}>
-                <POSIcon name="restaurant" size={36} color={INK} />
               </View>
 
-              <POSBadge label="APOS DELIVERY" variant="success" />
 
               <Text style={styles.title}>Inicia sesión</Text>
               <Text style={styles.subtitle}>
@@ -89,7 +86,6 @@ export default function LoginScreen() {
 
               {/* Indicador de confianza — Trust Design */}
               <View style={styles.trustRow}>
-                <POSIcon name="shield-checkmark" size={16} color={SUCCESS} />
                 <Text style={styles.trustText}>Conexión segura y verificada</Text>
               </View>
             </View>
@@ -106,7 +102,6 @@ export default function LoginScreen() {
                   <Text style={styles.label}>USUARIO</Text>
                   <View style={[styles.inputWrapper, userPressed && styles.inputWrapperActive]}>
                     <View style={styles.inputIcon}>
-                      <POSIcon name="person" size={20} color={INK} />
                     </View>
                     <TextInput
                       value={username}
@@ -130,7 +125,6 @@ export default function LoginScreen() {
                   <Text style={styles.label}>CONTRASEÑA</Text>
                   <View style={[styles.inputWrapper, passPressed && styles.inputWrapperActive]}>
                     <View style={styles.inputIcon}>
-                      <POSIcon name="lock-closed" size={20} color={INK} />
                     </View>
                     <TextInput
                       ref={passwordRef}
@@ -152,11 +146,7 @@ export default function LoginScreen() {
                       activeOpacity={0.6}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
-                      <POSIcon
-                        name={showPassword ? 'eye-off' : 'eye'}
-                        size={20}
-                        color={INK}
-                      />
+
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -164,7 +154,6 @@ export default function LoginScreen() {
                 {/* Error — feedback inmediato, alto contraste, sin ambigüedad */}
                 {error && (
                   <View style={styles.errorContainer}>
-                    <POSIcon name="alert-circle" size={20} color={INK} />
                     <Text style={styles.errorText}>{error}</Text>
                   </View>
                 )}
@@ -192,7 +181,6 @@ export default function LoginScreen() {
                     ) : (
                       <View style={styles.buttonContent}>
                         <Text style={styles.primaryButtonText}>ENTRAR</Text>
-                        <POSIcon name="arrow-forward" size={20} color={SURFACE} />
                       </View>
                     )}
                   </View>
@@ -235,7 +223,6 @@ const styles = StyleSheet.create({
 
   // ── Cabecera: color sólido plano, borde inferior marcado (sin gradientes) ──
   header: {
-    backgroundColor: COLORS.primary,
     paddingTop: 56,
     paddingBottom: 32,
     paddingHorizontal: 24,
@@ -331,7 +318,6 @@ const styles = StyleSheet.create({
   },
   inputWrapperActive: {
     backgroundColor: SURFACE,
-    borderColor: COLORS.primary,
     borderWidth: 3,
   },
   inputIcon: {
@@ -376,7 +362,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   primaryButton: {
-    backgroundColor: COLORS.primary,
     borderRadius: 14,
     borderWidth: 3,
     borderColor: INK,
@@ -428,7 +413,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   switchLink: {
-    color: COLORS.primary,
     fontSize: 13,
     fontWeight: '900',
   },

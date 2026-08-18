@@ -1,7 +1,7 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
-import { loadFromSessionStorage, removeFromSessionStorage, saveToSessionStorage } from './auth.helpers';
-import { login, registro } from './auth.thunk';
-
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { loadFromSessionStorage } from '../infrestructure/auth.helpers';
+import { loginThunk } from '../aplication/useCase/login.thunk';
+import { registroThunk } from '../aplication/useCase/registro.thunk';
 
 interface AuthState {
     token: string | null;
@@ -43,33 +43,33 @@ const authSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            .addCase(registro.pending, (state) => {
+            .addCase(registroThunk.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(registro.fulfilled, (state, action) => {
+            .addCase(registroThunk.fulfilled, (state, action) => {
                 state.loading = false;
                 state.token = action.payload.data.token;
                 state.isAuthenticated = true;
                 state.id = action.payload.data.id;
                 state.error = null;
             })
-            .addCase(registro.rejected, (state, action) => {
+            .addCase(registroThunk.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload || 'Error en el registro';
             })
-            .addCase(login.pending, (state) => {
+            .addCase(loginThunk.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(login.fulfilled, (state, action) => {
+            .addCase(loginThunk.fulfilled, (state, action) => {
                 state.loading = false;
                 state.token = action.payload.data.token;
                 state.isAuthenticated = true;
                 state.error = null;
                 state.id = action.payload.data.id;
             })
-            .addCase(login.rejected, (state, action) => {
+            .addCase(loginThunk.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload || 'Error en el login';
             });

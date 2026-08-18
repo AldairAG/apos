@@ -1,10 +1,11 @@
+import { AppDispatch, persistor, RootState } from '@/store';
 import { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, persistor, RootState } from '@/store';
-import { login, registro } from './auth.thunk';
-import { logout as logoutAction } from './auth.slice';
-import type { AuthRequest, RegistroRequestDTO } from './auth.types';
-import {obtenerRutaSegunRol } from './auth.helpers';
+import { obtenerRutaSegunRol } from '../../infrestructure/auth.helpers';
+import { loginThunk } from '../../aplication/useCase/login.thunk';
+import { registroThunk } from '../../aplication/useCase/registro.thunk';
+import { logout as logoutAction } from '../../store/auth.slice';
+import type { AuthRequest, RegistroRequestDTO } from '../../domain/types/auth.types';
 
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -16,8 +17,8 @@ export const useAuth = () => {
   // Login
   const handleLogin = useCallback(
     async (credentials: AuthRequest) => {
-      const result = await dispatch(login(credentials));
-      if (login.fulfilled.match(result)) {
+      const result = await dispatch(loginThunk(credentials));
+      if (loginThunk.fulfilled.match(result)) {
         return { success: true, data: result.payload };
       }
       return { success: false, error: result.payload as string };
@@ -28,8 +29,8 @@ export const useAuth = () => {
   // Registro
   const handleRegistro = useCallback(
     async (data: RegistroRequestDTO) => {
-      const result = await dispatch(registro(data));
-      if (registro.fulfilled.match(result)) {
+      const result = await dispatch(registroThunk(data));
+      if (registroThunk.fulfilled.match(result)) {
         obtenerRutaSegunRol(result.payload.data.token);
         return { success: true, data: result.payload };
       }

@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Usuario } from "./usuario.types";
+import { Usuario } from "./domain/types/usuario.types";
 
 
 interface UsuarioState {

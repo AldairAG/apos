@@ -1,4 +1,4 @@
-import { Usuario } from "../usuario/usuario.types";
+import { Usuario } from "../../../usuario/domain/types/usuario.types";
 
 export interface RegistroRequestDTO {
     username: string;
@@ -31,3 +31,5 @@ export interface JwtPayload {
     exp: number;
     iat: number;
 }
+
+export const BASE_PATH = '/usuarios';

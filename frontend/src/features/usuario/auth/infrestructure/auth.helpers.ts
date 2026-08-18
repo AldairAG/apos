@@ -1,6 +1,6 @@
 import { obtenerRutaInicialPorRol } from "@/routes/routes";
 import { jwtDecode } from "jwt-decode";
-import { JwtPayload } from "./auth.types";
+import { JwtPayload } from "../domain/types/auth.types";
 
 export const saveToSessionStorage = (key: string, value: unknown) => {
 	try {

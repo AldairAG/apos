@@ -18,7 +18,7 @@ export default function TabLayout() {
             <Stack.Screen name="index" />
             <Stack.Screen name="login" />
             <Stack.Screen name="register" />
-            <Stack.Screen name="dashboard" />
+            <Stack.Screen name="admin_home" />
           </Stack>
         </ThemeProvider>
       </PersistGate>

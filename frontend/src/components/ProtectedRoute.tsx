@@ -1,5 +1,5 @@
-import { obtenerRolDesdeToken } from '@/features/usuario/auth/auth.helpers';
-import { useAuth } from '@/features/usuario/auth/useAuth';
+import { useAuth } from '@/features/usuario/auth/presentation/hook/useAuth';
+import { obtenerRolDesdeToken } from '@/features/usuario/auth/infrestructure/auth.helpers';
 import { ROUTES, tienePermisoParaRuta } from '@/routes/routes';
 import { Redirect } from 'expo-router';
 import { ReactNode } from 'react';
