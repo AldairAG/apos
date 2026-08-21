@@ -10,6 +10,21 @@ public enum ErrorCode {
             "Ocurrió un error interno",
             HttpStatus.INTERNAL_SERVER_ERROR
     ),  
+    ERROR_ALMACENANDO_ARCHIVO(
+            "ERROR_ALMACENANDO_ARCHIVO",
+            "Ocurrió un error al almacenar el archivo",
+            HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    ERROR_ALMACENANDO_ARCHIVO_ARCHIVO_VACIO(
+            "ERROR_ALMACENANDO_ARCHIVO_ARCHIVO_VACIO",
+            "Ocurrió un error al almacenar el archivo porque el archivo está vacío",
+            HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    ARCHIVO_NO_ENCONTRADO(
+            "ARCHIVO_NO_ENCONTRADO",
+            "Archivo no encontrado",
+            HttpStatus.NOT_FOUND
+    ),
 
     //USUARIO
     USUARIO_YA_EXISTE(
@@ -39,7 +54,16 @@ public enum ErrorCode {
             "EMAIL_Y_PASSWORD_REQUERIDOS",
             "Email y password son requeridos",
             HttpStatus.BAD_REQUEST
-    );
+    ),
+    
+    //EMPRESA
+    EMPRESA_NO_ENCONTRADA(
+        "EMPRESA_NO_ENCONTRADA",
+        "Empresa no encontrada",
+        HttpStatus.NOT_FOUND
+    ),
+    ;
+
 
 
     private final String code;

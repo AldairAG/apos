@@ -1,5 +1,6 @@
 package com.api.apos.domain.auth.usuario;
 
+import com.api.apos.domain.empresa.Empresa;
 import com.api.apos.enums.Rol;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -44,6 +45,10 @@ public class Usuario implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     private Rol rol;
+
+    @ManyToOne
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
 
 
     //Domain metodos
