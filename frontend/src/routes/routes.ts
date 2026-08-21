@@ -20,8 +20,8 @@ export const ROUTES = {
 
   // Módulo de Administración del Sistema
   ADMIN: {
-    USUARIOS: '/admin/usuarios',
-    EMPLEADOS: '/admin/empleados',
+    USUARIOS: '/usuarios',
+    EDITAR_USUARIO: '/usuarios/[usuarioId]',
     ROLES: '/admin/roles',
     SUCURSALES: '/admin/sucursales',
     DESCUENTOS: '/admin/descuentos',
