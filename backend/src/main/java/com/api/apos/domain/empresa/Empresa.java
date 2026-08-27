@@ -3,7 +3,9 @@ package com.api.apos.domain.empresa;
 import java.util.List;
 
 import com.api.apos.domain.auth.usuario.Usuario;
+import com.api.apos.domain.cuenta.Cuenta;
 import com.api.apos.domain.empresa.enums.TipoEmpresa;
+import com.api.apos.domain.sucursal.Sucursal;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -38,6 +40,12 @@ public class Empresa {
     @OneToMany(mappedBy = "empresa")
     private List<Usuario> usuarios;
 
+    @OneToMany(mappedBy = "empresa")
+    private List<Sucursal> sucursales;
+
+    @OneToMany(mappedBy = "empresa")
+    private List<Cuenta> cuentas;
+
     public void delete(){
         activa=false;
     }
@@ -45,6 +53,16 @@ public class Empresa {
     public void addUsuario(Usuario usuario) {
         usuarios.add(usuario);
         usuario.setEmpresa(this);
+    }
+
+    public void addCuenta(Cuenta cuenta) {
+        cuentas.add(cuenta);
+        cuenta.setEmpresa(this);
+    }
+
+    public void addSucursal(Sucursal sucursal) {
+        sucursales.add(sucursal);
+        sucursal.setEmpresa(this);
     }
 
 }

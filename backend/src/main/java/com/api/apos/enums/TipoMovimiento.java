@@ -1,6 +1,6 @@
 package com.api.apos.enums;
 
-public enum TipoConceptoMovimiento {
+public enum TipoMovimiento {
     // Ingresos
     VENTA,
     DEVOLUCION_VENTA,

@@ -62,7 +62,18 @@ public enum ErrorCode {
         "Empresa no encontrada",
         HttpStatus.NOT_FOUND
     ),
-    ;
+    //CUENTA
+    CUENTA_NO_ENCONTRADA(
+        "CUENTA_NO_ENCONTRADA",
+        "Cuenta no encontrada",
+        HttpStatus.NOT_FOUND
+    ),
+    //MOVIMIENTO
+    MOVIMIENTO_NO_ENCONTRADO(
+        "MOVIMIENTO_NO_ENCONTRADO",
+        "Movimiento no encontrado",
+        HttpStatus.NOT_FOUND
+    );
 
 
 
