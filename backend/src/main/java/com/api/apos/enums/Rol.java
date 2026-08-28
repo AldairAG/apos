@@ -4,5 +4,6 @@ public enum Rol {
     ADMINISTRADOR,
     GERENTE,
     MESERO,
-    COCINA
+    COCINA,
+    SIN_ROL
 }

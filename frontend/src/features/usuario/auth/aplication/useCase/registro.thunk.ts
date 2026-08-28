@@ -11,7 +11,7 @@ export const registroThunk = createAsyncThunk<
     'auth/registro',
     async (registroRequest, { rejectWithValue }) => {
         try {
-            const response = await api.post<JwtResponse>(`${BASE_PATH}/registro`, registroRequest);;
+            const response = await api.post<JwtResponse>(`${BASE_PATH}/auth/registro`, registroRequest);;
             if (!response.success) {
                 return rejectWithValue(response.message);
             }

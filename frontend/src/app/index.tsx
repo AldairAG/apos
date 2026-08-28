@@ -8,7 +8,7 @@ export default function IndexScreen() {
   if (verificarInicioSesion()) {
     console.log('Usuario autenticado, redirigiendo a dashboard...');
     // Si está autenticado, redirigir según su rol
-    return <Redirect href={ROUTES.DASHBOARD} />;
+    return <Redirect href={ROUTES.ADMIN.HOME} />;
   }
   // Si no está autenticado, ir al login
   return <Redirect href={ROUTES.LOGIN} />;

@@ -232,7 +232,7 @@ class ApiBase {
             // 3. Dispatch logout en Redux (si el store fue inyectado)
             if (this.store) {
                 try {
-                    const module = await import('../features/usuario/auth/auth.slice');
+                    const module = await import('../features/usuario/auth/store/auth.slice');
                     const logout = module.logout;
                     this.store.dispatch(logout());
                 } catch (error) {
@@ -377,7 +377,7 @@ class ApiBase {
             if (error.response?.data) {
                 // Error desde el servidor
                 const serverError = error.response.data;
-                if (serverError.error) {
+                if (serverError.message) {
                     errorMessage = serverError.message;
                 } else if (typeof serverError === 'string') {
                     errorMessage = serverError;

@@ -48,7 +48,7 @@ export const useAuth = () => {
   // Logout
   const handleLogout = useCallback(async () => {
     dispatch(logoutAction());
-      await persistor.purge();
+    await persistor.purge();
   }, [dispatch]);
 
   return {
