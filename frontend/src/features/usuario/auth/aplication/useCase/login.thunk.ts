@@ -1,5 +1,5 @@
 import { ApiResponse } from "@/api/apiTypes";
-import { AuthRequest, BASE_PATH, JwtResponse, RegistroRequestDTO } from "../../domain/types/auth.types";
+import { AuthRequest, BASE_PATH, JwtResponse } from "../../domain/types/auth.types";
 import { api, apiBase } from "@/api/apiBase";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 

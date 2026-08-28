@@ -1,24 +1,18 @@
-export interface Usuario {
-    id: number;
-    nombre: string;
-    email: string;
-    password: string;
-    telefono: string;
-    activo: boolean;
-    fechaRegistro: Date;
-    ultimoAcceso: Date;
-    createdAt: Date;
-    updatedAt: Date;
-    rol: Rol;
-    /*materiales: Material[];
-    recetas: Receta[];
-    sucursales: Sucursal[];
-    categorias: Categoria[];
-    gruposExtra: GrupoExtra[];*/
+import { EmpresaDto } from "@/features/empresa/domain/types/empresa.types";
 
+export interface UsuarioDto {
+    id: number;
+    email: string;
+    nombre: string;
+    apellido: string;
+    telefono: string;
+    lada: string;
+    empresa: EmpresaDto;
 }
 
 export enum Rol {
     ADMIN = 'ADMIN',
     USUARIO = 'USUARIO'
 }
+
+export const API_BASE_PATH = "/usuarios";

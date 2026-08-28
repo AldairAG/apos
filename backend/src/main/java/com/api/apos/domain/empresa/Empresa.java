@@ -6,6 +6,7 @@ import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.cuenta.Cuenta;
 import com.api.apos.domain.empresa.enums.TipoEmpresa;
 import com.api.apos.domain.sucursal.Sucursal;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -37,12 +38,15 @@ public class Empresa {
 
     private boolean activa;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "empresa")
     private List<Usuario> usuarios;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "empresa")
     private List<Sucursal> sucursales;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "empresa")
     private List<Cuenta> cuentas;
 

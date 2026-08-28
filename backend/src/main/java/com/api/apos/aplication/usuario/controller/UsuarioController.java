@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.api.apos.aplication.usuario.dto.UsuarioDto;
 import com.api.apos.aplication.usuario.usecase.CompletarPerfilUseCase;
 import com.api.apos.aplication.usuario.usecase.LoginUseCase;
+import com.api.apos.aplication.usuario.usecase.ObtenerUsuarioActualUseCase;
 import com.api.apos.aplication.usuario.usecase.RegistrarUsuarioUseCase;
 import com.api.apos.dto.request.AuthRequest;
 import com.api.apos.dto.response.JwtResponse;
@@ -16,6 +17,8 @@ import com.api.apos.exception.SuccessCode;
 import com.api.apos.helpers.ApiResponseWrapper;
 
 import lombok.AllArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -23,6 +26,8 @@ import lombok.AllArgsConstructor;
 public class UsuarioController {
 
     private final LoginUseCase loginUseCase;
+    
+    private final ObtenerUsuarioActualUseCase obtenerUsuarioActualUseCase;
 
     private final RegistrarUsuarioUseCase registrarUsuario;
 
@@ -44,6 +49,12 @@ public class UsuarioController {
     public ResponseEntity<ApiResponseWrapper<UsuarioDto>> completarPerfil(@RequestBody AuthRequest entity) {
         UsuarioDto response = completarPerfilUseCase.execute(entity);
         return ResponseEntity.ok(new ApiResponseWrapper<>(true, response, SuccessCode.PERFIL_COMPLETADO.name(), null));
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponseWrapper<UsuarioDto>> obtenerUsuarioActual() {
+        UsuarioDto response = obtenerUsuarioActualUseCase.execute();
+        return ResponseEntity.ok(new ApiResponseWrapper<>(true, response, SuccessCode.OPERACION_EXITOSA.name(), null));
     }
     
 
