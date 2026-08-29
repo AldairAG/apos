@@ -12,7 +12,7 @@ export const loginThunk = createAsyncThunk<
     'auth/login',
     async (loginRequest, { rejectWithValue }) => {
         try {
-            const response = await api.post<JwtResponse>(`${BASE_PATH}/login`, loginRequest);
+            const response = await api.post<JwtResponse>(`${BASE_PATH}/auth/login`, loginRequest);
             if (!response.success) {
                 return rejectWithValue(response.message);
             }

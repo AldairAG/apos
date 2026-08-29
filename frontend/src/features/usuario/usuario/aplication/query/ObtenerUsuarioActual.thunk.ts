@@ -1,14 +1,14 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { API_BASE_PATH, UsuarioDto } from "../../domain/types/usuario.types";
-import { api, apiBase } from "@/api/apiBase";
-
-
+import { api } from "@/api/apiBase";
+import { ApiResponse } from "@/api/apiTypes";
+    
 export const obtenerUsuarioActual = createAsyncThunk<
     UsuarioDto,
     void,
     { rejectValue: string }>(
         "usuario/obtenerUsuarioActual",
-        async (_, thunkAPI) => {
+         async (_ , { rejectWithValue }) => {
             try {
                 const response = await api.get<UsuarioDto>(`${API_BASE_PATH}`);
                 if (!response.success) {
@@ -17,7 +17,7 @@ export const obtenerUsuarioActual = createAsyncThunk<
                 return response.data;
             } catch (error: unknown) {
                 const errorMessage = error instanceof Error ? error.message : 'Error al obtener el usuario actual';
-                return thunkAPI.rejectWithValue(errorMessage);
+                return rejectWithValue(errorMessage);
             }
         }
     );

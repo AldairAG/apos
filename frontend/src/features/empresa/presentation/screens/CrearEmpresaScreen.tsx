@@ -1,43 +1,5 @@
-/**
- * EmpresaForm.tsx
- *
- * Formulario "Crear Empresa" con estilo Material 3 (Material You),
- * paleta azul (primary) + amarillo (secondary), construido con
- * React Native + NativeWind.
- *
- * Dependencias necesarias:
- *   npm install nativewind tailwindcss
- *   npx expo install expo-image-picker
- *
- * DTO objetivo:
- *   export interface EmpresaDto {
- *     nombre: string;
- *     imgUrl: string;
- *     imgFile: File;
- *   }
- *
- * Nota: React Native no tiene el objeto `File` del navegador. Aquí se modela
- * el archivo seleccionado como un objeto compatible (uri, name, type) que es
- * el estándar para subir imágenes en RN (FormData). Al enviar al backend se
- * castea al tipo `File` del DTO para mantener compatibilidad de tipos.
- */
-
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  Image,
-  ActivityIndicator,
-  ScrollView,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
-import * as ImagePicker from "expo-image-picker";
-
-// ---------- Tipos ----------
+import React, { useEffect, useRef, useState } from "react";
+import { useForm, Controller } from "react-hook-form";
 
 export interface EmpresaDto {
   nombre: string;
@@ -45,224 +7,258 @@ export interface EmpresaDto {
   imgFile: File;
 }
 
-interface RNFile {
-  uri: string;
-  name: string;
-  type: string;
+interface EmpresaFormValues {
+  nombre: string;
+  imgFile: File | null;
 }
 
-interface EmpresaFormProps {
-  onSubmit: (dto: EmpresaDto) => Promise<void> | void;
-  initialValues?: Partial<{ nombre: string; imgUrl: string }>;
-}
+/**
+ * Paleta Material 3 (tokens simplificados)
+ * Primary   -> Azul   #1857B6 / container #D8E2FF / on-container #001B3D
+ * Secondary -> Amarillo #8A6D00 / container #FFE28A / on-container #2A1F00
+ * Surface   -> #FFFBFE / surface-variant #F1EEF4 / outline #79747E
+ * Error     -> #B3261E / container #F9DEDC
+ *
+ * Requiere: npm install react-hook-form
+ */
 
-// ---------- Componente ----------
+export default function RegistroEmpresaScreen() {
+  const [loading, setLoading] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+  const [imgUrl, setImgUrl] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-export default function EmpresaForm({ onSubmit, initialValues }: EmpresaFormProps) {
-  const [nombre, setNombre] = useState(initialValues?.nombre ?? "");
-  const [imgUrl, setImgUrl] = useState(initialValues?.imgUrl ?? "");
-  const [imgFile, setImgFile] = useState<RNFile | null>(null);
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<EmpresaFormValues>({
+    defaultValues: { nombre: "", imgFile: null },
+    mode: "onSubmit",
+  });
 
-  const [nombreFocused, setNombreFocused] = useState(false);
-  const [nombreError, setNombreError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const imgFile = watch("imgFile");
 
-  const pickImage = async () => {
-    const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permiso.granted) {
-      Alert.alert(
-        "Permiso requerido",
-        "Necesitamos acceso a tu galería para seleccionar el logo de la empresa."
-      );
-      return;
-    }
-
-    const resultado = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-      allowsEditing: true,
-      aspect: [1, 1],
-    });
-
-    if (!resultado.canceled && resultado.assets?.length) {
-      const asset = resultado.assets[0];
-      const nombreArchivo = asset.uri.split("/").pop() ?? "logo.jpg";
-      const extension = nombreArchivo.split(".").pop();
-
-      setImgUrl(asset.uri);
-      setImgFile({
-        uri: asset.uri,
-        name: nombreArchivo,
-        type: `image/${extension === "jpg" ? "jpeg" : extension}`,
-      });
-    }
-  };
-
-  const validar = () => {
-    if (!nombre.trim()) {
-      setNombreError("El nombre de la empresa es obligatorio");
-      return false;
-    }
-    setNombreError("");
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validar()) return;
+  // Genera y libera la vista previa cada vez que cambia el archivo seleccionado
+  useEffect(() => {
     if (!imgFile) {
-      Alert.alert("Falta el logo", "Selecciona una imagen para la empresa.");
+      setImgUrl("");
       return;
     }
+    const url = URL.createObjectURL(imgFile);
+    setImgUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imgFile]);
 
+  const applyFile = (file: File, onChange: (file: File | null) => void) => {
+    if (!file.type.startsWith("image/")) {
+      setValue("imgFile", null);
+      return;
+    }
+    onChange(file);
+  };
+
+  const removeImage = (onChange: (file: File | null) => void) => {
+    onChange(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const onSubmit = async (values: EmpresaFormValues) => {
+    if (!values.imgFile) return;
+
+    const data: EmpresaDto = {
+      nombre: values.nombre.trim(),
+      imgUrl,
+      imgFile: values.imgFile,
+    };
+
+    // Punto de integración: reemplaza este bloque por tu llamada real
+    // (fetch, servicio, etc).
+    setLoading(true);
     try {
-      setSubmitting(true);
-      const dto: EmpresaDto = {
-        nombre: nombre.trim(),
-        imgUrl,
-        // RN no tiene `File`; se castea el objeto compatible con FormData.
-        imgFile: imgFile as unknown as File,
-      };
-      await onSubmit(dto);
+      console.log("EmpresaDto listo para enviar:", data);
+      await new Promise((resolve) => setTimeout(resolve, 900));
+      setEnviado(true);
+      reset();
+      setTimeout(() => setEnviado(false), 3000);
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-m3-surface"
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      {/* Top App Bar */}
-      <View className="pt-14 pb-4 px-4 bg-m3-surface">
-        <Text className="text-2xl font-semibold text-m3-onSurface">
-          Crear empresa
-        </Text>
-        <Text className="text-sm text-m3-onSurfaceVariant mt-1">
-          Completa los datos para registrar una nueva empresa
-        </Text>
-      </View>
+    <div className="min-h-screen bg-[#F1EEF4] flex flex-col">
+      {/* Top app bar M3 */}
+      <header className="h-16 shrink-0 bg-[#FFFBFE] flex items-center gap-2 px-4 shadow-[0_1px_2px_rgba(0,0,0,0.08)]">
+        <button
+          type="button"
+          aria-label="Volver"
+          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#F1EEF4] transition-colors"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1C1B1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h1 className="text-lg font-medium text-[#1C1B1F]">Registrar empresa</h1>
+      </header>
 
-      <ScrollView
-        className="flex-1 px-4"
-        contentContainerStyle={{ paddingBottom: 32 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Card contenedora */}
-        <View className="bg-m3-surfaceContainerLow rounded-m3-lg p-5 shadow-sm">
-          {/* --- Selector de imagen --- */}
-          <Text className="text-xs font-medium text-m3-onSurfaceVariant mb-2 ml-1">
-            LOGO DE LA EMPRESA
-          </Text>
-
-          <Pressable
-            onPress={pickImage}
-            className="items-center justify-center mb-1"
-          >
-            {imgUrl ? (
-              <View className="relative">
-                <Image
-                  source={{ uri: imgUrl }}
-                  className="w-32 h-32 rounded-m3-full border-2 border-m3-primary"
-                  resizeMode="cover"
-                />
-                <View className="absolute bottom-0 right-0 bg-m3-secondary w-9 h-9 rounded-m3-full items-center justify-center border-2 border-m3-surfaceContainerLow">
-                  <Text className="text-m3-onSecondary text-base">✎</Text>
-                </View>
-              </View>
-            ) : (
-              <View className="w-32 h-32 rounded-m3-full bg-m3-primaryContainer items-center justify-center border-2 border-dashed border-m3-primary">
-                <Text className="text-3xl text-m3-onPrimaryContainer">+</Text>
-                <Text className="text-xs text-m3-onPrimaryContainer mt-1">
-                  Añadir logo
-                </Text>
-              </View>
-            )}
-          </Pressable>
-
-          <Text className="text-center text-xs text-m3-onSurfaceVariant mb-6">
-            Toca el círculo para elegir una imagen
-          </Text>
-
-          {/* --- Campo Nombre (Outlined Text Field M3) --- */}
-          <Text className="text-xs font-medium text-m3-onSurfaceVariant mb-1 ml-1">
-            NOMBRE DE LA EMPRESA
-          </Text>
-          <View
-            className={`flex-row items-center rounded-m3-sm px-4 py-3.5 border ${
-              nombreError
-                ? "border-m3-error"
-                : nombreFocused
-                ? "border-2 border-m3-primary"
-                : "border-m3-outline"
-            } bg-m3-surface`}
-          >
-            <TextInput
-              value={nombre}
-              onChangeText={(t) => {
-                setNombre(t);
-                if (nombreError) setNombreError("");
-              }}
-              onFocus={() => setNombreFocused(true)}
-              onBlur={() => setNombreFocused(false)}
-              placeholder="Ej. Acme Corporation"
-              placeholderTextColor="#73777F"
-              className="flex-1 text-base text-m3-onSurface"
-            />
-          </View>
-          {nombreError ? (
-            <Text className="text-xs text-m3-error mt-1 ml-1">
-              {nombreError}
-            </Text>
-          ) : (
-            <Text className="text-xs text-m3-onSurfaceVariant mt-1 ml-1">
-              Nombre público con el que se identificará la empresa
-            </Text>
+      {/* Contenido de la pantalla */}
+      <main className="flex-1 overflow-y-auto px-6 py-8">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="max-w-md mx-auto space-y-7"
+        >
+          {enviado && (
+            <div className="rounded-2xl bg-[#D8E2FF] text-[#001B3D] text-sm px-4 py-3">
+              Empresa registrada correctamente.
+            </div>
           )}
-        </View>
 
-        {/* --- Acciones --- */}
-        <View className="flex-row justify-end items-center mt-6 gap-3">
-          <Pressable
-            onPress={() => {
-              setNombre("");
-              setImgUrl("");
-              setImgFile(null);
-              setNombreError("");
-            }}
-            className="px-5 py-3 rounded-m3-full active:bg-m3-surfaceContainer"
-          >
-            <Text className="text-m3-primary font-medium">Cancelar</Text>
-          </Pressable>
+          <div className="w-16 h-16 rounded-2xl bg-[#D8E2FF] flex items-center justify-center mx-auto">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1857B6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 21h18" />
+              <path d="M5 21V7l8-4v18" />
+              <path d="M19 21V11l-6-4" />
+              <path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01" />
+            </svg>
+          </div>
 
-          <Pressable
-            onPress={handleSubmit}
-            disabled={submitting}
-            className={`flex-row items-center px-6 py-3 rounded-m3-full ${
-              submitting ? "bg-m3-primary/60" : "bg-m3-primary active:bg-m3-tertiary"
-            }`}
-          >
-            {submitting && (
-              <ActivityIndicator
-                size="small"
-                color="#FFFFFF"
-                style={{ marginRight: 8 }}
+          {/* Campo: nombre (filled text field M3) */}
+          <div>
+            <div className="relative">
+              <input
+                id="nombre"
+                type="text"
+                placeholder=" "
+                {...register("nombre", {
+                  required: "Ingresa el nombre de la empresa.",
+                  validate: (v) => v.trim().length > 0 || "Ingresa el nombre de la empresa.",
+                })}
+                className={`peer w-full h-14 rounded-t-[4px] px-4 pt-5 pb-1.5 text-[#1C1B1F] bg-white outline-none border-b-2 transition-colors placeholder-transparent ${
+                  errors.nombre
+                    ? "border-[#B3261E]"
+                    : "border-[#79747E] focus:border-[#1857B6]"
+                }`}
               />
+              <label
+                htmlFor="nombre"
+                className="absolute left-4 top-4 text-[#49454F] text-base transition-all duration-150 origin-left
+                  peer-focus:top-2 peer-focus:text-xs peer-focus:text-[#1857B6]
+                  peer-[:not(:placeholder-shown)]:top-2 peer-[:not(:placeholder-shown)]:text-xs"
+              >
+                Nombre de la empresa
+              </label>
+            </div>
+            {errors.nombre && (
+              <p className="mt-1.5 ml-4 text-xs text-[#B3261E]">{errors.nombre.message}</p>
             )}
-            <Text className="text-m3-onPrimary font-medium">
-              {submitting ? "Guardando..." : "Crear empresa"}
-            </Text>
-          </Pressable>
-        </View>
+          </div>
 
-        {/* Acento amarillo: chip informativo (secondary) */}
-        <View className="flex-row items-center self-start bg-m3-secondaryContainer rounded-m3-full px-4 py-2 mt-6">
-          <View className="w-2 h-2 rounded-m3-full bg-m3-secondary mr-2" />
-          <Text className="text-xs text-m3-onSecondaryContainer">
-            Los campos marcados son obligatorios
-          </Text>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          {/* Campo: imagen */}
+          <Controller
+            control={control}
+            name="imgFile"
+            rules={{ required: "Selecciona una imagen para el logo." }}
+            render={({ field }) => (
+              <div>
+                <p className="text-sm font-medium text-[#1C1B1F] mb-2">Logo de la empresa</p>
+
+                {field.value ? (
+                  <div className="w-full rounded-2xl bg-white p-3 flex items-center gap-3">
+                    <img
+                      src={imgUrl}
+                      alt="Vista previa del logo"
+                      className="w-16 h-16 rounded-xl object-cover bg-[#F1EEF4]"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#1C1B1F] truncate">{field.value.name}</p>
+                      <p className="text-xs text-[#49454F]">
+                        {(field.value.size / 1024).toFixed(0)} KB
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeImage(field.onChange)}
+                      className="text-xs font-medium text-[#1857B6] hover:bg-[#D8E2FF] rounded-full px-3 py-1.5 transition-colors"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOver(true);
+                    }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOver(false);
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) applyFile(file, field.onChange);
+                    }}
+                    onClick={() => inputRef.current?.click()}
+                    role="button"
+                    tabIndex={0}
+                    className={`cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${
+                      dragOver
+                        ? "border-[#8A6D00] bg-[#FFF7DE]"
+                        : errors.imgFile
+                        ? "border-[#B3261E] bg-[#F9DEDC]/40"
+                        : "border-[#79747E] bg-white hover:bg-[#FFF7DE]"
+                    }`}
+                  >
+                    <div className="mx-auto w-10 h-10 rounded-full bg-[#FFE28A] flex items-center justify-center mb-2">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A6D00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 16V4M12 4l-4 4M12 4l4 4" />
+                        <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-[#1C1B1F]">
+                      Arrastra una imagen aquí o{" "}
+                      <span className="text-[#1857B6] font-medium underline underline-offset-2">
+                        selecciona un archivo
+                      </span>
+                    </p>
+                    <p className="text-xs text-[#49454F] mt-1">PNG, JPG hasta 5MB</p>
+                  </div>
+                )}
+
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) applyFile(file, field.onChange);
+                  }}
+                />
+                {errors.imgFile && (
+                  <p className="mt-1.5 ml-1 text-xs text-[#B3261E]">{errors.imgFile.message}</p>
+                )}
+              </div>
+            )}
+          />
+
+          {/* Botón filled M3 */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-12 rounded-full bg-[#1857B6] text-white text-sm font-medium tracking-wide
+              shadow-[0_1px_2px_rgba(0,0,0,0.15),0_1px_3px_1px_rgba(0,0,0,0.08)]
+              hover:bg-[#1E63CC] hover:shadow-[0_1px_3px_rgba(0,0,0,0.2),0_4px_8px_3px_rgba(0,0,0,0.1)]
+              active:bg-[#154E9E] transition-all disabled:opacity-40 disabled:shadow-none"
+          >
+            {loading ? "Registrando…" : "Registrar empresa"}
+          </button>
+        </form>
+      </main>
+    </div>
   );
 }

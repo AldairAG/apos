@@ -20,7 +20,7 @@ export const useUsuario = () => {
     }
 
     const handleObtenerUsuarioActual = useCallback(async () => {
-        const result = await dispatch(obtenerUsuarioActual());
+        const result = await dispatch(obtenerUsuarioActual()).unwrap();
         return result;
     }, [dispatch]);
 
