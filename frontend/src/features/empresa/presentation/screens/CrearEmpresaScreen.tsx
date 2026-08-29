@@ -1,94 +1,124 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
-
-export interface EmpresaDto {
-  nombre: string;
-  imgUrl: string;
-  imgFile: File;
-}
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import { useEmpresa } from "../hook/useEmpresa";
+import { EmpresaDto } from "../../domain/types/empresa.types";
+import { router } from "expo-router";
+import { ROUTES } from "@/routes/routes";
 
 interface EmpresaFormValues {
   nombre: string;
   imgFile: File | null;
 }
 
-/**
- * Paleta Material 3 (tokens simplificados)
- * Primary   -> Azul   #1857B6 / container #D8E2FF / on-container #001B3D
- * Secondary -> Amarillo #8A6D00 / container #FFE28A / on-container #2A1F00
- * Surface   -> #FFFBFE / surface-variant #F1EEF4 / outline #79747E
- * Error     -> #B3261E / container #F9DEDC
- *
- * Requiere: npm install react-hook-form
- */
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
-export default function RegistroEmpresaScreen() {
-  const [loading, setLoading] = useState(false);
+// Esquema de validación con Yup. Reemplaza tanto las reglas que antes vivían
+// en `register("nombre", { required, validate })` como las del `rules` del
+// Controller de react-hook-form para `imgFile`.
+const validationSchema = Yup.object({
+  nombre: Yup.string()
+    .trim()
+    .required("Ingresa el nombre de la empresa."),
+  imgFile: Yup.mixed<File>()
+    .nullable()
+    .test(
+      "fileType",
+      "El archivo debe ser una imagen.",
+      (value) => {
+        // Si no hay archivo, es válido porque la imagen es opcional
+        if (!value) return true;
+
+        // Si existe, debe ser un File y tener un tipo de imagen
+        return value instanceof File && value.type.startsWith("image/");
+      }
+    )
+    .test(
+      "fileSize",
+      "La imagen no debe superar 5MB.",
+      (value) => {
+        // Si no hay archivo, es válido porque la imagen es opcional
+        if (!value) return true;
+
+        // Si existe, debe pesar como máximo 5MB
+        return value instanceof File && value.size <= MAX_FILE_SIZE_BYTES;
+      }
+    ),
+});
+
+export default function CrearEmpresaScreen() {
+  const { crearEmpresa } = useEmpresa();
+
   const [enviado, setEnviado] = useState(false);
   const [imgUrl, setImgUrl] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const {
-    control,
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<EmpresaFormValues>({
-    defaultValues: { nombre: "", imgFile: null },
-    mode: "onSubmit",
+  const formik = useFormik<EmpresaFormValues>({
+    initialValues: { nombre: "", imgFile: null },
+    validationSchema,
+    onSubmit: async (values, { resetForm }) => {
+
+      const data: EmpresaDto = {
+        nombre: values.nombre.trim(),
+        imgUrl,
+        imgFile: values.imgFile,
+      };
+
+      const result = await crearEmpresa(data);
+
+      if (result.success) {
+        setEnviado(true);
+        setTimeout(() => setEnviado(false), 3000);
+        router.replace(ROUTES.ADMIN.HOME);
+      }
+
+
+      resetForm();
+      setImgUrl("");
+    },
   });
 
-  const imgFile = watch("imgFile");
+  const {
+    values,
+    errors,
+    touched,
+    submitCount,
+    isSubmitting,
+    handleSubmit,
+    handleChange,
+    handleBlur,
+    setFieldValue,
+    setFieldTouched,
+  } = formik;
+
+  // Muestra el error de un campo solo si ya fue tocado o si ya se intentó enviar
+  const mostrarError = (campo: keyof EmpresaFormValues) =>
+    Boolean(errors[campo]) && (touched[campo] || submitCount > 0);
 
   // Genera y libera la vista previa cada vez que cambia el archivo seleccionado
   useEffect(() => {
-    if (!imgFile) {
+    if (!values.imgFile) {
       setImgUrl("");
       return;
     }
-    const url = URL.createObjectURL(imgFile);
+    const url = URL.createObjectURL(values.imgFile);
     setImgUrl(url);
     return () => URL.revokeObjectURL(url);
-  }, [imgFile]);
+  }, [values.imgFile]);
 
-  const applyFile = (file: File, onChange: (file: File | null) => void) => {
+  const applyFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
-      setValue("imgFile", null);
+      setFieldValue("imgFile", null);
       return;
     }
-    onChange(file);
+    setFieldValue("imgFile", file);
+    setFieldTouched("imgFile", true, false);
   };
 
-  const removeImage = (onChange: (file: File | null) => void) => {
-    onChange(null);
+  const removeImage = () => {
+    setFieldValue("imgFile", null);
     if (inputRef.current) inputRef.current.value = "";
-  };
-
-  const onSubmit = async (values: EmpresaFormValues) => {
-    if (!values.imgFile) return;
-
-    const data: EmpresaDto = {
-      nombre: values.nombre.trim(),
-      imgUrl,
-      imgFile: values.imgFile,
-    };
-
-    // Punto de integración: reemplaza este bloque por tu llamada real
-    // (fetch, servicio, etc).
-    setLoading(true);
-    try {
-      console.log("EmpresaDto listo para enviar:", data);
-      await new Promise((resolve) => setTimeout(resolve, 900));
-      setEnviado(true);
-      reset();
-      setTimeout(() => setEnviado(false), 3000);
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
@@ -109,10 +139,7 @@ export default function RegistroEmpresaScreen() {
 
       {/* Contenido de la pantalla */}
       <main className="flex-1 overflow-y-auto px-6 py-8">
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="max-w-md mx-auto space-y-7"
-        >
+        <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-7" noValidate>
           {enviado && (
             <div className="rounded-2xl bg-[#D8E2FF] text-[#001B3D] text-sm px-4 py-3">
               Empresa registrada correctamente.
@@ -133,17 +160,16 @@ export default function RegistroEmpresaScreen() {
             <div className="relative">
               <input
                 id="nombre"
+                name="nombre"
                 type="text"
                 placeholder=" "
-                {...register("nombre", {
-                  required: "Ingresa el nombre de la empresa.",
-                  validate: (v) => v.trim().length > 0 || "Ingresa el nombre de la empresa.",
-                })}
-                className={`peer w-full h-14 rounded-t-[4px] px-4 pt-5 pb-1.5 text-[#1C1B1F] bg-white outline-none border-b-2 transition-colors placeholder-transparent ${
-                  errors.nombre
-                    ? "border-[#B3261E]"
-                    : "border-[#79747E] focus:border-[#1857B6]"
-                }`}
+                value={values.nombre}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={`peer w-full h-14 rounded-t-[4px] px-4 pt-5 pb-1.5 text-[#1C1B1F] bg-white outline-none border-b-2 transition-colors placeholder-transparent ${mostrarError("nombre")
+                  ? "border-[#B3261E]"
+                  : "border-[#79747E] focus:border-[#1857B6]"
+                  }`}
               />
               <label
                 htmlFor="nombre"
@@ -154,108 +180,102 @@ export default function RegistroEmpresaScreen() {
                 Nombre de la empresa
               </label>
             </div>
-            {errors.nombre && (
-              <p className="mt-1.5 ml-4 text-xs text-[#B3261E]">{errors.nombre.message}</p>
+            {mostrarError("nombre") && (
+              <p className="mt-1.5 ml-4 text-xs text-[#B3261E]">{errors.nombre}</p>
             )}
           </div>
 
           {/* Campo: imagen */}
-          <Controller
-            control={control}
-            name="imgFile"
-            rules={{ required: "Selecciona una imagen para el logo." }}
-            render={({ field }) => (
-              <div>
-                <p className="text-sm font-medium text-[#1C1B1F] mb-2">Logo de la empresa</p>
+          <div>
+            <p className="text-sm font-medium text-[#1C1B1F] mb-2">Logo de la empresa</p>
 
-                {field.value ? (
-                  <div className="w-full rounded-2xl bg-white p-3 flex items-center gap-3">
-                    <img
-                      src={imgUrl}
-                      alt="Vista previa del logo"
-                      className="w-16 h-16 rounded-xl object-cover bg-[#F1EEF4]"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#1C1B1F] truncate">{field.value.name}</p>
-                      <p className="text-xs text-[#49454F]">
-                        {(field.value.size / 1024).toFixed(0)} KB
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeImage(field.onChange)}
-                      className="text-xs font-medium text-[#1857B6] hover:bg-[#D8E2FF] rounded-full px-3 py-1.5 transition-colors"
-                    >
-                      Quitar
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDragOver(true);
-                    }}
-                    onDragLeave={() => setDragOver(false)}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setDragOver(false);
-                      const file = e.dataTransfer.files?.[0];
-                      if (file) applyFile(file, field.onChange);
-                    }}
-                    onClick={() => inputRef.current?.click()}
-                    role="button"
-                    tabIndex={0}
-                    className={`cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${
-                      dragOver
-                        ? "border-[#8A6D00] bg-[#FFF7DE]"
-                        : errors.imgFile
-                        ? "border-[#B3261E] bg-[#F9DEDC]/40"
-                        : "border-[#79747E] bg-white hover:bg-[#FFF7DE]"
-                    }`}
-                  >
-                    <div className="mx-auto w-10 h-10 rounded-full bg-[#FFE28A] flex items-center justify-center mb-2">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A6D00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 16V4M12 4l-4 4M12 4l4 4" />
-                        <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
-                      </svg>
-                    </div>
-                    <p className="text-sm text-[#1C1B1F]">
-                      Arrastra una imagen aquí o{" "}
-                      <span className="text-[#1857B6] font-medium underline underline-offset-2">
-                        selecciona un archivo
-                      </span>
-                    </p>
-                    <p className="text-xs text-[#49454F] mt-1">PNG, JPG hasta 5MB</p>
-                  </div>
-                )}
-
-                <input
-                  ref={inputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) applyFile(file, field.onChange);
-                  }}
+            {values.imgFile ? (
+              <div className="w-full rounded-2xl bg-white p-3 flex items-center gap-3">
+                <img
+                  src={imgUrl}
+                  alt="Vista previa del logo"
+                  className="w-16 h-16 rounded-xl object-cover bg-[#F1EEF4]"
                 />
-                {errors.imgFile && (
-                  <p className="mt-1.5 ml-1 text-xs text-[#B3261E]">{errors.imgFile.message}</p>
-                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[#1C1B1F] truncate">{values.imgFile.name}</p>
+                  <p className="text-xs text-[#49454F]">
+                    {(values.imgFile.size / 1024).toFixed(0)} KB
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="text-xs font-medium text-[#1857B6] hover:bg-[#D8E2FF] rounded-full px-3 py-1.5 transition-colors"
+                >
+                  Quitar
+                </button>
+              </div>
+            ) : (
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) applyFile(file);
+                }}
+                onClick={() => inputRef.current?.click()}
+                role="button"
+                tabIndex={0}
+                className={`cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${dragOver
+                  ? "border-[#8A6D00] bg-[#FFF7DE]"
+                  : mostrarError("imgFile")
+                    ? "border-[#B3261E] bg-[#F9DEDC]/40"
+                    : "border-[#79747E] bg-white hover:bg-[#FFF7DE]"
+                  }`}
+              >
+                <div className="mx-auto w-10 h-10 rounded-full bg-[#FFE28A] flex items-center justify-center mb-2">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A6D00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 16V4M12 4l-4 4M12 4l4 4" />
+                    <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+                  </svg>
+                </div>
+                <p className="text-sm text-[#1C1B1F]">
+                  Arrastra una imagen aquí o{" "}
+                  <span className="text-[#1857B6] font-medium underline underline-offset-2">
+                    selecciona un archivo
+                  </span>
+                </p>
+                <p className="text-xs text-[#49454F] mt-1">PNG, JPG hasta 5MB</p>
               </div>
             )}
-          />
+
+            <input
+              ref={inputRef}
+              type="file"
+              name="imgFile"
+              accept="image/*"
+              className="hidden"
+              onBlur={handleBlur}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) applyFile(file);
+              }}
+            />
+            {mostrarError("imgFile") && (
+              <p className="mt-1.5 ml-1 text-xs text-[#B3261E]">{errors.imgFile}</p>
+            )}
+          </div>
 
           {/* Botón filled M3 */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={isSubmitting}
             className="w-full h-12 rounded-full bg-[#1857B6] text-white text-sm font-medium tracking-wide
               shadow-[0_1px_2px_rgba(0,0,0,0.15),0_1px_3px_1px_rgba(0,0,0,0.08)]
               hover:bg-[#1E63CC] hover:shadow-[0_1px_3px_rgba(0,0,0,0.2),0_4px_8px_3px_rgba(0,0,0,0.1)]
               active:bg-[#154E9E] transition-all disabled:opacity-40 disabled:shadow-none"
           >
-            {loading ? "Registrando…" : "Registrar empresa"}
+            {isSubmitting ? "Registrando…" : "Registrar empresa"}
           </button>
         </form>
       </main>

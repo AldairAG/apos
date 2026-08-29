@@ -1,7 +1,9 @@
 package com.api.apos.aplication.empresa.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.api.apos.aplication.empresa.controller.dto.EmpresaDto;
 import com.api.apos.aplication.empresa.controller.usecase.CrearEmpresa;
@@ -30,9 +32,18 @@ public class EmpresaController {
     private final FileStorageService fileStorageService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponseWrapper<EmpresaDto>> crearEmpresa(@ModelAttribute EmpresaDto empresaDto) {
+    public ResponseEntity<ApiResponseWrapper<EmpresaDto>> crearEmpresa(
+            @ModelAttribute EmpresaDto empresaDto,
+            @RequestPart(value = "imgFile", required = false) MultipartFile imgFile) {
+
         EmpresaDto createdEmpresa = crearEmpresa.execute(empresaDto);
-        return ResponseEntity.ok(new ApiResponseWrapper<>(true, createdEmpresa, "Empresa creada correctamente", null));
+
+        return ResponseEntity.ok(
+                new ApiResponseWrapper<>(
+                        true,
+                        createdEmpresa,
+                        "Empresa creada correctamente",
+                        null));
     }
 
     @GetMapping("/{id}/logo")

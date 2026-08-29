@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { PieChart } from "react-native-gifted-charts";
 import { router } from "expo-router";
 import { useUsuario } from "../../hook/useUsuario";
+import { useAuth } from "@/features/usuario/auth/presentation/hook/useAuth";
 
 /**
  * Requiere:
@@ -219,6 +220,7 @@ function PieCard({
 
 const AdminHomeScreen = () => {
   const { obtenerUsuarioActual, loading } = useUsuario();
+  const {isAuthenticated} = useAuth();
 
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState(CUENTAS[0]);
   const [selectorCuentaVisible, setSelectorCuentaVisible] = useState(false);
@@ -228,6 +230,12 @@ const AdminHomeScreen = () => {
 
   useEffect(() => {
     const fetchObtenerUsuario = async () => {
+      
+      if (!isAuthenticated) {
+        router.replace("/login");
+        return;
+      }
+
       const result = await obtenerUsuarioActual();
 
       if (!result.empresa) {
