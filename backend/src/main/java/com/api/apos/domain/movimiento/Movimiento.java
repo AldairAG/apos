@@ -39,7 +39,7 @@ public class Movimiento extends AuditableEntity {
 
     private CategoriaMovimiento categoria;
 
-    private Long usuarioId;
+    private Long createdBy;
 
     private Long cuentaDestinoId;
 
