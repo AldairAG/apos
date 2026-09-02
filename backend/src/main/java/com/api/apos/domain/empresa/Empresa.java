@@ -1,6 +1,7 @@
 package com.api.apos.domain.empresa;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.cuenta.Cuenta;
@@ -55,16 +56,26 @@ public class Empresa {
     }
     
     public void addUsuario(Usuario usuario) {
+        if (usuarios == null) {
+            usuarios = new ArrayList<>();
+        }
+
         usuarios.add(usuario);
         usuario.setEmpresa(this);
     }
 
     public void addCuenta(Cuenta cuenta) {
+        if (cuentas == null) {
+            cuentas = new ArrayList<>();
+        }
         cuentas.add(cuenta);
         cuenta.setEmpresa(this);
     }
 
     public void addSucursal(Sucursal sucursal) {
+        if (sucursales == null) {
+            sucursales = new ArrayList<>();
+        }
         sucursales.add(sucursal);
         sucursal.setEmpresa(this);
     }

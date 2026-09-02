@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
@@ -27,35 +28,47 @@ import org.springframework.web.bind.annotation.GetMapping;
 @AllArgsConstructor
 public class EmpresaController {
 
-    private final CrearEmpresa crearEmpresa;
+        private final CrearEmpresa crearEmpresa;
 
-    private final FileStorageService fileStorageService;
+        private final FileStorageService fileStorageService;
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponseWrapper<EmpresaDto>> crearEmpresa(
-            @ModelAttribute EmpresaDto empresaDto,
-            @RequestPart(value = "imgFile", required = false) MultipartFile imgFile) {
+        /**
+         * @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+         *                       public ResponseEntity<ApiResponseWrapper<EmpresaDto>>
+         *                       crearEmpresa(
+         * @ModelAttribute EmpresaDto empresaDto,
+         * @RequestPart(value = "imgFile", required = false) MultipartFile imgFile) {
+         * 
+         *                    EmpresaDto createdEmpresa =
+         *                    crearEmpresa.execute(empresaDto);
+         * 
+         *                    return ResponseEntity.ok(
+         *                    new ApiResponseWrapper<>(
+         *                    true,
+         *                    createdEmpresa,
+         *                    "Empresa creada correctamente",
+         *                    null));
+         *                    }
+         */
 
-        EmpresaDto createdEmpresa = crearEmpresa.execute(empresaDto);
+        @PostMapping("/")
+        public ResponseEntity<ApiResponseWrapper<EmpresaDto>> crearEmpresa(@RequestBody EmpresaDto empresaDto) {
 
-        return ResponseEntity.ok(
-                new ApiResponseWrapper<>(
-                        true,
-                        createdEmpresa,
-                        "Empresa creada correctamente",
-                        null));
-    }
+                EmpresaDto createdEmpresa = crearEmpresa.execute(empresaDto);
 
-    @GetMapping("/{id}/logo")
-    public ResponseEntity<Resource> obtenerLogo(
-            @PathVariable Long id) throws IOException {
+                return ResponseEntity.ok(new ApiResponseWrapper<>(true,createdEmpresa,"Empresa creada correctamente",null));
+        }
 
-        Resource resource = fileStorageService
-                .loadFileAsResource("empresas/" + id + "/logo.webp");
+        @GetMapping("/{id}/logo")
+        public ResponseEntity<Resource> obtenerLogo(
+                        @PathVariable Long id) throws IOException {
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("image/webp"))
-                .body(resource);
-    }
+                Resource resource = fileStorageService
+                                .loadFileAsResource("empresas/" + id + "/logo.webp");
+
+                return ResponseEntity.ok()
+                                .contentType(MediaType.parseMediaType("image/webp"))
+                                .body(resource);
+        }
 
 }

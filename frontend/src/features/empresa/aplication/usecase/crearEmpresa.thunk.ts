@@ -10,7 +10,7 @@ export const  crearEmpresaThunk = createAsyncThunk<
         "empresa/crear",
         async (empresa, { rejectWithValue }) => {
             try {
-                const response = await api.post<EmpresaDto>(`${API_BASE_PATH}`, empresa);
+                const response = await api.post<EmpresaDto>(`${API_BASE_PATH}/`, empresa);
                 if (!response.success) {
                     throw new Error(response.message);
                 }

@@ -40,6 +40,8 @@ public class Cuenta extends AuditableEntity {
     @Enumerated(EnumType.STRING)
     private TipoCuenta tipo;
 
+    private Boolean cuentaDestino;
+
     @ManyToOne
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
