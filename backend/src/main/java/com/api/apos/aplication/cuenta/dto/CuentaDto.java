@@ -2,7 +2,9 @@ package com.api.apos.aplication.cuenta.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
+import com.api.apos.aplication.movimiento.dto.MovimientoDto;
 import com.api.apos.enums.TipoCuenta;
 
 import jakarta.persistence.EnumType;
@@ -25,4 +27,7 @@ public class CuentaDto {
     private LocalDateTime updatedAt;
 
     private LocalDateTime createdAt;
+
+    private List<MovimientoDto> movimientos;
+
 }
