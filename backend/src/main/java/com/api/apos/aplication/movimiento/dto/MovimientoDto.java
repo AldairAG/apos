@@ -27,10 +27,6 @@ public class MovimientoDto {
 
     private Long createdBy;
 
-    private Long cuentaDestinoId;
-
-    private Long cuentaOrigenId;
-
     private LocalDateTime updatedAt;
 
     private LocalDateTime createdAt;

@@ -13,8 +13,6 @@ public class MovimientoMapper {
                 .estado(movimiento.getEstado())
                 .categoria(movimiento.getCategoria())
                 .createdBy(movimiento.getCreatedBy())
-                .cuentaDestinoId(movimiento.getCuentaDestinoId())
-                .cuentaOrigenId(movimiento.getCuentaOrigenId())
                 .updatedAt(movimiento.getUpdatedAt())
                 .createdAt(movimiento.getCreatedAt())
                 .build();

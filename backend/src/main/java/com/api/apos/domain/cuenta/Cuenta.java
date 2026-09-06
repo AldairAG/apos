@@ -6,6 +6,8 @@ import com.api.apos.domain.auditable.AuditableEntity;
 import com.api.apos.domain.empresa.Empresa;
 import com.api.apos.domain.movimiento.Movimiento;
 import com.api.apos.enums.TipoCuenta;
+import com.api.apos.enums.TipoMovimiento;
+import com.api.apos.enums.EstadoMovimiento;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -18,15 +20,19 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Builder
 @Table(name = "cuentas")
+@AllArgsConstructor 
+@NoArgsConstructor 
 public class Cuenta extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,6 +58,30 @@ public class Cuenta extends AuditableEntity {
 
     public void delete() {
         this.activa = false;
+    }
+
+    public void aumentarSaldo(BigDecimal monto) {
+        this.saldo = this.saldo.add(monto);
+    }
+
+    public void disminuirSaldo(BigDecimal monto) {
+        this.saldo = this.saldo.subtract(monto);
+    }
+
+    public void addIngreso(Movimiento movimiento) {
+        this.movimientos.add(movimiento);
+        movimiento.setCuenta(this);
+        movimiento.setTipo(TipoMovimiento.INGRESO);
+        movimiento.setEstado(EstadoMovimiento.COMPLETADO);
+        this.aumentarSaldo(movimiento.getMonto());
+    }
+
+    public void addEgreso(Movimiento movimiento) {
+        this.movimientos.add(movimiento);
+        movimiento.setCuenta(this);
+        movimiento.setTipo(TipoMovimiento.EGRESO);
+        movimiento.setEstado(EstadoMovimiento.COMPLETADO);
+        this.disminuirSaldo(movimiento.getMonto());
     }
 
 }

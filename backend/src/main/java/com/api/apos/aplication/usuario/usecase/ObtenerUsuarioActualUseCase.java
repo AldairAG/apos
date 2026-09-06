@@ -1,6 +1,7 @@
 package com.api.apos.aplication.usuario.usecase;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.api.apos.aplication.usuario.dto.UsuarioDto;
 import com.api.apos.aplication.empresa.controller.dto.EmpresaDto;
@@ -19,6 +20,7 @@ public class ObtenerUsuarioActualUseCase {
     
     private final UsuarioService usuarioService;
 
+    @Transactional(readOnly = true)
     public UsuarioDto execute() {
         Usuario usuario = usuarioService.getUsuarioAutenticado();
 

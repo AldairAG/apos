@@ -12,6 +12,10 @@ export const ROUTES = {
   // Módulo de Administración del Sistema
   ADMIN: {
     HOME: '/admin_home',
+    MOVIMIENTOS: {
+      CREAR_GASTO: '/movimientos/admin_crear_gasto',
+      CREAR_INGRESO: '/movimientos/admin_crear_ingreso',
+    },
   },
 
 

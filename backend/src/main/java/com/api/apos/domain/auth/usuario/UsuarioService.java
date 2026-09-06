@@ -31,7 +31,19 @@ public class UsuarioService implements UserDetailsService {
                 if (authentication == null || !authentication.isAuthenticated()) {
                         throw new RuntimeException("No hay un usuario autenticado");
                 }
-                return (Usuario) authentication.getPrincipal();
+                Usuario usuario = usuarioRepository.findById(((Usuario) authentication.getPrincipal()).getId()).orElse(null);
+                if (usuario == null) {
+                        throw new RuntimeException("No se encontró el usuario autenticado");
+                }
+                return usuario;
+        }
+
+        public Long getUsuarioAutenticadoId() {
+                 Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication == null || !authentication.isAuthenticated()) {
+                        throw new RuntimeException("No hay un usuario autenticado");
+                }
+                return ((Usuario) authentication.getPrincipal()).getId();
         }
 
         public Usuario findByEmail(String email) {

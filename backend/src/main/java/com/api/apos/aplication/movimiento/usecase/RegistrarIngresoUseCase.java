@@ -9,33 +9,34 @@ import com.api.apos.domain.cuenta.Cuenta;
 import com.api.apos.domain.cuenta.CuentaService;
 import com.api.apos.domain.movimiento.Movimiento;
 import com.api.apos.domain.movimiento.MovimientoService;
+import com.api.apos.enums.CategoriaMovimiento;
 
 import lombok.AllArgsConstructor;
 
 @Service 
-@AllArgsConstructor
-public class RegistrarGastoUseCase {
+@AllArgsConstructor 
+public class RegistrarIngresoUseCase {
+    
+    private final MovimientoService movimientoService;
 
     private final CuentaService cuentaService;
 
-    private final MovimientoService movimientoService;
-
     private final UsuarioService usuarioService;
 
-    @Transactional
+    @Transactional 
     public void execute(MovimientoDto movimientoDto) {
-
+        
         Cuenta cuenta = cuentaService.findById(movimientoDto.getCuentaId());
 
         Movimiento movimiento = Movimiento.builder()
                 .descripcion(movimientoDto.getDescripcion())
                 .monto(movimientoDto.getMonto())
-                .categoria(movimientoDto.getCategoria())
+                .categoria(CategoriaMovimiento.INGRESO)
                 .createdBy(usuarioService.getUsuarioAutenticadoId())
                 .build();
 
-        cuenta.addEgreso(movimiento);
-
+        cuenta.addIngreso(movimiento);
+        
         movimientoService.save(movimiento);
 
     }

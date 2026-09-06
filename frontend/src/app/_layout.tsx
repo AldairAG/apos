@@ -4,6 +4,7 @@ import { useColorScheme } from 'react-native';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/lib/integration/react';
 import "../global.css";
+import { ROUTES } from '@/routes/routes';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -19,7 +20,9 @@ export default function TabLayout() {
             <Stack.Screen name="index" />
             <Stack.Screen name="login" />
             <Stack.Screen name="register" />
-            <Stack.Screen name="admin_home" />
+            <Stack.Screen name={ROUTES.ADMIN.HOME} />
+            <Stack.Screen name={ROUTES.ADMIN.MOVIMIENTOS.CREAR_INGRESO} />
+            <Stack.Screen name={ROUTES.ADMIN.MOVIMIENTOS.CREAR_GASTO} />
           </Stack>
         </ThemeProvider>
       </PersistGate>

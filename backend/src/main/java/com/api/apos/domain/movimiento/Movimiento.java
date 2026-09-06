@@ -9,6 +9,8 @@ import com.api.apos.enums.TipoMovimiento;
 import com.api.apos.enums.CategoriaMovimiento;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -33,10 +35,16 @@ public class Movimiento extends AuditableEntity {
 
     private BigDecimal monto;
 
+    //Representa si el movimiento fue de ingreso o egreso
+    @Enumerated(EnumType.STRING)
     private TipoMovimiento tipo;
 
+    //Representa si el movimiento fue cancelado
+    @Enumerated(EnumType.STRING)
     private EstadoMovimiento estado;
 
+    //Categoria del movimiento ya sea ingreso o egreso
+    @Enumerated(EnumType.STRING)
     private CategoriaMovimiento categoria;
 
     private Long createdBy;

@@ -6,8 +6,6 @@ import {
   ScrollView,
   Pressable,
   Modal,
-  Animated,
-  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { PieChart } from "react-native-gifted-charts";
@@ -15,25 +13,12 @@ import { router } from "expo-router";
 import { useUsuario } from "../../hook/useUsuario";
 import { useAuth } from "@/features/usuario/auth/presentation/hook/useAuth";
 import { CuentaDto } from "@/features/cuenta/domain/types/cuenta.types";
-
-/**
- * Requiere:
- *   npm install react-native-gifted-charts react-native-svg
- *   (Ionicons ya viene incluido con Expo vía @expo/vector-icons)
- *
- * Paleta M3 (azul / amarillo) — igual que el resto de la app.
- */
-const AZUL = "#1857B6";
-const AZUL_CONTAINER = "#D8E2FF";
-const AMARILLO = "#8A6D00";
-const AMARILLO_CONTAINER = "#FFE28A";
-const SURFACE = "#F1EEF4";
-const ROJO = "#B3261E";
+import { AMARILLO, AMARILLO_CONTAINER, AZUL, AZUL_CONTAINER, ROJO } from "@/types/colors";
+import { ROUTES } from "@/routes/routes";
 
 const PALETA_INGRESOS = ["#1857B6", "#3568C4", "#5580D1", "#7A9BDE", "#A9C1EA"];
 const PALETA_GASTOS = ["#8A6D00", "#B98600", "#D9A400", "#F0BE33", "#FFD666"];
 
-const SIDEBAR_WIDTH = 280;
 
 // ---------- Tipos y datos de ejemplo ----------
 // Sustituye MOVIMIENTOS_MOCK y CUENTAS por tus datos reales (API / store).
@@ -77,80 +62,6 @@ const buildPieData = (items: Movimiento[], paleta: string[]) => {
     }));
 };
 
-// ---------- Menú lateral ----------
-
-interface SidebarProps {
-  visible: boolean;
-  translateX: Animated.Value;
-  onClose: () => void;
-}
-
-const NAV_ITEMS: { label: string; icon: keyof typeof Ionicons.glyphMap; route: string }[] = [
-  { label: "Resumen del día", icon: "home-outline", route: "/dashboard" },
-  { label: "Movimientos", icon: "swap-vertical-outline", route: "/movimientos" },
-  { label: "Cuentas", icon: "wallet-outline", route: "/cuentas" },
-  { label: "Categorías", icon: "pricetags-outline", route: "/categorias" },
-  { label: "Reportes", icon: "bar-chart-outline", route: "/reportes" },
-  { label: "Configuración", icon: "settings-outline", route: "/configuracion" },
-];
-
-function Sidebar({ visible, translateX, onClose }: SidebarProps) {
-  if (!visible) return null;
-
-  return (
-    <View className="absolute inset-0 z-50" pointerEvents="box-none">
-      <Pressable
-        onPress={onClose}
-        className="absolute inset-0 bg-black/40"
-        accessibilityLabel="Cerrar menú"
-      />
-      <Animated.View
-        style={{ transform: [{ translateX }], width: SIDEBAR_WIDTH }}
-        className="absolute left-0 top-0 h-full bg-white"
-      >
-        <View className="h-16 flex-row items-center justify-between px-4 border-b border-[#E7E0EC]">
-          <Text className="text-base font-medium text-[#1C1B1F]">Menú</Text>
-          <Pressable
-            onPress={onClose}
-            className="w-9 h-9 rounded-full items-center justify-center"
-            accessibilityLabel="Cerrar"
-          >
-            <Ionicons name="close" size={20} color="#1C1B1F" />
-          </Pressable>
-        </View>
-
-        <ScrollView className="flex-1 pt-2">
-          {NAV_ITEMS.map((item) => (
-            <Pressable
-              key={item.route}
-              onPress={() => {
-                onClose();
-                router.push(item.route as any);
-              }}
-              className="flex-row items-center gap-3 px-5 py-3 active:bg-[#F1EEF4]"
-            >
-              <Ionicons name={item.icon} size={20} color="#49454F" />
-              <Text className="text-sm text-[#1C1B1F]">{item.label}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        <Pressable
-          onPress={() => {
-            onClose();
-            router.replace("/login" as any);
-          }}
-          className="flex-row items-center gap-3 px-5 py-4 border-t border-[#E7E0EC]"
-        >
-          <Ionicons name="log-out-outline" size={20} color={ROJO} />
-          <Text className="text-sm" style={{ color: ROJO }}>
-            Cerrar sesión
-          </Text>
-        </Pressable>
-      </Animated.View>
-    </View>
-  );
-}
 
 // ---------- Tarjeta de gráfica de pastel ----------
 
@@ -241,26 +152,6 @@ const AdminHomeScreen = () => {
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState<CuentaDto | null>(null);
   const [selectorCuentaVisible, setSelectorCuentaVisible] = useState(false);
 
-  const [sidebarVisible, setSidebarVisible] = useState(false);
-  const translateX = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
-
-  const openSidebar = () => {
-    setSidebarVisible(true);
-    Animated.timing(translateX, {
-      toValue: 0,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const closeSidebar = () => {
-    Animated.timing(translateX, {
-      toValue: -SIDEBAR_WIDTH,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => setSidebarVisible(false));
-  };
-
   // TODO: sustituir por datos reales (API) filtrados al día actual
   const movimientosDelDia = useMemo(() => {
     return MOVIMIENTOS_MOCK.filter(
@@ -294,18 +185,6 @@ const AdminHomeScreen = () => {
 
   return (
     <View className="flex-1 bg-[#F1EEF4]">
-      {/* Top app bar */}
-      <View className="h-16 shrink-0 bg-white flex-row items-center justify-between px-2 shadow-[0_1px_2px_rgba(0,0,0,0.08)]">
-        <Pressable
-          onPress={openSidebar}
-          className="w-10 h-10 rounded-full items-center justify-center"
-          accessibilityLabel="Abrir menú"
-        >
-          <Ionicons name="menu" size={22} color="#1C1B1F" />
-        </Pressable>
-        <Text className="text-base font-medium text-[#1C1B1F]">Resumen del día</Text>
-        <View className="w-10" />
-      </View>
 
       <ScrollView
         className="flex-1"
@@ -318,7 +197,7 @@ const AdminHomeScreen = () => {
         >
           <View className="flex-row items-center gap-2">
             <Ionicons name="wallet-outline" size={18} color={AZUL} />
-            <Text className="text-sm text-[#1C1B1F]">{cuentaSeleccionada?.nombre}</Text>
+            <Text className="text-sm text-[#1C1B1F]">{cuentaSeleccionada?.nombre || "Todas las cuentas"}</Text>
           </View>
           <Ionicons name="chevron-down" size={18} color="#49454F" />
         </Pressable>
@@ -367,7 +246,7 @@ const AdminHomeScreen = () => {
         {/* Botones agregar */}
         <View className="flex-row gap-3">
           <Pressable
-            onPress={() => router.push("/movimientos/nuevo?tipo=ingreso" as any)}
+            onPress={() => router.push(ROUTES.ADMIN.MOVIMIENTOS.CREAR_INGRESO as any)}
             className="flex-1 h-12 rounded-full flex-row items-center justify-center gap-1.5"
             style={{ backgroundColor: AZUL }}
           >
@@ -376,7 +255,7 @@ const AdminHomeScreen = () => {
           </Pressable>
 
           <Pressable
-            onPress={() => router.push("/movimientos/nuevo?tipo=gasto" as any)}
+            onPress={() => router.push(ROUTES.ADMIN.MOVIMIENTOS.CREAR_GASTO as any)}
             className="flex-1 h-12 rounded-full flex-row items-center justify-center gap-1.5 border-2"
             style={{ borderColor: AMARILLO }}
           >
@@ -405,12 +284,52 @@ const AdminHomeScreen = () => {
       </ScrollView>
 
       {/* Selector de cuenta (modal) */}
-      <Modal visible={selectorCuentaVisible} transparent animationType="fade">
+      <Modal
+        visible={selectorCuentaVisible}
+        transparent
+        animationType="fade"
+      >
         <Pressable
           className="flex-1 bg-black/40 items-center justify-center px-8"
           onPress={() => setSelectorCuentaVisible(false)}
         >
           <View className="w-full bg-white rounded-2xl overflow-hidden">
+
+            {/* Todas las cuentas */}
+            <Pressable
+              onPress={() => {
+                setCuentaSeleccionada(null);
+                setSelectorCuentaVisible(false);
+              }}
+              className="flex-row items-center justify-between px-5 py-4 active:bg-[#F1EEF4]"
+            >
+              <View className="flex-row items-center">
+                <Ionicons
+                  name="wallet-outline"
+                  size={20}
+                  color="#6B6870"
+                />
+
+                <Text className="text-sm text-[#1C1B1F] ml-3">
+                  Todas las cuentas
+                </Text>
+              </View>
+
+              {cuentaSeleccionada === null && (
+                <Ionicons
+                  name="checkmark"
+                  size={18}
+                  color={AZUL}
+                />
+              )}
+            </Pressable>
+
+            {/* Separador */}
+            {(usuario?.empresa?.cuentas?.length ?? 0) > 0 && (
+              <View className="h-[1px] bg-[#E8E5EA]" />
+            )}
+
+            {/* Cuentas */}
             {usuario?.empresa.cuentas?.length === 0 ? (
               <View className="px-5 py-6 items-center">
                 <Ionicons
@@ -447,12 +366,11 @@ const AdminHomeScreen = () => {
                 </Pressable>
               ))
             )}
+
           </View>
         </Pressable>
       </Modal>
 
-      {/* Menú lateral */}
-      <Sidebar visible={sidebarVisible} translateX={translateX} onClose={closeSidebar} />
     </View>
   );
 };
