@@ -14,6 +14,7 @@ import { PieChart } from "react-native-gifted-charts";
 import { router } from "expo-router";
 import { useUsuario } from "../../hook/useUsuario";
 import { useAuth } from "@/features/usuario/auth/presentation/hook/useAuth";
+import { CuentaDto } from "@/features/cuenta/domain/types/cuenta.types";
 
 /**
  * Requiere:
@@ -44,8 +45,6 @@ interface Movimiento {
   monto: number;
   cuenta: string;
 }
-
-const CUENTAS = ["Todas las cuentas", "Efectivo", "Banco azul", "Tarjeta de crédito"];
 
 const MOVIMIENTOS_MOCK: Movimiento[] = [
   { id: "1", tipo: "gasto", categoria: "Comida", monto: 320, cuenta: "Efectivo" },
@@ -219,18 +218,12 @@ function PieCard({
 // ---------- Pantalla principal ----------
 
 const AdminHomeScreen = () => {
-  const { obtenerUsuarioActual, loading } = useUsuario();
-  const {isAuthenticated} = useAuth();
-
-  const [cuentaSeleccionada, setCuentaSeleccionada] = useState(CUENTAS[0]);
-  const [selectorCuentaVisible, setSelectorCuentaVisible] = useState(false);
-
-  const [sidebarVisible, setSidebarVisible] = useState(false);
-  const translateX = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
+  const { obtenerUsuarioActual, loading, usuario } = useUsuario();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const fetchObtenerUsuario = async () => {
-      
+
       if (!isAuthenticated) {
         router.replace("/login");
         return;
@@ -244,6 +237,12 @@ const AdminHomeScreen = () => {
     };
     fetchObtenerUsuario();
   }, [obtenerUsuarioActual]);
+
+  const [cuentaSeleccionada, setCuentaSeleccionada] = useState<CuentaDto | null>(null);
+  const [selectorCuentaVisible, setSelectorCuentaVisible] = useState(false);
+
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const translateX = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
 
   const openSidebar = () => {
     setSidebarVisible(true);
@@ -319,7 +318,7 @@ const AdminHomeScreen = () => {
         >
           <View className="flex-row items-center gap-2">
             <Ionicons name="wallet-outline" size={18} color={AZUL} />
-            <Text className="text-sm text-[#1C1B1F]">{cuentaSeleccionada}</Text>
+            <Text className="text-sm text-[#1C1B1F]">{cuentaSeleccionada?.nombre}</Text>
           </View>
           <Ionicons name="chevron-down" size={18} color="#49454F" />
         </Pressable>
@@ -412,21 +411,42 @@ const AdminHomeScreen = () => {
           onPress={() => setSelectorCuentaVisible(false)}
         >
           <View className="w-full bg-white rounded-2xl overflow-hidden">
-            {CUENTAS.map((cuenta) => (
-              <Pressable
-                key={cuenta}
-                onPress={() => {
-                  setCuentaSeleccionada(cuenta);
-                  setSelectorCuentaVisible(false);
-                }}
-                className="flex-row items-center justify-between px-5 py-4 active:bg-[#F1EEF4]"
-              >
-                <Text className="text-sm text-[#1C1B1F]">{cuenta}</Text>
-                {cuenta === cuentaSeleccionada && (
-                  <Ionicons name="checkmark" size={18} color={AZUL} />
-                )}
-              </Pressable>
-            ))}
+            {usuario?.empresa.cuentas?.length === 0 ? (
+              <View className="px-5 py-6 items-center">
+                <Ionicons
+                  name="wallet-outline"
+                  size={32}
+                  color="#8A8790"
+                />
+
+                <Text className="text-sm text-[#6B6870] text-center mt-2">
+                  No tienes cuentas registradas
+                </Text>
+              </View>
+            ) : (
+              usuario?.empresa.cuentas?.map((cuenta) => (
+                <Pressable
+                  key={cuenta.id}
+                  onPress={() => {
+                    setCuentaSeleccionada(cuenta);
+                    setSelectorCuentaVisible(false);
+                  }}
+                  className="flex-row items-center justify-between px-5 py-4 active:bg-[#F1EEF4]"
+                >
+                  <Text className="text-sm text-[#1C1B1F]">
+                    {cuenta.nombre}
+                  </Text>
+
+                  {cuenta.id === cuentaSeleccionada?.id && (
+                    <Ionicons
+                      name="checkmark"
+                      size={18}
+                      color={AZUL}
+                    />
+                  )}
+                </Pressable>
+              ))
+            )}
           </View>
         </Pressable>
       </Modal>

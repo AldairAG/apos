@@ -1,6 +1,6 @@
 package com.api.apos.aplication.usuario.dto;
 
-import com.api.apos.domain.empresa.Empresa;
+import com.api.apos.aplication.empresa.controller.dto.EmpresaDto;
 
 import lombok.Builder;
 import lombok.Data;
@@ -15,5 +15,5 @@ public class UsuarioDto {
     private String telefono;
     private String lada;
 
-    private Empresa empresa;
+    private EmpresaDto empresa;
 }

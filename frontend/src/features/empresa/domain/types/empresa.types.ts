@@ -5,7 +5,7 @@ export interface EmpresaDto {
     imgUrl: string;
     imgFile?: File | null;
 
-    cuentas?: CuentaDto[] | null;
+    cuentas: CuentaDto[];
 
 }
 

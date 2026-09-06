@@ -7,6 +7,7 @@ import com.api.apos.domain.empresa.Empresa;
 import com.api.apos.domain.movimiento.Movimiento;
 import com.api.apos.enums.TipoCuenta;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -46,7 +47,7 @@ public class Cuenta extends AuditableEntity {
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
 
-    @OneToMany(mappedBy = "cuenta")
+    @OneToMany(mappedBy = "cuenta", cascade = CascadeType.ALL)
     private List<Movimiento> movimientos;
 
     public void delete() {

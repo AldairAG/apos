@@ -9,6 +9,7 @@ import com.api.apos.domain.empresa.enums.TipoEmpresa;
 import com.api.apos.domain.sucursal.Sucursal;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -48,7 +49,7 @@ public class Empresa {
     private List<Sucursal> sucursales;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "empresa")
+    @OneToMany(mappedBy = "empresa",cascade = CascadeType.ALL)
     private List<Cuenta> cuentas;
 
     public void delete(){
