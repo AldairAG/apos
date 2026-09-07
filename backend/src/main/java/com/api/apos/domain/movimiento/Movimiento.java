@@ -1,7 +1,7 @@
 package com.api.apos.domain.movimiento;
 
 import java.math.BigDecimal;
-
+import com.api.apos.domain.corte_caja.CorteCaja;
 import com.api.apos.domain.auditable.AuditableEntity;
 import com.api.apos.domain.cuenta.Cuenta;
 import com.api.apos.enums.EstadoMovimiento;
@@ -11,6 +11,7 @@ import com.api.apos.enums.CategoriaMovimiento;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -56,6 +57,10 @@ public class Movimiento extends AuditableEntity {
     @ManyToOne
     @JoinColumn(name = "cuenta_id") 
     private Cuenta cuenta;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "corte_caja_id")
+    private CorteCaja corteCaja;
 
     public void delete() {
         this.estado = EstadoMovimiento.CANCELADO;

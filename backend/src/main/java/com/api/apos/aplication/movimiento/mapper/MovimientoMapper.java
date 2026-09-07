@@ -4,7 +4,7 @@ import com.api.apos.aplication.movimiento.dto.MovimientoDto;
 import com.api.apos.domain.movimiento.Movimiento;
 
 public class MovimientoMapper {
-    public MovimientoDto toDto(Movimiento movimiento) {
+    public static MovimientoDto toDto(Movimiento movimiento) {
         return MovimientoDto.builder()
                 .id(movimiento.getId())
                 .descripcion(movimiento.getDescripcion())
