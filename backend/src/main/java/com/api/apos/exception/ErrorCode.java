@@ -73,7 +73,71 @@ public enum ErrorCode {
         "MOVIMIENTO_NO_ENCONTRADO",
         "Movimiento no encontrado",
         HttpStatus.NOT_FOUND
+    ),
+
+    MOVIMIENTO_NO_PERMITIDO(
+        "MOVIMIENTO_NO_PERMITIDO",
+        "El movimiento no está permitido",
+        HttpStatus.FORBIDDEN
+    ),
+
+    MOVIMIENTOS_NO_ENCONTRADOS(
+        "MOVIMIENTOS_NO_ENCONTRADOS",
+        "No se encontraron movimientos",
+        HttpStatus.NOT_FOUND
+    ),
+
+    //CAJA
+    CAJA_NO_ENCONTRADA(
+        "CAJA_NO_ENCONTRADA",
+        "Caja no encontrada",
+        HttpStatus.NOT_FOUND
+    ),
+
+    ERROR_AL_GUARDAR_CAJA(
+        "ERROR_AL_GUARDAR_CAJA",
+        "Ocurrió un error al guardar la caja",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+
+    ERROR_AL_ELIMINAR_CAJA(
+        "ERROR_AL_ELIMINAR_CAJA",
+        "Ocurrió un error al eliminar la caja",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+
+    ERROR_AL_ABRIR_CAJA(
+        "ERROR_AL_ABRIR_CAJA",
+        "Ocurrió un error al abrir la caja",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+
+    ERROR_AL_CERRAR_CAJA(
+        "ERROR_AL_CERRAR_CAJA",
+        "Ocurrió un error al cerrar la caja",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+
+    //CORTE_CAJA
+    CORTE_CAJA_NO_ENCONTRADO(
+        "CORTE_CAJA_NO_ENCONTRADO",
+        "Corte de caja no encontrado",
+        HttpStatus.NOT_FOUND
+    ),
+    ERROR_AL_GUARDAR_CORTE_CAJA(
+        "ERROR_AL_GUARDAR_CORTE_CAJA",
+        "Ocurrió un error al guardar el corte de caja",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    ERROR_AL_ELIMINAR_CORTE_CAJA(
+        "ERROR_AL_ELIMINAR_CORTE_CAJA",
+        "Ocurrió un error al eliminar el corte de caja",
+        HttpStatus.INTERNAL_SERVER_ERROR
     );
+
+
+
+
 
 
 
