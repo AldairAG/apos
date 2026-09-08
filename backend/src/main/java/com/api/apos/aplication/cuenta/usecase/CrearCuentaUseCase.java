@@ -3,11 +3,11 @@ package com.api.apos.aplication.cuenta.usecase;
 import org.springframework.stereotype.Service;
 
 import com.api.apos.aplication.cuenta.dto.CuentaDto;
-import com.api.apos.domain.cuenta.CuentaRepository;
 import com.api.apos.aplication.cuenta.mapper.CuentaMapper;
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.auth.usuario.UsuarioService;
-import com.api.apos.domain.cuenta.Cuenta;
+import com.api.apos.domain.financiero.cuenta.Cuenta;
+import com.api.apos.domain.financiero.cuenta.CuentaRepository;
 
 import lombok.RequiredArgsConstructor;
 

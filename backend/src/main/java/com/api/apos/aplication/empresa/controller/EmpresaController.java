@@ -5,8 +5,8 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.api.apos.aplication.empresa.controller.dto.EmpresaDto;
-import com.api.apos.aplication.empresa.controller.usecase.CrearEmpresa;
+import com.api.apos.aplication.empresa.dto.EmpresaDto;
+import com.api.apos.aplication.empresa.usecase.CrearEmpresa;
 import com.api.apos.helpers.ApiResponseWrapper;
 import com.api.apos.helpers.FileStorageService;
 import org.springframework.core.io.Resource;

@@ -1,7 +1,7 @@
 package com.api.apos.aplication.sucursal.mapper;
 
 import com.api.apos.aplication.sucursal.dto.SucursalDto;
-import com.api.apos.domain.sucursal.Sucursal;
+import com.api.apos.domain.organizacion.sucursal.Sucursal;
 
 public class SucursalMapper {
     

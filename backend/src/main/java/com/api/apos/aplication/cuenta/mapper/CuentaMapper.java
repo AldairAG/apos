@@ -1,7 +1,7 @@
 package com.api.apos.aplication.cuenta.mapper;
 
 import com.api.apos.aplication.cuenta.dto.CuentaDto;
-import com.api.apos.domain.cuenta.Cuenta;
+import com.api.apos.domain.financiero.cuenta.Cuenta;
 
 public class CuentaMapper {
     

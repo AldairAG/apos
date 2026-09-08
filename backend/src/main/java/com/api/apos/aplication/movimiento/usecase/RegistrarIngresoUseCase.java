@@ -6,10 +6,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.api.apos.aplication.movimiento.dto.MovimientoDto;
 import com.api.apos.aplication.movimiento.mapper.MovimientoMapper;
 import com.api.apos.domain.auth.usuario.UsuarioService;
-import com.api.apos.domain.cuenta.Cuenta;
-import com.api.apos.domain.cuenta.CuentaService;
-import com.api.apos.domain.movimiento.Movimiento;
-import com.api.apos.domain.movimiento.MovimientoService;
+import com.api.apos.domain.financiero.cuenta.Cuenta;
+import com.api.apos.domain.financiero.cuenta.CuentaService;
+import com.api.apos.domain.financiero.movimiento.Movimiento;
+import com.api.apos.domain.financiero.movimiento.MovimientoService;
 import com.api.apos.enums.CategoriaMovimiento;
 
 import lombok.AllArgsConstructor;

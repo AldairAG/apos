@@ -1,6 +1,6 @@
 package com.api.apos.aplication.usuario.dto;
 
-import com.api.apos.aplication.empresa.controller.dto.EmpresaDto;
+import com.api.apos.aplication.empresa.dto.EmpresaDto;
 
 import lombok.Builder;
 import lombok.Data;

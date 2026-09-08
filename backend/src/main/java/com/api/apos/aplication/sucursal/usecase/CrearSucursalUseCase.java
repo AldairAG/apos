@@ -6,11 +6,11 @@ import org.springframework.stereotype.Service;
 
 import com.api.apos.aplication.sucursal.dto.SucursalDto;
 import com.api.apos.aplication.sucursal.mapper.SucursalMapper;
-import com.api.apos.domain.sucursal.SucursalService;
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.auth.usuario.UsuarioService;
-import com.api.apos.domain.empresa.Empresa;
-import com.api.apos.domain.sucursal.Sucursal;
+import com.api.apos.domain.organizacion.empresa.Empresa;
+import com.api.apos.domain.organizacion.sucursal.Sucursal;
+import com.api.apos.domain.organizacion.sucursal.SucursalService;
 
 import lombok.AllArgsConstructor;
 

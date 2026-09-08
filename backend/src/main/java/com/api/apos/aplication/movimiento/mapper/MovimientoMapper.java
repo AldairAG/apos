@@ -1,7 +1,7 @@
 package com.api.apos.aplication.movimiento.mapper;
 
 import com.api.apos.aplication.movimiento.dto.MovimientoDto;
-import com.api.apos.domain.movimiento.Movimiento;
+import com.api.apos.domain.financiero.movimiento.Movimiento;
 
 public class MovimientoMapper {
     public static MovimientoDto toDto(Movimiento movimiento) {

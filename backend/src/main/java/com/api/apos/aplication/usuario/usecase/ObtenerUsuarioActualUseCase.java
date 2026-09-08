@@ -4,8 +4,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.api.apos.aplication.usuario.dto.UsuarioDto;
-import com.api.apos.aplication.empresa.controller.dto.EmpresaDto;
-import com.api.apos.aplication.empresa.controller.mapper.EmpresaMapper;
+import com.api.apos.aplication.empresa.dto.EmpresaDto;
+import com.api.apos.aplication.empresa.mapper.EmpresaMapper;
 import com.api.apos.aplication.cuenta.dto.CuentaDto;
 import com.api.apos.aplication.cuenta.mapper.CuentaMapper;
 import java.util.List;
