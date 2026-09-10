@@ -18,8 +18,48 @@ export const ROUTES = {
     },
   },
 
+  SUCURSAL: {
+    HOME: '/sucursal_home',
+  },
+
+  ADMIN_SUCURSAL: {
+    SELECCIONAR: '/sucursal/SeleccionarSucursal',
+  },
+
+  POS: {
+    HOME: '/pos_home',
+  },
 
 } as const;
+
+/**
+ * Módulos disponibles dentro del contexto de una sucursal ([sucursalId]).
+ * Usado por el layout de sucursal para las tabs de navegación y por el
+ * selector de sucursal para conservar el módulo actual al cambiar de sucursal.
+ */
+export const MODULOS_SUCURSAL = [
+  { key: 'dashboard', label: 'Panel' },
+  { key: 'productos', label: 'Productos' },
+  { key: 'inventario', label: 'Inventario' },
+  { key: 'caja', label: 'Caja' },
+  { key: 'mesas', label: 'Mesas' },
+  { key: 'ordenes', label: 'Órdenes' },
+  { key: 'configuracion', label: 'Configuración' },
+] as const;
+
+export type ModuloSucursalKey = typeof MODULOS_SUCURSAL[number]['key'];
+
+/**
+ * Construye la ruta de un módulo para una sucursal específica.
+ * Sin módulo (o 'dashboard') apunta al panel principal de la sucursal.
+ */
+export const rutaSucursal = (
+  sucursalId: string | number,
+  modulo?: ModuloSucursalKey
+): string =>
+  modulo && modulo !== 'dashboard'
+    ? `/sucursal/${sucursalId}/${modulo}`
+    : `/sucursal/${sucursalId}`;
 
 /**
  * Roles del sistema

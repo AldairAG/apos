@@ -44,7 +44,7 @@ function AdminLayoutContent() {
           className="absolute left-0 right-0 text-center text-base font-medium text-[#1C1B1F]"
           pointerEvents="none"
         >
-          Resumen del día
+          Administracion general
         </Text>
 
       </View>

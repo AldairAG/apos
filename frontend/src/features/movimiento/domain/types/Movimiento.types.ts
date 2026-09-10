@@ -17,10 +17,6 @@ export interface MovimientoDto {
 
     createdBy: number;
 
-    cuentaDestinoId: number;
-
-    cuentaOrigenId: number;
-
     updatedAt: Date;
 
     createdAt: Date;

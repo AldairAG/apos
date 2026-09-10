@@ -6,18 +6,20 @@ import {
 } from 'redux-persist';
 import { apiBase } from '../api/apiBase';
 //slices
+import sucursalReducer from '../features/sucursal/store/sucursal.slice';
 import authReducer from '../features/usuario/auth/store/auth.slice';
 import usuarioReducer from '../features/usuario/usuario/store/usuario.slice';
 
 const persistConfig = {
     key: 'root',
     storage: AsyncStorage,
-    whitelist: ['auth','usuario'], // solo persistir estos slices
+    whitelist: ['auth','usuario','sucursal'], // solo persistir estos slices
 };
 
 const rootReducer = combineReducers({
     auth: authReducer,
     usuario: usuarioReducer,
+    sucursal: sucursalReducer,
 });
 
 const persistedReducer = persistReducer(
