@@ -9,16 +9,18 @@ import { apiBase } from '../api/apiBase';
 import sucursalReducer from '../features/sucursal/store/sucursal.slice';
 import authReducer from '../features/usuario/auth/store/auth.slice';
 import usuarioReducer from '../features/usuario/usuario/store/usuario.slice';
+import movimientoReducer from '../features/movimiento/store/MovimientoSlice';
 
 const persistConfig = {
     key: 'root',
     storage: AsyncStorage,
-    whitelist: ['auth','usuario','sucursal'], // solo persistir estos slices
+    whitelist: ['auth','usuario'], // solo persistir estos slices
 };
 
 const rootReducer = combineReducers({
     auth: authReducer,
     usuario: usuarioReducer,
+    movimiento: movimientoReducer,
     sucursal: sucursalReducer,
 });
 

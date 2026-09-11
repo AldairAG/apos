@@ -18,6 +18,7 @@ export const useUsuario = () => {
     const handleClearUsuario = () => {
         dispatch(clearUsuario());
     }
+    
 
     const handleObtenerUsuarioActual = useCallback(async () => {
         const result = await dispatch(obtenerUsuarioActual()).unwrap();

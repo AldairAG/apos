@@ -2,43 +2,34 @@ import React, { useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, Modal, FlatList } from "react-native";
 import { Formik, FormikHelpers } from "formik";
 import * as Yup from "yup";
+import { CategoriaMovimiento } from "../../domain/enum/CategoriaMovimiento";
+import { useEmpresa } from "@/features/empresa/presentation/hook/useEmpresa";
+import { useUsuario } from "@/features/usuario/usuario/hook/useUsuario";
+import { useMovimientos } from "../hook/useMovimientos";
 
-// TODO: reemplazar por el enum real de categorías de gasto del proyecto.
-enum CategoriaMovimiento {
-  PROVEEDORES = "PROVEEDORES",
-  SERVICIOS = "SERVICIOS",
-  NOMINA = "NOMINA",
-  RENTA = "RENTA",
-  OTRO_GASTO = "OTRO_GASTO",
-}
 
 const CATEGORIA_LABELS: Record<CategoriaMovimiento, string> = {
-  [CategoriaMovimiento.PROVEEDORES]: "Pago a proveedores",
   [CategoriaMovimiento.SERVICIOS]: "Servicios",
   [CategoriaMovimiento.NOMINA]: "Nómina",
   [CategoriaMovimiento.RENTA]: "Renta",
-  [CategoriaMovimiento.OTRO_GASTO]: "Otro gasto",
+  [CategoriaMovimiento.EQUIPO]: "Otro gasto",
+  [CategoriaMovimiento.MANTENIMIENTO]: "Mantenimiento",
+  [CategoriaMovimiento.PUBLICIDAD]: "Publicidad",
+  [CategoriaMovimiento.IMPUESTOS]: "Impuestos",
+  [CategoriaMovimiento.OTROS]: "Otros",
+  [CategoriaMovimiento.TRANSPORTE]: "Transporte",
 };
 
 const CATEGORIAS: CategoriaMovimiento[] = [
-  CategoriaMovimiento.PROVEEDORES,
   CategoriaMovimiento.SERVICIOS,
   CategoriaMovimiento.NOMINA,
   CategoriaMovimiento.RENTA,
-  CategoriaMovimiento.OTRO_GASTO,
-];
-
-// TODO: reemplazar por las cuentas reales del usuario/negocio (traídas de
-// Redux, un service, o el contexto de sesión), en vez de este placeholder.
-interface Cuenta {
-  id: string;
-  nombre: string;
-}
-
-const CUENTAS: Cuenta[] = [
-  { id: "cta-efectivo", nombre: "Efectivo" },
-  { id: "cta-banco", nombre: "Cuenta bancaria" },
-  { id: "cta-digital", nombre: "Billetera digital" },
+  CategoriaMovimiento.EQUIPO,
+  CategoriaMovimiento.MANTENIMIENTO,
+  CategoriaMovimiento.PUBLICIDAD,
+  CategoriaMovimiento.IMPUESTOS,
+  CategoriaMovimiento.OTROS,
+  CategoriaMovimiento.TRANSPORTE,
 ];
 
 interface CrearGastoForm {
@@ -105,7 +96,6 @@ const validationSchema = Yup.object({
 
   descripcion: Yup.string()
     .trim()
-    .required("La descripción es obligatoria")
     .min(3, "La descripción debe tener al menos 3 caracteres")
     .max(255, "La descripción no puede superar los 255 caracteres"),
 
@@ -117,6 +107,8 @@ const validationSchema = Yup.object({
 });
 
 export default function CrearGastoScreen() {
+  const {usuario} = useUsuario();
+  const { crearEgreso,error,loading,movimientos } = useMovimientos();
   const [categoriaModalVisible, setCategoriaModalVisible] = useState(false);
   const [cuentaModalVisible, setCuentaModalVisible] = useState(false);
 
@@ -128,7 +120,18 @@ export default function CrearGastoScreen() {
   const handleSubmit = (
     values: CrearGastoForm,
     helpers: FormikHelpers<CrearGastoForm>
-  ) => {};
+  ) => {
+    const { monto, descripcion, categoria, fecha, cuentaId } = values;
+    const payload = {
+      monto: Number(monto.replace(",", ".")),
+      descripcion,
+      categoria,
+      fecha,
+      cuentaId: Number(cuentaId),
+    };
+    crearEgreso(payload);
+    helpers.setSubmitting(false);
+  };
 
   return (
     <View className="flex-1 bg-white px-4 pt-6">
@@ -156,7 +159,7 @@ export default function CrearGastoScreen() {
             : "";
 
           const cuentaLabel =
-            CUENTAS.find((c) => c.id === values.cuentaId)?.nombre ?? "";
+            usuario?.empresa?.cuentas.find((c) => c.id === Number(values.cuentaId))?.nombre ?? "";
 
           return (
             <View className="gap-1">
@@ -272,13 +275,13 @@ export default function CrearGastoScreen() {
                       Selecciona una cuenta
                     </Text>
                     <FlatList
-                      data={CUENTAS}
-                      keyExtractor={(item) => item.id}
+                      data={usuario?.empresa?.cuentas ?? []}
+                      keyExtractor={(item) => item.id.toString()}
                       renderItem={({ item }) => (
                         <Pressable
                           className="py-3 border-b border-gray-100"
                           onPress={() => {
-                            setFieldValue("cuentaId", item.id);
+                            setFieldValue("cuentaId", Number(item.id));
                             setCuentaModalVisible(false);
                           }}
                         >

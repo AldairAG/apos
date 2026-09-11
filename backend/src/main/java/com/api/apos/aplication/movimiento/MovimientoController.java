@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 
 @RestController 
-@RequestMapping ("/api/movimiento")
+@RequestMapping ("/api/movimientos")
 @AllArgsConstructor
 public class MovimientoController {
     

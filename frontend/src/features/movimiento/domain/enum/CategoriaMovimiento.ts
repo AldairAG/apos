@@ -1,6 +1,6 @@
 export enum CategoriaMovimiento {
     INSUMOS= "INSUMOS",
-    NÓMINA= "NÓMINA",
+    NOMINA= "NÓMINA",
     RENTA= "RENTA",
     SERVICIOS= "SERVICIOS",
     TRANSPORTE= "TRANSPORTE",

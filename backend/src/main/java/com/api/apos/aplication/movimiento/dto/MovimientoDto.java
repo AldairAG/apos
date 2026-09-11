@@ -7,11 +7,13 @@ import com.api.apos.enums.CategoriaMovimiento;
 import com.api.apos.enums.EstadoMovimiento;
 import com.api.apos.enums.TipoMovimiento;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@AllArgsConstructor 
 public class MovimientoDto {
     private Long id;
 
