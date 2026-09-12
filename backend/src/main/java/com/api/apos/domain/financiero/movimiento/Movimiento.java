@@ -1,6 +1,7 @@
 package com.api.apos.domain.financiero.movimiento;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import com.api.apos.domain.financiero.auditable.AuditableEntity;
 import com.api.apos.domain.financiero.corte_caja.CorteCaja;
@@ -19,15 +20,19 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Builder
 @Table(name = "movimientos")
+@AllArgsConstructor 
+@NoArgsConstructor 
 public class Movimiento extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -54,6 +59,8 @@ public class Movimiento extends AuditableEntity {
     private Long cuentaDestinoId;
 
     private Long cuentaOrigenId;
+
+    private LocalDateTime fecha;
 
     @ManyToOne
     @JoinColumn(name = "cuenta_id") 

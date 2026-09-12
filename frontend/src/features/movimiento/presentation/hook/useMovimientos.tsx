@@ -1,7 +1,8 @@
 import { AppDispatch, RootState } from "@/store";
 import { useDispatch, useSelector } from "react-redux";
-import { crearEgresoThunk } from "../../aplication/usecase/CrearEgreso";
-import { crearIngresoThunk } from "../../aplication/usecase/CrearIngreso";
+import { crearEgresoThunk } from "../../aplication/usecase/CrearEgresoThunk";
+import { crearIngresoThunk } from "../../aplication/usecase/CrearIngresoThunk";
+import { findByDateQueryThunk } from "../../aplication/query/FindByDateQueryThunk";
 
 export const useMovimientos = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -18,12 +19,17 @@ export const useMovimientos = () => {
         dispatch(crearEgresoThunk(movimientoDto));
     };
 
+    const findByDate = (fecha: string) => {
+        dispatch(findByDateQueryThunk({ fecha }));
+    };
+
     return {
         movimientos,
         loading,
         error,
         crearIngreso,
         crearEgreso,
+        findByDate,
         dispatch,
     };
 };

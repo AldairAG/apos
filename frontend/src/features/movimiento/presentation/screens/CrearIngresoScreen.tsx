@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, Modal, FlatList } from "react-native";
 import { Formik, FormikHelpers } from "formik";
 import * as Yup from "yup";
 import { CategoriaMovimiento } from "../../domain/enum/CategoriaMovimiento";
 import { useUsuario } from "@/features/usuario/usuario/hook/useUsuario";
 import { useMovimientos } from "../hook/useMovimientos";
+import { dateStringToLocateDateTime } from "@/helpers/TimeHelpers";
 
 const CATEGORIA_LABELS: Partial<Record<CategoriaMovimiento, string>> = {
   [CategoriaMovimiento.VENTA]: "Venta",
@@ -80,7 +81,6 @@ const validationSchema = Yup.object({
 
   descripcion: Yup.string()
     .trim()
-    .required("La descripción es obligatoria")
     .min(3, "La descripción debe tener al menos 3 caracteres")
     .max(255, "La descripción no puede superar los 255 caracteres"),
 
@@ -110,13 +110,13 @@ export default function CrearIngresoScreen() {
       monto: Number(values.monto.replace(",", ".")),
       descripcion: values.descripcion,
       categoria: values.categoria,
-      fecha: values.fecha,
+      fecha: dateStringToLocateDateTime(values.fecha),
       cuentaId: Number(values.cuentaId),
     });
 
     helpers.setSubmitting(false);
     helpers.resetForm();
-    Navi
+    navigation.back();
 
 
   };

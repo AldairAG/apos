@@ -34,6 +34,7 @@ public class RegistrarIngresoUseCase {
                 .monto(movimientoDto.getMonto())
                 .categoria(CategoriaMovimiento.INGRESO)
                 .createdBy(usuarioService.getUsuarioAutenticadoId())
+                .fecha(movimientoDto.getFecha())
                 .build();
 
         cuenta.addIngreso(movimiento);

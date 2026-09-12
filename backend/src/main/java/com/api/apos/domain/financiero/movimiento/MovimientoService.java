@@ -1,6 +1,8 @@
 package com.api.apos.domain.financiero.movimiento;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -55,12 +57,29 @@ public class MovimientoService {
     public BigDecimal getTotalGastosByCorteCajaId(Long corteCajaId) {
         List<Movimiento> gastos = movimientoRepository.findByCorteCajaIdAndCategoriaNot(
                 corteCajaId,
-                CategoriaMovimiento.VENTA
-        );
+                CategoriaMovimiento.VENTA);
 
         return gastos.stream()
                 .map(Movimiento::getMonto)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public List<Movimiento> findMovimientosByDate(LocalDateTime fecha) {
+        return movimientoRepository.findByFecha(fecha);
+    }
+
+    /*
+     * Este metodo se encarga de obtener todos los movimientos de una empresa
+     * específica para una fecha determinada.
+     */
+    public List<Movimiento> findMovimientosByEmpresaCuentaIdAndFecha(Long empresaId, LocalDate fecha) {
+        LocalDateTime inicio = fecha.atStartOfDay();
+        LocalDateTime fin = fecha.plusDays(1).atStartOfDay();
+
+        return movimientoRepository.findByCuentaEmpresaIdAndFechaGreaterThanEqualAndFechaLessThan(
+                empresaId,
+                inicio,
+                fin);
     }
 
 }

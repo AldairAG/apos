@@ -15,36 +15,18 @@ import { useAuth } from "@/features/usuario/auth/presentation/hook/useAuth";
 import { CuentaDto } from "@/features/cuenta/domain/types/cuenta.types";
 import { AMARILLO, AMARILLO_CONTAINER, AZUL, AZUL_CONTAINER, ROJO } from "@/types/colors";
 import { ROUTES } from "@/routes/routes";
+import { MovimientoDto } from "@/features/movimiento/domain/types/Movimiento.types";
+import { useMovimientos } from "@/features/movimiento/presentation/hook/useMovimientos";
+import { TipoMovimiento } from "@/features/movimiento/domain/enum/TipoMovimiento";
 
 const PALETA_INGRESOS = ["#1857B6", "#3568C4", "#5580D1", "#7A9BDE", "#A9C1EA"];
 const PALETA_GASTOS = ["#8A6D00", "#B98600", "#D9A400", "#F0BE33", "#FFD666"];
 
 
-// ---------- Tipos y datos de ejemplo ----------
-// Sustituye MOVIMIENTOS_MOCK y CUENTAS por tus datos reales (API / store).
-
-interface Movimiento {
-  id: string;
-  tipo: "ingreso" | "gasto";
-  categoria: string;
-  monto: number;
-  cuenta: string;
-}
-
-const MOVIMIENTOS_MOCK: Movimiento[] = [
-  { id: "1", tipo: "gasto", categoria: "Comida", monto: 320, cuenta: "Efectivo" },
-  { id: "2", tipo: "gasto", categoria: "Transporte", monto: 150, cuenta: "Efectivo" },
-  { id: "3", tipo: "gasto", categoria: "Servicios", monto: 480, cuenta: "Banco azul" },
-  { id: "4", tipo: "gasto", categoria: "Comida", monto: 210, cuenta: "Tarjeta de crédito" },
-  { id: "5", tipo: "ingreso", categoria: "Ventas", monto: 1800, cuenta: "Banco azul" },
-  { id: "6", tipo: "ingreso", categoria: "Freelance", monto: 650, cuenta: "Efectivo" },
-  { id: "7", tipo: "ingreso", categoria: "Otros", monto: 200, cuenta: "Tarjeta de crédito" },
-];
-
 const formatCurrency = (n: number) =>
   `$${n.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const buildPieData = (items: Movimiento[], paleta: string[]) => {
+const buildPieData = (items: MovimientoDto[], paleta: string[]) => {
   const total = items.reduce((sum, m) => sum + m.monto, 0);
   const porCategoria = items.reduce<Record<string, number>>((acc, m) => {
     acc[m.categoria] = (acc[m.categoria] ?? 0) + m.monto;
@@ -131,6 +113,7 @@ function PieCard({
 const AdminHomeScreen = () => {
   const { obtenerUsuarioActual, loading, usuario } = useUsuario();
   const { isAuthenticated } = useAuth();
+  const { movimientos, error, findByDate } = useMovimientos();
 
   useEffect(() => {
     const fetchObtenerUsuario = async () => {
@@ -149,22 +132,27 @@ const AdminHomeScreen = () => {
     fetchObtenerUsuario();
   }, [obtenerUsuarioActual]);
 
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+
+    findByDate(`${today}T00:00:00`);
+  }, [findByDate]);
+
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState<CuentaDto | null>(null);
   const [selectorCuentaVisible, setSelectorCuentaVisible] = useState(false);
 
-  // TODO: sustituir por datos reales (API) filtrados al día actual
   const movimientosDelDia = useMemo(() => {
-    return MOVIMIENTOS_MOCK.filter(
-      (m) => cuentaSeleccionada === "Todas las cuentas" || m.cuenta === cuentaSeleccionada
+    return movimientos.filter(
+      (m) => cuentaSeleccionada === null || m.cuentaId === cuentaSeleccionada?.id
     );
-  }, [cuentaSeleccionada]);
+  }, [cuentaSeleccionada, movimientos]);
 
   const gastos = useMemo(
-    () => movimientosDelDia.filter((m) => m.tipo === "gasto"),
+    () => movimientosDelDia.filter((m) => m.tipo === TipoMovimiento.EGRESO),
     [movimientosDelDia]
   );
   const ingresos = useMemo(
-    () => movimientosDelDia.filter((m) => m.tipo === "ingreso"),
+    () => movimientosDelDia.filter((m) => m.tipo === TipoMovimiento.INGRESO),
     [movimientosDelDia]
   );
 
@@ -174,6 +162,13 @@ const AdminHomeScreen = () => {
 
   const dataGastos = useMemo(() => buildPieData(gastos, PALETA_GASTOS), [gastos]);
   const dataIngresos = useMemo(() => buildPieData(ingresos, PALETA_INGRESOS), [ingresos]);
+
+  const saldoMostrado = cuentaSeleccionada
+    ? Number(cuentaSeleccionada.saldo || 0)
+    : usuario?.empresa.cuentas.reduce(
+      (total, cuenta) => total + Number(cuenta.saldo || 0),
+      0
+    );
 
   if (loading) {
     return (
@@ -197,7 +192,17 @@ const AdminHomeScreen = () => {
         >
           <View className="flex-row items-center gap-2">
             <Ionicons name="wallet-outline" size={18} color={AZUL} />
-            <Text className="text-sm text-[#1C1B1F]">{cuentaSeleccionada?.nombre || "Todas las cuentas"}</Text>
+            <View className="flex-row items-center">
+              <Text className="text-sm text-[#1C1B1F]">
+                {cuentaSeleccionada?.nombre || "Todas las cuentas"}
+              </Text>
+
+              <View className="ml-2 rounded-full bg-green-50 px-2 py-0.5">
+                <Text className="text-xs font-semibold text-green-700">
+                  ${saldoMostrado.toFixed(2)}
+                </Text>
+              </View>
+            </View>
           </View>
           <Ionicons name="chevron-down" size={18} color="#49454F" />
         </Pressable>

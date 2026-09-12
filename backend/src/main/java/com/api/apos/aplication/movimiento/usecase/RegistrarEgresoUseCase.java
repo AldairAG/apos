@@ -33,6 +33,7 @@ public class RegistrarEgresoUseCase {
                 .monto(movimientoDto.getMonto())
                 .categoria(movimientoDto.getCategoria())
                 .createdBy(usuarioService.getUsuarioAutenticadoId())
+                .fecha(movimientoDto.getFecha())
                 .build();
 
         cuenta.addEgreso(movimiento);

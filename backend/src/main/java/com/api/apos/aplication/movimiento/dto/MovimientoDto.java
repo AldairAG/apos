@@ -33,6 +33,8 @@ public class MovimientoDto {
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime fecha;
+
     //Metodos de formulario
     private Long cuentaId;
 

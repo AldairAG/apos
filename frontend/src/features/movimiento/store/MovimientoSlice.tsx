@@ -1,7 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { crearIngresoThunk } from "../aplication/usecase/CrearIngreso";
+import { crearEgresoThunk } from "../aplication/usecase/CrearEgresoThunk";
+import { crearIngresoThunk } from "../aplication/usecase/CrearIngresoThunk";
+import { findByDateQueryThunk } from "../aplication/query/FindByDateQueryThunk";
 import { MovimientoDto } from "../domain/types/Movimiento.types";
-import { crearEgresoThunk } from "../aplication/usecase/CrearEgreso";
 
 
 interface MovimientoState {
@@ -56,6 +57,17 @@ const movimientoSlice = createSlice({
             state.loading = false;
         });
         builder.addCase(crearIngresoThunk.rejected, (state, action) => {
+            state.error = action.error.message || "Error";
+            state.loading = false;
+        });
+        builder.addCase(findByDateQueryThunk.pending, (state) => {
+            state.loading = true;
+        });
+        builder.addCase(findByDateQueryThunk.fulfilled, (state, action) => {
+            state.movimientos = action.payload.data;
+            state.loading = false;
+        });
+        builder.addCase(findByDateQueryThunk.rejected, (state, action) => {
             state.error = action.error.message || "Error";
             state.loading = false;
         });

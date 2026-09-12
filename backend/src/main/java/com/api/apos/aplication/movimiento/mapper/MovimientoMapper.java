@@ -11,6 +11,7 @@ public class MovimientoMapper {
                 .monto(movimiento.getMonto())
                 .tipo(movimiento.getTipo())
                 .estado(movimiento.getEstado())
+                .cuentaId(movimiento.getCuenta().getId())
                 .categoria(movimiento.getCategoria())
                 .createdBy(movimiento.getCreatedBy())
                 .updatedAt(movimiento.getUpdatedAt())

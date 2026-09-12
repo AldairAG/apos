@@ -3,12 +3,12 @@ import { View, Text, TextInput, Pressable, Modal, FlatList } from "react-native"
 import { Formik, FormikHelpers } from "formik";
 import * as Yup from "yup";
 import { CategoriaMovimiento } from "../../domain/enum/CategoriaMovimiento";
-import { useEmpresa } from "@/features/empresa/presentation/hook/useEmpresa";
 import { useUsuario } from "@/features/usuario/usuario/hook/useUsuario";
 import { useMovimientos } from "../hook/useMovimientos";
+import { dateStringToLocateDateTime } from "@/helpers/TimeHelpers";
 
 
-const CATEGORIA_LABELS: Record<CategoriaMovimiento, string> = {
+const CATEGORIA_LABELS: Partial<Record<CategoriaMovimiento, string>> = {
   [CategoriaMovimiento.SERVICIOS]: "Servicios",
   [CategoriaMovimiento.NOMINA]: "Nómina",
   [CategoriaMovimiento.RENTA]: "Renta",
@@ -108,7 +108,7 @@ const validationSchema = Yup.object({
 
 export default function CrearGastoScreen() {
   const {usuario} = useUsuario();
-  const { crearEgreso,error,loading,movimientos } = useMovimientos();
+  const { crearEgreso,error,loading } = useMovimientos();
   const [categoriaModalVisible, setCategoriaModalVisible] = useState(false);
   const [cuentaModalVisible, setCuentaModalVisible] = useState(false);
 
@@ -126,11 +126,13 @@ export default function CrearGastoScreen() {
       monto: Number(monto.replace(",", ".")),
       descripcion,
       categoria,
-      fecha,
+      fecha: dateStringToLocateDateTime(fecha),
       cuentaId: Number(cuentaId),
     };
     crearEgreso(payload);
     helpers.setSubmitting(false);
+    helpers.resetForm();
+    navigation.back();
   };
 
   return (
