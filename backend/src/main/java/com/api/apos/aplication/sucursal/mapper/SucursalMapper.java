@@ -10,7 +10,6 @@ public class SucursalMapper {
                 .id(sucursal.getId())
                 .nombre(sucursal.getNombre())
                 .codigo(sucursal.getCodigo())
-                .activa(sucursal.getActiva())
                 .direccion(sucursal.getDireccion())
                 .telefono(sucursal.getTelefono())
                 .build();

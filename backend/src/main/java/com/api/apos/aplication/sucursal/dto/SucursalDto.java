@@ -12,8 +12,6 @@ public class SucursalDto {
 
     private String codigo;
 
-    private Boolean activa;
-
     private String direccion;
 
     private String telefono;

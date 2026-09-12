@@ -199,7 +199,7 @@ const AdminHomeScreen = () => {
 
               <View className="ml-2 rounded-full bg-green-50 px-2 py-0.5">
                 <Text className="text-xs font-semibold text-green-700">
-                  ${saldoMostrado.toFixed(2)}
+                  ${saldoMostrado?.toFixed(2)}
                 </Text>
               </View>
             </View>
