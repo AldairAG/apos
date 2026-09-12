@@ -43,7 +43,10 @@ public class UsuarioService implements UserDetailsService {
                 if (authentication == null || !authentication.isAuthenticated()) {
                         throw new RuntimeException("No hay un usuario autenticado");
                 }
-                return ((Usuario) authentication.getPrincipal()).getId();
+
+                Usuario usuario=((Usuario) authentication.getPrincipal());
+
+                return usuario.getId();
         }
 
         public Usuario findByEmail(String email) {

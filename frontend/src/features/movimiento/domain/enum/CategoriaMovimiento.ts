@@ -1,4 +1,9 @@
 export enum CategoriaMovimiento {
+    //Venta
+    VENTA= "VENTA",
+    INGRESO= "INGRESO",
+
+    //Gastos
     INSUMOS= "INSUMOS",
     NOMINA= "NÓMINA",
     RENTA= "RENTA",

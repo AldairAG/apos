@@ -2,37 +2,18 @@ import React, { useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, Modal, FlatList } from "react-native";
 import { Formik, FormikHelpers } from "formik";
 import * as Yup from "yup";
+import { CategoriaMovimiento } from "../../domain/enum/CategoriaMovimiento";
+import { useUsuario } from "@/features/usuario/usuario/hook/useUsuario";
+import { useMovimientos } from "../hook/useMovimientos";
 
-// TODO: reemplazar por el enum real de categorías de ingreso del proyecto.
-enum CategoriaMovimiento {
-  VENTA = "VENTA",
-  ABONO_CLIENTE = "ABONO_CLIENTE",
-  OTRO_INGRESO = "OTRO_INGRESO",
-}
-
-const CATEGORIA_LABELS: Record<CategoriaMovimiento, string> = {
+const CATEGORIA_LABELS: Partial<Record<CategoriaMovimiento, string>> = {
   [CategoriaMovimiento.VENTA]: "Venta",
-  [CategoriaMovimiento.ABONO_CLIENTE]: "Abono de cliente",
-  [CategoriaMovimiento.OTRO_INGRESO]: "Otro ingreso",
+  [CategoriaMovimiento.INGRESO]: "Ingreso",
 };
 
 const CATEGORIAS: CategoriaMovimiento[] = [
   CategoriaMovimiento.VENTA,
-  CategoriaMovimiento.ABONO_CLIENTE,
-  CategoriaMovimiento.OTRO_INGRESO,
-];
-
-// TODO: reemplazar por las cuentas reales del usuario/negocio (traídas de
-// Redux, un service, o el contexto de sesión), en vez de este placeholder.
-interface Cuenta {
-  id: string;
-  nombre: string;
-}
-
-const CUENTAS: Cuenta[] = [
-  { id: "cta-efectivo", nombre: "Efectivo" },
-  { id: "cta-banco", nombre: "Cuenta bancaria" },
-  { id: "cta-digital", nombre: "Billetera digital" },
+  CategoriaMovimiento.INGRESO,
 ];
 
 interface CrearIngresoForm {
@@ -64,8 +45,8 @@ function buildQuickDateOptions(): { iso: string; label: string; sublabel: string
       i === 0
         ? "Hoy"
         : i === 1
-        ? "Ayer"
-        : fecha.toLocaleDateString("es-MX", { weekday: "short" });
+          ? "Ayer"
+          : fecha.toLocaleDateString("es-MX", { weekday: "short" });
 
     const sublabel = fecha.toLocaleDateString("es-MX", {
       day: "2-digit",
@@ -111,6 +92,8 @@ const validationSchema = Yup.object({
 });
 
 export default function CrearIngresoScreen() {
+  const { usuario } = useUsuario();
+  const { crearIngreso } = useMovimientos();
   const [categoriaModalVisible, setCategoriaModalVisible] = useState(false);
   const [cuentaModalVisible, setCuentaModalVisible] = useState(false);
 
@@ -121,7 +104,22 @@ export default function CrearIngresoScreen() {
   const handleSubmit = (
     values: CrearIngresoForm,
     helpers: FormikHelpers<CrearIngresoForm>
-  ) => {};
+  ) => {
+
+    crearIngreso({
+      monto: Number(values.monto.replace(",", ".")),
+      descripcion: values.descripcion,
+      categoria: values.categoria,
+      fecha: values.fecha,
+      cuentaId: Number(values.cuentaId),
+    });
+
+    helpers.setSubmitting(false);
+    helpers.resetForm();
+    Navi
+
+
+  };
 
   return (
     <View className="flex-1 bg-white px-4 pt-6">
@@ -149,7 +147,7 @@ export default function CrearIngresoScreen() {
             : "";
 
           const cuentaLabel =
-            CUENTAS.find((c) => c.id === values.cuentaId)?.nombre ?? "";
+            usuario?.empresa.cuentas.find((c) => c.id === Number(values.cuentaId))?.nombre ?? "";
 
           return (
             <View className="gap-1">
@@ -164,23 +162,20 @@ export default function CrearIngresoScreen() {
                     <Pressable
                       key={opcion.iso}
                       onPress={() => setFieldValue("fecha", opcion.iso)}
-                      className={`flex-1 rounded-xl py-2 items-center border ${
-                        seleccionada
+                      className={`flex-1 rounded-xl py-2 items-center border ${seleccionada
                           ? "bg-blue-600 border-blue-600"
                           : "bg-white border-gray-300"
-                      }`}
+                        }`}
                     >
                       <Text
-                        className={`text-sm font-semibold ${
-                          seleccionada ? "text-white" : "text-gray-700"
-                        }`}
+                        className={`text-sm font-semibold ${seleccionada ? "text-white" : "text-gray-700"
+                          }`}
                       >
                         {opcion.label}
                       </Text>
                       <Text
-                        className={`text-xs ${
-                          seleccionada ? "text-blue-100" : "text-gray-400"
-                        }`}
+                        className={`text-xs ${seleccionada ? "text-blue-100" : "text-gray-400"
+                          }`}
                       >
                         {opcion.sublabel}
                       </Text>
@@ -201,11 +196,10 @@ export default function CrearIngresoScreen() {
                 Monto
               </Text>
               <TextInput
-                className={`border rounded-xl px-4 py-3 text-base text-gray-900 mb-1 ${
-                  touched.monto && errors.monto
+                className={`border rounded-xl px-4 py-3 text-base text-gray-900 mb-1 ${touched.monto && errors.monto
                     ? "border-red-500"
                     : "border-gray-300"
-                }`}
+                  }`}
                 placeholder="0.00"
                 placeholderTextColor="#9CA3AF"
                 keyboardType="decimal-pad"
@@ -227,16 +221,14 @@ export default function CrearIngresoScreen() {
               </Text>
               <Pressable
                 onPress={() => setCuentaModalVisible(true)}
-                className={`border rounded-xl px-4 py-3 mb-1 flex-row items-center justify-between ${
-                  touched.cuentaId && errors.cuentaId
+                className={`border rounded-xl px-4 py-3 mb-1 flex-row items-center justify-between ${touched.cuentaId && errors.cuentaId
                     ? "border-red-500"
                     : "border-gray-300"
-                }`}
+                  }`}
               >
                 <Text
-                  className={`text-base ${
-                    cuentaLabel ? "text-gray-900" : "text-gray-400"
-                  }`}
+                  className={`text-base ${cuentaLabel ? "text-gray-900" : "text-gray-400"
+                    }`}
                 >
                   {cuentaLabel || "Selecciona una cuenta"}
                 </Text>
@@ -265,13 +257,13 @@ export default function CrearIngresoScreen() {
                       Selecciona una cuenta
                     </Text>
                     <FlatList
-                      data={CUENTAS}
-                      keyExtractor={(item) => item.id}
+                      data={usuario?.empresa.cuentas ?? []}
+                      keyExtractor={(item) => String(item.id)}
                       renderItem={({ item }) => (
                         <Pressable
                           className="py-3 border-b border-gray-100"
                           onPress={() => {
-                            setFieldValue("cuentaId", item.id);
+                            setFieldValue("cuentaId", String(item.id));
                             setCuentaModalVisible(false);
                           }}
                         >
@@ -290,11 +282,10 @@ export default function CrearIngresoScreen() {
                 Descripción
               </Text>
               <TextInput
-                className={`border rounded-xl px-4 py-3 text-base text-gray-900 mb-1 ${
-                  touched.descripcion && errors.descripcion
+                className={`border rounded-xl px-4 py-3 text-base text-gray-900 mb-1 ${touched.descripcion && errors.descripcion
                     ? "border-red-500"
                     : "border-gray-300"
-                }`}
+                  }`}
                 placeholder="Ej. Venta de mercancía"
                 placeholderTextColor="#9CA3AF"
                 multiline
@@ -316,16 +307,14 @@ export default function CrearIngresoScreen() {
               </Text>
               <Pressable
                 onPress={() => setCategoriaModalVisible(true)}
-                className={`border rounded-xl px-4 py-3 mb-1 flex-row items-center justify-between ${
-                  touched.categoria && errors.categoria
+                className={`border rounded-xl px-4 py-3 mb-1 flex-row items-center justify-between ${touched.categoria && errors.categoria
                     ? "border-red-500"
                     : "border-gray-300"
-                }`}
+                  }`}
               >
                 <Text
-                  className={`text-base ${
-                    categoriaLabel ? "text-gray-900" : "text-gray-400"
-                  }`}
+                  className={`text-base ${categoriaLabel ? "text-gray-900" : "text-gray-400"
+                    }`}
                 >
                   {categoriaLabel || "Selecciona una categoría"}
                 </Text>
@@ -378,9 +367,8 @@ export default function CrearIngresoScreen() {
               <Pressable
                 onPress={() => formikSubmit()}
                 disabled={isSubmitting}
-                className={`rounded-xl py-4 items-center mt-4 ${
-                  isSubmitting ? "bg-blue-300" : "bg-blue-600"
-                }`}
+                className={`rounded-xl py-4 items-center mt-4 ${isSubmitting ? "bg-blue-300" : "bg-blue-600"
+                  }`}
               >
                 <Text className="text-white text-base font-semibold">
                   {isSubmitting ? "Registrando..." : "Registrar ingreso"}
