@@ -20,8 +20,8 @@ export default function SucursalLayout() {
 
   // La URL es la fuente de verdad: sincroniza Redux si no coincide (deep link, refresh, etc).
   useEffect(() => {
-    if (sucursalId && sucursalId !== sucursalSeleccionadaId) {
-      cambiarSucursal(sucursalId);
+    if (sucursalId && Number(sucursalId) !== sucursalSeleccionadaId) {
+      cambiarSucursal(Number(sucursalId));
     }
   }, [sucursalId, sucursalSeleccionadaId]);
 

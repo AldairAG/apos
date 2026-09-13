@@ -2,7 +2,7 @@ import { rutaSucursal } from "@/routes/routes";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Formik, FormikHelpers } from "formik";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
     FlatList,
@@ -31,37 +31,33 @@ const crearSucursalValidationSchema = Yup.object({
         .max(80, "El nombre no puede superar los 80 caracteres"),
 });
 
-/**
- * Pantalla para seleccionar la sucursal con la que se va a trabajar.
- * Al elegir una sucursal, sincroniza Redux y navega a su dashboard
- * (app/(admin)/sucursal/[sucursalId]).
- * Incluye una modal interna para crear una nueva sucursal.
- */
+
 const SeleccionarSucursalScreen = () => {
     const router = useRouter();
-    const { sucursales, cambiarSucursal, loading } = useSucursal();
-    // TODO: si useSucursal expone una acción para crear (ej. crearSucursal(nombre)),
-    // desestructúrala aquí y úsala en handleCrearSucursal en vez del TODO de abajo.
-
+    const { sucursales,findSucursalesByEmpresa, cambiarSucursal, loading, crearSucursal } = useSucursal();
     const [modalCrearVisible, setModalCrearVisible] = useState(false);
 
-    const seleccionar = (id: string) => {
+    const seleccionar = (id: number) => {
         cambiarSucursal(id);
         router.push(rutaSucursal(id) as any);
     };
 
+
     const abrirModalCrear = () => setModalCrearVisible(true);
     const cerrarModalCrear = () => setModalCrearVisible(false);
 
-    // TODO: implementar el envío real (llamar al service/thunk de sucursal,
-    // refrescar `sucursales` al terminar) y luego cerrar la modal.
     const handleCrearSucursal = (
         values: CrearSucursalForm,
         helpers: FormikHelpers<CrearSucursalForm>
     ) => {
+        crearSucursal(values);
         helpers.resetForm();
         cerrarModalCrear();
     };
+
+    useEffect(() => {
+        findSucursalesByEmpresa();
+    }, []);
 
     if (loading) {
         return (
@@ -92,7 +88,7 @@ const SeleccionarSucursalScreen = () => {
             ) : (
                 <FlatList
                     data={sucursales}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(item) => item.id?.toString() ?? ""}
                     contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 96 }}
                     ListHeaderComponent={
                         <Pressable
@@ -107,20 +103,20 @@ const SeleccionarSucursalScreen = () => {
                     }
                     renderItem={({ item }) => (
                         <Pressable
-                            onPress={() => seleccionar(item.id)}
+                            onPress={() => seleccionar(item.id ?? 0)}
                             className="flex-row items-center justify-between bg-white rounded-2xl p-4 border border-[#E7E0EC] active:bg-[#F1EEF4]"
                         >
                             <View className="flex-1">
                                 <Text className="text-sm font-medium text-[#1C1B1F]">{item.nombre}</Text>
-                                <Text className="text-xs text-[#79747E] mt-0.5">{item.direccion}</Text>
+                                {/* <Text className="text-xs text-[#79747E] mt-0.5">{item.direccion}</Text> */}
                             </View>
-                            <View
+                            {/* <View
                                 className={`px-2 py-1 rounded-full mr-2 ${item.estado === "ACTIVA" ? "bg-[#D8E2FF]" : "bg-[#FDE2E1]"}`}
                             >
                                 <Text className={`text-xs ${item.estado === "ACTIVA" ? "text-[#1857B6]" : "text-[#B3261E]"}`}>
                                     {item.estado === "ACTIVA" ? "Activa" : "Inactiva"}
                                 </Text>
-                            </View>
+                            </View> */}
                             <Ionicons name="chevron-forward" size={18} color="#79747E" />
                         </Pressable>
                     )}

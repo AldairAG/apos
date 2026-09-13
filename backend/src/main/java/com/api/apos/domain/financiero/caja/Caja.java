@@ -12,6 +12,8 @@ import com.api.apos.domain.financiero.corte_caja.CorteCaja;
 import com.api.apos.domain.organizacion.sucursal.Sucursal;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -44,6 +46,7 @@ public class Caja extends AuditableEntity {
     @Builder.Default
     private Boolean activa = true;
 
+    @Enumerated(EnumType.STRING)
     private EstadoCaja estado;
 
     @ManyToOne(fetch = FetchType.LAZY)

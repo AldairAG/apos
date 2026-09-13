@@ -1,10 +1,12 @@
 package com.api.apos.aplication.sucursal.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@AllArgsConstructor 
 public class SucursalDto {
     private Long id;
 

@@ -1,6 +1,7 @@
 package com.api.apos.domain.financiero.corte_caja;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.api.apos.domain.financiero.caja.Caja;
@@ -48,6 +49,8 @@ public class CorteCaja extends AuditableEntity {
     private BigDecimal gastos;
 
     private BigDecimal ventas;
+
+    private LocalDateTime cerradoAt;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

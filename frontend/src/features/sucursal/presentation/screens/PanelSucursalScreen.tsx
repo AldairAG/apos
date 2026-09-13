@@ -10,7 +10,6 @@ import { useSucursal } from "../hook/useSucursal";
  * existan los endpoints reales de resumen por sucursal en el backend.
  */
 
-// TODO: sustituir por datos reales cuando exista el endpoint de resumen de sucursal.
 const RESUMEN_MOCK = {
     ventasDelDia: 12850.5,
     numeroOrdenes: 37,
@@ -40,22 +39,6 @@ const PanelSucursalScreen = () => {
 
     return (
         <ScrollView className="flex-1 bg-[#F1EEF4]" contentContainerStyle={{ padding: 16, gap: 16 }}>
-            {/* Estado de la sucursal */}
-            <View className="bg-white rounded-2xl p-5 border border-[#E7E0EC]">
-                <View className="flex-row items-center justify-between">
-                    <Text className="text-lg font-medium text-[#1C1B1F]">{sucursalActual.nombre}</Text>
-                    <View
-                        className={`px-2.5 py-1 rounded-full ${sucursalActual.estado === "ACTIVA" ? "bg-[#D8E2FF]" : "bg-[#FDE2E1]"}`}
-                    >
-                        <Text
-                            className={`text-xs font-medium ${sucursalActual.estado === "ACTIVA" ? "text-[#1857B6]" : "text-[#B3261E]"}`}
-                        >
-                            {sucursalActual.estado === "ACTIVA" ? "Activa" : "Inactiva"}
-                        </Text>
-                    </View>
-                </View>
-                <Text className="text-xs text-[#79747E] mt-1">{sucursalActual.direccion}</Text>
-            </View>
 
             {/* Resumen del día */}
             <View className="flex-row flex-wrap gap-3">
@@ -99,7 +82,7 @@ const PanelSucursalScreen = () => {
                     {ACCESOS_RAPIDOS.map((acceso) => (
                         <Pressable
                             key={acceso.key}
-                            onPress={() => router.push(rutaSucursal(sucursalActual.id, acceso.key) as any)}
+                            onPress={() => router.push(rutaSucursal(sucursalActual.id||0, acceso.key) as any)}
                             className="w-[30%] items-center bg-white rounded-2xl py-4 border border-[#E7E0EC] active:bg-[#F1EEF4]"
                         >
                             <Ionicons name={acceso.icon} size={22} color="#1857B6" />

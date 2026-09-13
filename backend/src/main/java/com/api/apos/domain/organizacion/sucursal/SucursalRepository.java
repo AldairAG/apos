@@ -9,4 +9,6 @@ public interface SucursalRepository extends JpaRepository<Sucursal, Long> {
     Optional<Sucursal> findByCodigo(String codigo);
 
     List<Sucursal> findAllByEmpresaId(Long empresaId);
+
+    Optional<Sucursal> findByEmpresaId(Long empresaId);
 }

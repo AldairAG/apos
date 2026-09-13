@@ -1,8 +1,10 @@
 import { AppDispatch, RootState } from "@/store";
 import { useDispatch, useSelector } from "react-redux";
 import { seleccionarSucursal } from "../../store/sucursal.slice";
+import { crearSucursalThunk } from "../../aplication/usecase/CrearSucursalThunk";
+import { SucursalDto } from "../../domain/types/sucursal.types";
+import { findSucursalesByEmpresaThunk } from "../../aplication/query/FindSucursalesByEmpresaThunk";
 
-// Hook para leer y sincronizar la sucursal seleccionada (Redux) desde cualquier pantalla del contexto de sucursal.
 export const useSucursal = () => {
     const dispatch = useDispatch<AppDispatch>();
     const { sucursales, sucursalSeleccionadaId, loading, error } = useSelector(
@@ -11,8 +13,16 @@ export const useSucursal = () => {
 
     const sucursalActual = sucursales.find((s) => s.id === sucursalSeleccionadaId) ?? null;
 
-    const cambiarSucursal = (id: string) => {
+    const cambiarSucursal = (id: number) => {
         dispatch(seleccionarSucursal(id));
+    };
+
+    const crearSucursal = (sucursal: SucursalDto) => {
+        dispatch(crearSucursalThunk(sucursal));
+    };
+
+    const findSucursalesByEmpresa = () => {
+        dispatch(findSucursalesByEmpresaThunk());
     };
 
     return {
@@ -22,5 +32,7 @@ export const useSucursal = () => {
         loading,
         error,
         cambiarSucursal,
+        crearSucursal,
+        findSucursalesByEmpresa,
     };
 };

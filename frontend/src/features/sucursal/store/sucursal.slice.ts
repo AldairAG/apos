@@ -1,22 +1,17 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { SucursalDto } from "../domain/types/sucursal.types";
-
-// TODO: sustituir por datos reales cuando exista el endpoint de sucursales en el backend.
-const SUCURSALES_MOCK: SucursalDto[] = [
-    { id: "15", nombre: "Sucursal Centro", direccion: "Av. Principal 123", telefono: "555-0101", estado: "ACTIVA" },
-    { id: "18", nombre: "Sucursal Norte", direccion: "Blvd. Norte 456", telefono: "555-0102", estado: "ACTIVA" },
-    { id: "22", nombre: "Sucursal Sur", direccion: "Calle Sur 789", telefono: "555-0103", estado: "INACTIVA" },
-];
+import { crearSucursalThunk } from "../aplication/usecase/CrearSucursalThunk";
+import { findSucursalesByEmpresaThunk } from "../aplication/query/FindSucursalesByEmpresaThunk";
 
 interface SucursalState {
     sucursales: SucursalDto[];
-    sucursalSeleccionadaId: string | null;
+    sucursalSeleccionadaId: number | null;
     loading: boolean;
     error: string | null;
 }
 
 const initialState: SucursalState = {
-    sucursales: SUCURSALES_MOCK,
+    sucursales: [],
     sucursalSeleccionadaId: null,
     loading: false,
     error: null,
@@ -26,12 +21,38 @@ const sucursalSlice = createSlice({
     name: "sucursal",
     initialState,
     reducers: {
-        seleccionarSucursal(state, action: PayloadAction<string>) {
+        seleccionarSucursal(state, action: PayloadAction<number>) {
             state.sucursalSeleccionadaId = action.payload;
         },
         limpiarSucursalSeleccionada(state) {
             state.sucursalSeleccionadaId = null;
         },
+    },
+    extraReducers: (builder) => {
+        builder.addCase(crearSucursalThunk.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(crearSucursalThunk.fulfilled, (state, action) => {
+            state.loading = false;
+            state.sucursales.push(action.payload.data);
+        });
+        builder.addCase(crearSucursalThunk.rejected, (state, action: PayloadAction<string | undefined>) => {
+            state.loading = false;
+            state.error = action.payload ?? "Error al crear la sucursal";
+        });
+        builder.addCase(findSucursalesByEmpresaThunk.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(findSucursalesByEmpresaThunk.fulfilled, (state, action) => {
+            state.loading = false;
+            state.sucursales = action.payload.data;
+        });
+        builder.addCase(findSucursalesByEmpresaThunk.rejected, (state, action: PayloadAction<string | undefined>) => {
+            state.loading = false;
+            state.error = action.payload ?? "Error al obtener las sucursales";
+        });
     },
 });
 

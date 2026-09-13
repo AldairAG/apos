@@ -39,7 +39,6 @@ public class SucursalService {
     public List<Sucursal> findAllByEmpresaId(Long empresaId){
         return sucursalRepository.findAllByEmpresaId(empresaId);
     }
-    
 
 
 }

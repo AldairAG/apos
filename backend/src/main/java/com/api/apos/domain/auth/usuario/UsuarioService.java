@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import com.api.apos.domain.organizacion.empresa.Empresa;
 import com.api.apos.exception.AppException;
 import com.api.apos.exception.ErrorCode;
 
@@ -60,6 +61,11 @@ public class UsuarioService implements UserDetailsService {
 
         public Boolean existsByEmail(String email) {
                 return usuarioRepository.findByEmail(email).isPresent();
+        }
+
+        public Empresa getEmpresaFromAuthenticatedUser() {
+                Usuario usuario = getUsuarioAutenticado();
+                return usuario.getEmpresa();
         }
 
 }

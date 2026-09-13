@@ -3,12 +3,10 @@ import { useRouter } from "expo-router";
 import { Formik, FormikHelpers } from "formik";
 import { Pressable, Text, TextInput, View } from "react-native";
 import * as Yup from "yup";
+import { useSucursal } from "../hook/useSucursal";
+import { SucursalDto } from "../../domain/types/sucursal.types";
 
-interface CrearSucursalForm {
-    nombre: string;
-}
-
-const initialValues: CrearSucursalForm = {
+const initialValues: Partial<SucursalDto> = {
     nombre: "",
 };
 
@@ -26,14 +24,22 @@ const validationSchema = Yup.object({
  */
 const CrearSucursalScreen = () => {
     const router = useRouter();
+    const { crearSucursal } = useSucursal();
 
-    // TODO: implementar el envío real (llamar al service/thunk de sucursal,
-    // manejar loading/errores) y navegar de vuelta o refrescar el listado
-    // al terminar, por ejemplo: router.back();
     const handleSubmit = (
-        values: CrearSucursalForm,
-        helpers: FormikHelpers<CrearSucursalForm>
-    ) => {};
+        values: Partial<SucursalDto>,
+        helpers: FormikHelpers<Partial<SucursalDto>>
+    ) => {
+
+        const nuevaSucursal: SucursalDto = {
+            nombre: values.nombre ?? "",
+        };
+
+        crearSucursal(nuevaSucursal);
+        helpers.setSubmitting(false);
+        router.back();
+
+    };
 
     return (
         <View className="flex-1 bg-white">
