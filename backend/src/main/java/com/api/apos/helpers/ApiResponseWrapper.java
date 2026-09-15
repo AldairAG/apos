@@ -44,4 +44,12 @@ public class ApiResponseWrapper<T> {
     public void setCodeError(String codeError) {
         this.codeError = codeError;
     }
+
+    public static <T> ApiResponseWrapper<T> success(T data) {
+        return new ApiResponseWrapper<>(true, data, null, null);
+    }
+
+    public static <T> ApiResponseWrapper<T> error(String message, String codeError) {
+        return new ApiResponseWrapper<>(false, null, message, codeError);
+    }
 }

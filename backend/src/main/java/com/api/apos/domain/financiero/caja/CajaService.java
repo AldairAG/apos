@@ -31,7 +31,7 @@ public class CajaService {
         cajaRepository.save(caja);
     }
 
-    public List<Caja> findCajasBySucursalId(Long sucursalId) {
+    public List<Caja> findBySucursalId(Long sucursalId) {
         return cajaRepository.findBySucursalId(sucursalId);
     }
 

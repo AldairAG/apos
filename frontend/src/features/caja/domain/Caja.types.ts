@@ -7,6 +7,7 @@ export interface CajaDto {
     nombre: string;
     saldo: number;
     saldoInicial: number;
+    estado: EstadoCaja;
 
 }
 

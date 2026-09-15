@@ -3,6 +3,8 @@ package com.api.apos.aplication.caja.usecase;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 
+import com.api.apos.aplication.caja.dto.CajaDto;
+import com.api.apos.aplication.caja.mapper.CajaMapper;
 import com.api.apos.domain.auth.usuario.UsuarioService;
 import com.api.apos.domain.financiero.caja.Caja;
 import com.api.apos.domain.financiero.caja.CajaService;
@@ -23,7 +25,7 @@ public class AbrirCajaUseCase {
 
     private final UsuarioService usuarioService;
     
-    public void execute(Long cajaId) {
+    public CajaDto execute(Long cajaId) {
 
         Caja caja =cajaService.findById(cajaId);
 
@@ -45,6 +47,7 @@ public class AbrirCajaUseCase {
 
         corteCajaService.save(corteCaja);
 
+        return CajaMapper.toDto(caja);
     }
 
 }

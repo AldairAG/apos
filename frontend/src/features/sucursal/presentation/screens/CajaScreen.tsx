@@ -1,3 +1,12 @@
+import { CajaDto } from "@/features/caja/domain/Caja.types";
+import { EstadoCaja } from "@/features/caja/enum/Caja.Enums";
+import useCaja from "@/features/caja/presentation/hook/useCaja";
+import { CategoriaMovimiento } from "@/features/movimiento/domain/enum/CategoriaMovimiento";
+import { TipoMovimiento } from "@/features/movimiento/domain/enum/TipoMovimiento";
+import { MovimientoDto } from "@/features/movimiento/domain/types/Movimiento.types";
+import { useMovimientos } from "@/features/movimiento/presentation/hook/useMovimientos";
+import { formatMoney } from "@/helpers/FormatHelpers";
+import { formatFecha, formatHora } from "@/helpers/TimeHelpers";
 import { Ionicons } from "@expo/vector-icons";
 import { Formik, FormikHelpers } from "formik";
 import { useMemo, useState } from "react";
@@ -39,79 +48,23 @@ import * as Yup from "yup";
 // Tipos y enums placeholder — TODO: reemplazar por los reales del dominio
 // =====================================================================
 
-enum EstadoCaja {
-    ABIERTA = "ABIERTA",
-    CERRADA = "CERRADA",
-}
-
-enum TipoMovimiento {
-    INGRESO = "INGRESO",
-    EGRESO = "EGRESO",
-}
-
-enum CategoriaIngreso {
-    VENTA = "VENTA",
-    ABONO_CLIENTE = "ABONO_CLIENTE",
-    OTRO_INGRESO = "OTRO_INGRESO",
-}
-
-enum CategoriaEgreso {
-    INSUMOS = "INSUMOS",
-    NOMINA = "NOMINA",
-    SERVICIOS = "SERVICIOS",
-    RENTA = "RENTA",
-    OTRO_GASTO = "OTRO_GASTO",
-}
-
-const CATEGORIA_INGRESO_LABELS: Record<CategoriaIngreso, string> = {
-    [CategoriaIngreso.VENTA]: "Venta",
-    [CategoriaIngreso.ABONO_CLIENTE]: "Abono de cliente",
-    [CategoriaIngreso.OTRO_INGRESO]: "Otro ingreso",
+const CATEGORIA_INGRESO_LABELS: Partial<Record<CategoriaMovimiento, string>> = {
+    [CategoriaMovimiento.VENTA]: "Venta",
+    [CategoriaMovimiento.INGRESO]: "Abono de cliente",
 };
 
-const CATEGORIA_EGRESO_LABELS: Record<CategoriaEgreso, string> = {
-    [CategoriaEgreso.INSUMOS]: "Insumos",
-    [CategoriaEgreso.NOMINA]: "Nómina",
-    [CategoriaEgreso.SERVICIOS]: "Servicios",
-    [CategoriaEgreso.RENTA]: "Renta",
-    [CategoriaEgreso.OTRO_GASTO]: "Otro gasto",
+const CATEGORIA_EGRESO_LABELS: Partial<Record<CategoriaMovimiento, string>> = {
+    [CategoriaMovimiento.INSUMOS]: "Insumos",
+    [CategoriaMovimiento.NOMINA]: "Nómina",
+    [CategoriaMovimiento.SERVICIOS]: "Servicios",
+    [CategoriaMovimiento.RENTA]: "Renta",
+    [CategoriaMovimiento.OTROS]: "Otro gasto",
 };
 
-// CajaDto — igual al DTO real compartido
-interface CajaDto {
-    id: number;
-    nombre: string;
-    saldo: number;
-    saldoInicial: number;
-    estado: EstadoCaja; // TODO: confirmar si el estado vive en CajaDto o se deriva del corte actual
-}
-
-interface MovimientoDto {
-    id: number;
-    descripcion: string;
-    monto: number;
-    tipo: TipoMovimiento;
-    categoria: CategoriaIngreso | CategoriaEgreso;
-    createdAt: Date;
-}
 
 // =====================================================================
 // Datos mock — TODO: reemplazar por selectors de Redux + query use cases
 // =====================================================================
-
-const CAJAS_MOCK: CajaDto[] = [
-    { id: 1, nombre: "Caja Principal", saldo: 8540, saldoInicial: 3000, estado: EstadoCaja.ABIERTA },
-    { id: 2, nombre: "Caja Barra", saldo: 1200, saldoInicial: 1200, estado: EstadoCaja.CERRADA },
-    { id: 3, nombre: "Caja Terraza", saldo: 0, saldoInicial: 0, estado: EstadoCaja.CERRADA },
-];
-
-const MOVIMIENTOS_MOCK: MovimientoDto[] = [
-    { id: 1, descripcion: "Venta mostrador", monto: 450, tipo: TipoMovimiento.INGRESO, categoria: CategoriaIngreso.VENTA, createdAt: new Date(2026, 8, 13, 12, 35) },
-    { id: 2, descripcion: "Venta mostrador", monto: 320, tipo: TipoMovimiento.INGRESO, categoria: CategoriaIngreso.VENTA, createdAt: new Date(2026, 8, 13, 11, 10) },
-    { id: 3, descripcion: "Abono cliente frecuente", monto: 1000, tipo: TipoMovimiento.INGRESO, categoria: CategoriaIngreso.ABONO_CLIENTE, createdAt: new Date(2026, 8, 13, 9, 5) },
-    { id: 4, descripcion: "Compra de insumos", monto: 850, tipo: TipoMovimiento.EGRESO, categoria: CategoriaEgreso.INSUMOS, createdAt: new Date(2026, 8, 13, 10, 20) },
-    { id: 5, descripcion: "Pago de luz", monto: 350, tipo: TipoMovimiento.EGRESO, categoria: CategoriaEgreso.SERVICIOS, createdAt: new Date(2026, 8, 13, 8, 40) },
-];
 
 const HISTORIAL_CORTES_MOCK = [
     { id: 1, fecha: "13 Sep 2026", saldoFinal: 8800, cerradoAt: "22:15" },
@@ -124,23 +77,6 @@ const DENOMINACIONES = [1000, 500, 200, 100, 50, 20, 10, 5, 2, 1];
 // =====================================================================
 // Helpers
 // =====================================================================
-
-function formatMoney(value: number): string {
-    return value.toLocaleString("es-MX", {
-        style: "currency",
-        currency: "MXN",
-        minimumFractionDigits: 2,
-    });
-}
-
-function formatFecha(date: Date): string {
-    return date.toLocaleDateString("es-MX", { day: "2-digit", month: "short" });
-}
-
-function formatHora(date: Date): string {
-    return date.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
-}
-
 function agruparPorCategoria(
     movimientos: MovimientoDto[]
 ): { categoria: string; total: number; porcentaje: number; color: string }[] {
@@ -150,8 +86,8 @@ function agruparPorCategoria(
     movimientos.forEach((m) => {
         const label =
             m.tipo === TipoMovimiento.INGRESO
-                ? CATEGORIA_INGRESO_LABELS[m.categoria as CategoriaIngreso]
-                : CATEGORIA_EGRESO_LABELS[m.categoria as CategoriaEgreso];
+                ? CATEGORIA_INGRESO_LABELS[m.categoria as CategoriaMovimiento]
+                : CATEGORIA_EGRESO_LABELS[m.categoria as CategoriaMovimiento];
         mapa.set(label, (mapa.get(label) ?? 0) + m.monto);
     });
 
@@ -226,11 +162,10 @@ function DonutChart({
 // =====================================================================
 
 export default function CajaScreen() {
-    // TODO: reemplazar por selector de Redux (sucursal seleccionada vía [sucursalId])
-    const [cajas, setCajas] = useState<CajaDto[]>(CAJAS_MOCK);
-    const [cajaSeleccionadaId, setCajaSeleccionadaId] = useState<number>(CAJAS_MOCK[0].id);
-    // TODO: reemplazar por selector de Redux del corte actual (ingresos/egresos/ventas/gastos)
-    const [movimientos] = useState<MovimientoDto[]>(MOVIMIENTOS_MOCK);
+
+    const { cajas, cajaSeleccionadaId,findCajasBySucursalId, loading, error } = useCaja();
+
+    const { movimientos } = useMovimientos()
 
     const caja = useMemo(
         () => cajas.find((c) => c.id === cajaSeleccionadaId)!,
@@ -241,16 +176,16 @@ export default function CajaScreen() {
     // TODO: sustituir por los campos reales de CorteCajaDto (ingresos, egresos, ventas, gastos)
     const resumen = useMemo(() => {
         const ingresos = movimientos
-            .filter((m) => m.tipo === TipoMovimiento.INGRESO && m.categoria !== CategoriaIngreso.VENTA)
+            .filter((m) => m.tipo === TipoMovimiento.INGRESO && m.categoria !== CategoriaMovimiento.VENTA)
             .reduce((acc, m) => acc + m.monto, 0);
         const ventas = movimientos
-            .filter((m) => m.categoria === CategoriaIngreso.VENTA)
+            .filter((m) => m.categoria === CategoriaMovimiento.VENTA)
             .reduce((acc, m) => acc + m.monto, 0);
         const egresos = movimientos
-            .filter((m) => m.tipo === TipoMovimiento.EGRESO && m.categoria !== CategoriaEgreso.INSUMOS)
+            .filter((m) => m.tipo === TipoMovimiento.EGRESO && m.categoria !== CategoriaMovimiento.INSUMOS)
             .reduce((acc, m) => acc + m.monto, 0);
         const gastos = movimientos
-            .filter((m) => m.categoria === CategoriaEgreso.INSUMOS)
+            .filter((m) => m.categoria === CategoriaMovimiento.INSUMOS)
             .reduce((acc, m) => acc + m.monto, 0);
 
         return { ingresos, ventas, egresos, gastos };
@@ -328,18 +263,16 @@ export default function CajaScreen() {
 
                 {/* 2/3. Estado de caja + saldo */}
                 <View
-                    className={`rounded-2xl p-5 border ${
-                        caja.estado === EstadoCaja.ABIERTA
+                    className={`rounded-2xl p-5 border ${caja.estado === EstadoCaja.ABIERTA
                             ? "bg-[#E7EFFC] border-[#1857B6]"
                             : "bg-white border-[#E7E0EC]"
-                    }`}
+                        }`}
                 >
                     <View className="flex-row items-center justify-between mb-3">
                         <Text className="text-sm font-semibold text-[#1C1B1F]">{caja.nombre}</Text>
                         <View
-                            className={`flex-row items-center gap-1 px-2 py-1 rounded-full ${
-                                caja.estado === EstadoCaja.ABIERTA ? "bg-[#1857B6]" : "bg-[#79747E]"
-                            }`}
+                            className={`flex-row items-center gap-1 px-2 py-1 rounded-full ${caja.estado === EstadoCaja.ABIERTA ? "bg-[#1857B6]" : "bg-[#79747E]"
+                                }`}
                         >
                             <Ionicons
                                 name={caja.estado === EstadoCaja.ABIERTA ? "lock-open" : "lock-closed"}
@@ -468,16 +401,15 @@ export default function CajaScreen() {
                                                 <Text className="text-xs text-[#79747E] mt-0.5">
                                                     {formatFecha(m.createdAt)} · {formatHora(m.createdAt)} ·{" "}
                                                     {m.tipo === TipoMovimiento.INGRESO
-                                                        ? CATEGORIA_INGRESO_LABELS[m.categoria as CategoriaIngreso]
-                                                        : CATEGORIA_EGRESO_LABELS[m.categoria as CategoriaEgreso]}
+                                                        ? CATEGORIA_INGRESO_LABELS[m.categoria as CategoriaMovimiento]
+                                                        : CATEGORIA_EGRESO_LABELS[m.categoria as CategoriaMovimiento]}
                                                 </Text>
                                             </View>
                                             <Text
-                                                className={`text-sm font-semibold ${
-                                                    m.tipo === TipoMovimiento.INGRESO
+                                                className={`text-sm font-semibold ${m.tipo === TipoMovimiento.INGRESO
                                                         ? "text-[#1C7C3F]"
                                                         : "text-[#B3261E]"
-                                                }`}
+                                                    }`}
                                             >
                                                 {m.tipo === TipoMovimiento.INGRESO ? "+" : "-"}
                                                 {formatMoney(m.monto)}
@@ -534,9 +466,8 @@ export default function CajaScreen() {
                                         setCajaSeleccionadaId(item.id);
                                         setSelectorCajaVisible(false);
                                     }}
-                                    className={`flex-row items-center justify-between py-3 px-2 rounded-xl ${
-                                        item.id === cajaSeleccionadaId ? "bg-[#F1EEF4]" : ""
-                                    }`}
+                                    className={`flex-row items-center justify-between py-3 px-2 rounded-xl ${item.id === cajaSeleccionadaId ? "bg-[#F1EEF4]" : ""
+                                        }`}
                                 >
                                     <View>
                                         <Text className="text-sm font-medium text-[#1C1B1F]">{item.nombre}</Text>
@@ -699,9 +630,8 @@ function ModalCrearCaja({
                                 <View>
                                     <Text className="text-sm font-medium text-[#1C1B1F] mb-1">Nombre</Text>
                                     <TextInput
-                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${
-                                            touched.nombre && errors.nombre ? "border-[#B3261E]" : "border-[#E7E0EC]"
-                                        }`}
+                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.nombre && errors.nombre ? "border-[#B3261E]" : "border-[#E7E0EC]"
+                                            }`}
                                         placeholder="Ej. Caja Terraza"
                                         placeholderTextColor="#79747E"
                                         value={values.nombre}
@@ -779,11 +709,10 @@ function ModalAbrirCaja({
                                 <View>
                                     <Text className="text-sm font-medium text-[#1C1B1F] mb-1">Saldo inicial</Text>
                                     <TextInput
-                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${
-                                            touched.saldoInicial && errors.saldoInicial
+                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.saldoInicial && errors.saldoInicial
                                                 ? "border-[#B3261E]"
                                                 : "border-[#E7E0EC]"
-                                        }`}
+                                            }`}
                                         placeholder="0.00"
                                         placeholderTextColor="#79747E"
                                         keyboardType="decimal-pad"
@@ -896,9 +825,8 @@ function ModalNuevoMovimiento({
                                 <View className="mt-4">
                                     <Text className="text-sm font-medium text-[#1C1B1F] mb-1">Monto</Text>
                                     <TextInput
-                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${
-                                            touched.monto && errors.monto ? "border-[#B3261E]" : "border-[#E7E0EC]"
-                                        }`}
+                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.monto && errors.monto ? "border-[#B3261E]" : "border-[#E7E0EC]"
+                                            }`}
                                         placeholder="0.00"
                                         placeholderTextColor="#79747E"
                                         keyboardType="decimal-pad"
@@ -914,11 +842,10 @@ function ModalNuevoMovimiento({
 
                                     <Text className="text-sm font-medium text-[#1C1B1F] mb-1">Descripción</Text>
                                     <TextInput
-                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${
-                                            touched.descripcion && errors.descripcion
+                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.descripcion && errors.descripcion
                                                 ? "border-[#B3261E]"
                                                 : "border-[#E7E0EC]"
-                                        }`}
+                                            }`}
                                         placeholder="Ej. Venta mostrador"
                                         placeholderTextColor="#79747E"
                                         value={values.descripcion}
@@ -934,16 +861,14 @@ function ModalNuevoMovimiento({
                                     <Text className="text-sm font-medium text-[#1C1B1F] mb-1">Categoría</Text>
                                     <Pressable
                                         onPress={() => setCategoriaModalVisible(true)}
-                                        className={`border rounded-xl px-4 py-3 mb-1 flex-row items-center justify-between ${
-                                            touched.categoria && errors.categoria
+                                        className={`border rounded-xl px-4 py-3 mb-1 flex-row items-center justify-between ${touched.categoria && errors.categoria
                                                 ? "border-[#B3261E]"
                                                 : "border-[#E7E0EC]"
-                                        }`}
+                                            }`}
                                     >
                                         <Text
-                                            className={`text-base ${
-                                                values.categoria ? "text-[#1C1B1F]" : "text-[#79747E]"
-                                            }`}
+                                            className={`text-base ${values.categoria ? "text-[#1C1B1F]" : "text-[#79747E]"
+                                                }`}
                                         >
                                             {values.categoria
                                                 ? opcionesCategoria.find(([v]) => v === values.categoria)?.[1]
@@ -995,16 +920,14 @@ function ModalNuevoMovimiento({
                                                 <Pressable
                                                     key={i}
                                                     onPress={() => setFecha(d)}
-                                                    className={`flex-1 rounded-xl py-2 items-center border ${
-                                                        seleccionada
+                                                    className={`flex-1 rounded-xl py-2 items-center border ${seleccionada
                                                             ? "bg-[#1857B6] border-[#1857B6]"
                                                             : "bg-white border-[#E7E0EC]"
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <Text
-                                                        className={`text-xs font-semibold ${
-                                                            seleccionada ? "text-white" : "text-[#1C1B1F]"
-                                                        }`}
+                                                        className={`text-xs font-semibold ${seleccionada ? "text-white" : "text-[#1C1B1F]"
+                                                            }`}
                                                     >
                                                         {i === 0 ? "Hoy" : i === 1 ? "Ayer" : formatFecha(d)}
                                                     </Text>
@@ -1165,9 +1088,8 @@ function ModalCorte({
 
                         {/* Verificación */}
                         <View
-                            className={`rounded-2xl p-4 mt-4 border ${
-                                cuadra ? "bg-[#E4F5E9] border-[#1C7C3F]" : "bg-[#FDECEA] border-[#B3261E]"
-                            }`}
+                            className={`rounded-2xl p-4 mt-4 border ${cuadra ? "bg-[#E4F5E9] border-[#1C7C3F]" : "bg-[#FDECEA] border-[#B3261E]"
+                                }`}
                         >
                             <View className="flex-row items-center gap-2 mb-2">
                                 <Ionicons
@@ -1176,9 +1098,8 @@ function ModalCorte({
                                     color={cuadra ? "#1C7C3F" : "#B3261E"}
                                 />
                                 <Text
-                                    className={`text-sm font-semibold ${
-                                        cuadra ? "text-[#1C7C3F]" : "text-[#B3261E]"
-                                    }`}
+                                    className={`text-sm font-semibold ${cuadra ? "text-[#1C7C3F]" : "text-[#B3261E]"
+                                        }`}
                                 >
                                     {cuadra ? "Caja cuadrada" : "Diferencia en caja"}
                                 </Text>
@@ -1226,9 +1147,8 @@ function ModalCorte({
                                 </Pressable>
                                 <Pressable
                                     onPress={handleCerrar}
-                                    className={`flex-1 rounded-xl py-3 items-center ${
-                                        cuadra ? "bg-[#1857B6]" : "bg-[#B3261E]"
-                                    }`}
+                                    className={`flex-1 rounded-xl py-3 items-center ${cuadra ? "bg-[#1857B6]" : "bg-[#B3261E]"
+                                        }`}
                                 >
                                     <Text className="text-sm font-semibold text-white">Cerrar caja</Text>
                                 </Pressable>
@@ -1258,9 +1178,8 @@ function ResumenLinea({
                 {label}
             </Text>
             <Text
-                className={`text-sm ${destacado ? "font-bold" : "font-medium"} ${
-                    negativo ? "text-[#B3261E]" : "text-[#1C1B1F]"
-                }`}
+                className={`text-sm ${destacado ? "font-bold" : "font-medium"} ${negativo ? "text-[#B3261E]" : "text-[#1C1B1F]"
+                    }`}
             >
                 {negativo && value > 0 ? "-" : ""}
                 {formatMoney(Math.abs(value))}

@@ -5,6 +5,8 @@ import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.api.apos.aplication.caja.dto.CajaDto;
+import com.api.apos.aplication.caja.mapper.CajaMapper;
 import com.api.apos.domain.financiero.caja.Caja;
 import com.api.apos.domain.financiero.caja.CajaService;
 import com.api.apos.domain.financiero.corte_caja.CorteCaja;
@@ -28,7 +30,7 @@ public class CerrarCajaUseCase {
     private final MovimientoService movimientoService;
 
     @Transactional 
-    public void execute(Long cajaId) {
+    public CajaDto execute(Long cajaId) {
 
         Caja caja = cajaService.findById(cajaId);
 
@@ -55,6 +57,8 @@ public class CerrarCajaUseCase {
 
         corteActivo.cerrar();
         corteCajaService.save(corteActivo);
+        
+        return CajaMapper.toDto(caja);
     }
 
 

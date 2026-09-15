@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import java.math.BigDecimal;
 
+import com.api.apos.enums.EstadoCaja;
+
 @Data 
 @Builder    
 @AllArgsConstructor
@@ -16,6 +18,7 @@ public class CajaDto {
     private String nombre;
     private BigDecimal saldo;
     private BigDecimal saldoInicial;
+    private EstadoCaja estado;
 
     private CorteCajaDto corteCaja;
 

@@ -19,7 +19,7 @@ export default function SucursalSwitcher({ moduloActual }: SucursalSwitcherProps
     const { sucursales, sucursalActual, cambiarSucursal } = useSucursal();
     const [abierto, setAbierto] = useState(false);
 
-    const seleccionar = (id: string) => {
+    const seleccionar = (id:number) => {
         cambiarSucursal(id);
         setAbierto(false);
         router.replace(rutaSucursal(id, moduloActual) as any);
@@ -53,12 +53,11 @@ export default function SucursalSwitcher({ moduloActual }: SucursalSwitcherProps
                             {sucursales.map((s) => (
                                 <Pressable
                                     key={s.id}
-                                    onPress={() => seleccionar(s.id)}
+                                    onPress={() => seleccionar(s?.id||0)}
                                     className="flex-row items-center justify-between px-4 py-3 active:bg-[#F1EEF4]"
                                 >
                                     <View className="flex-1">
                                         <Text className="text-sm text-[#1C1B1F]">{s.nombre}</Text>
-                                        <Text className="text-xs text-[#79747E]">{s.direccion}</Text>
                                     </View>
                                     {s.id === sucursalActual?.id && (
                                         <Ionicons name="checkmark" size={18} color="#1857B6" />

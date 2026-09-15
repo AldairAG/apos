@@ -58,7 +58,9 @@ export default function SucursalLayout() {
         <SucursalSwitcher moduloActual={moduloActual} />
       </View>
 
-      <SucursalModuleTabs sucursalId={sucursalId} moduloActual={moduloActual} />
+      <View>
+        <SucursalModuleTabs sucursalId={sucursalId} moduloActual={moduloActual} />
+      </View>
 
       <View className="flex-1">
         <Stack screenOptions={{ headerShown: false }} />
