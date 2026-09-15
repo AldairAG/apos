@@ -1,7 +1,8 @@
+import { ROUTES } from "@/routes/routes";
 import { Ionicons } from "@expo/vector-icons";
 
 export const NAV_ITEMS: { label: string; icon: keyof typeof Ionicons.glyphMap; route: string }[] = [
-  { label: "Resumen del día", icon: "home-outline", route: "/dashboard" },
+  { label: "Resumen del día", icon: "home-outline", route: ROUTES.ADMIN.HOME },
   { label: "Movimientos", icon: "swap-vertical-outline", route: "/movimientos" },
   { label: "Cuentas", icon: "wallet-outline", route: "/cuentas" },
   { label: "Categorías", icon: "pricetags-outline", route: "/categorias" },

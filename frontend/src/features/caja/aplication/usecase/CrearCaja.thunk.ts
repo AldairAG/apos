@@ -5,13 +5,13 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 
 export const crearCajaThunk = createAsyncThunk<
     ApiResponse<CajaDto>,
-    CajaDto,
+    { sucursalId: number; cajaDto: CajaDto },
     { rejectValue: string }
 >(
     'caja/crearCaja',
-    async (CajaDto, { rejectWithValue }) => {
+    async ({ sucursalId, cajaDto }, { rejectWithValue }) => {
         try {
-            const response = await api.post<CajaDto>(`/cajas`, CajaDto);
+            const response = await api.post<CajaDto>(`/cajas/sucursal/${sucursalId}`, cajaDto);
             if (!response.success) {
                 return rejectWithValue(response.message);
             }

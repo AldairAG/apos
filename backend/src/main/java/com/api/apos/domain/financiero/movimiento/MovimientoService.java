@@ -82,4 +82,8 @@ public class MovimientoService {
                 fin);
     }
 
+    public List<Movimiento> findByCorteCajaId(Long corteCajaId) {
+        return movimientoRepository.findByCorteCajaId(corteCajaId);
+    }
+
 }

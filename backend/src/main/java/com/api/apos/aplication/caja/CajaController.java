@@ -36,13 +36,13 @@ public class CajaController {
     private final CrearCajaUseCase crearCajaUseCase;
     
 
-    @GetMapping("/{cajaId}/abrir")
+    @PostMapping("/{cajaId}/abrir")
     public ResponseEntity<ApiResponseWrapper<CajaDto>> abrirCaja(@PathVariable String cajaId) {
         CajaDto cajaAbierta=abrirCajaUseCase.execute(Long.parseLong(cajaId));
         return ResponseEntity.ok(ApiResponseWrapper.success(cajaAbierta));
     }
 
-    @GetMapping("/{cajaId}/cerrar")
+    @PostMapping("/{cajaId}/cerrar")
     public ResponseEntity<ApiResponseWrapper<CajaDto>> cerrarCaja(@PathVariable String cajaId) {
         CajaDto closedCaja = cerrarCajaUseCase.execute(Long.parseLong(cajaId));
         return ResponseEntity.ok(ApiResponseWrapper.success(closedCaja));
@@ -54,9 +54,9 @@ public class CajaController {
         return ResponseEntity.ok(new ApiResponseWrapper<>(true, cajas, null, null));
     }
 
-    @PostMapping("/")
-    public ResponseEntity<ApiResponseWrapper<CajaDto>> crearCaja(@RequestBody CajaDto cajaDto) {
-        CajaDto createdCaja = crearCajaUseCase.execute(cajaDto);
+    @PostMapping("/sucursal/{sucursalId}")
+    public ResponseEntity<ApiResponseWrapper<CajaDto>> crearCaja(@PathVariable String sucursalId, @RequestBody CajaDto cajaDto) {
+        CajaDto createdCaja = crearCajaUseCase.execute(cajaDto, Long.parseLong(sucursalId));
         return ResponseEntity.ok(ApiResponseWrapper.success(createdCaja));
     }
     

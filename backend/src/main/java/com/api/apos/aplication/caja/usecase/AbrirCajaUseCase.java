@@ -36,6 +36,7 @@ public class AbrirCajaUseCase {
         CorteCaja corteCaja = CorteCaja.builder()
             .caja(caja)
             .saldoInicial(caja.getSaldo())
+            .saldoFinal(BigDecimal.ZERO)
             .egresos(BigDecimal.ZERO)
             .gastos(BigDecimal.ZERO)
             .ingresos(BigDecimal.ZERO)

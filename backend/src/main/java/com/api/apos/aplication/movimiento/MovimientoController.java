@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.api.apos.aplication.movimiento.dto.MovimientoDto;
+import com.api.apos.aplication.movimiento.query.FindByCorteCajaIdQuery;
 import com.api.apos.aplication.movimiento.query.FindByDateQuery;
 import com.api.apos.aplication.movimiento.usecase.RegistrarIngresoUseCase;
 import com.api.apos.aplication.movimiento.usecase.RegistrarEgresoUseCase;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 
 
+
 @RestController 
 @RequestMapping ("/api/movimientos")
 @AllArgsConstructor
@@ -31,6 +33,8 @@ public class MovimientoController {
     private final RegistrarEgresoUseCase registrarEgresoUseCase;
 
     private final FindByDateQuery findByDateQuery;
+
+    private final FindByCorteCajaIdQuery findByCorteCajaIdQuery;
     
     @PostMapping("/ingreso")
     public ResponseEntity<ApiResponseWrapper<MovimientoDto>> crearIngreso(@RequestBody MovimientoDto movimientoDto) {
@@ -49,6 +53,13 @@ public class MovimientoController {
         List<MovimientoDto> movimientos = findByDateQuery.execute(fecha);
         return ResponseEntity.ok(new ApiResponseWrapper<>(true, movimientos, "Movimientos encontrados exitosamente", null));
     }
+
+    @GetMapping("/findByCorteCajaId/{corteCajaId}")
+    public ResponseEntity<ApiResponseWrapper<List<MovimientoDto>>> getMovimientosByCorteCajaId(@PathVariable String corteCajaId) {
+        List<MovimientoDto> movimientos = findByCorteCajaIdQuery.execute(Long.parseLong(corteCajaId));
+        return ResponseEntity.ok(new ApiResponseWrapper<>(true, movimientos, "Movimientos encontrados exitosamente", null));
+    }
+    
     
 
 }

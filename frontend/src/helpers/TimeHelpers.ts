@@ -7,10 +7,20 @@ export const dateStringToLocateDateTime = (date: string): string => {
     return fecha;
 }
 
-export function formatFecha(date: Date): string {
-    return date.toLocaleDateString("es-MX", { day: "2-digit", month: "short" });
+export function formatFecha(date: string | Date): string {
+    const parsedDate = date instanceof Date ? date : new Date(date);
+
+    return parsedDate.toLocaleDateString("es-MX", {
+        day: "2-digit",
+        month: "short",
+    });
 }
 
-export function formatHora(date: Date): string {
-    return date.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+export function formatHora(date: string | Date): string {
+    const parsedDate = date instanceof Date ? date : new Date(date);
+
+    return parsedDate.toLocaleTimeString("es-MX", {
+        hour: "2-digit",
+        minute: "2-digit",
+    });
 }

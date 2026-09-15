@@ -5,48 +5,24 @@ import { CategoriaMovimiento } from "@/features/movimiento/domain/enum/Categoria
 import { TipoMovimiento } from "@/features/movimiento/domain/enum/TipoMovimiento";
 import { MovimientoDto } from "@/features/movimiento/domain/types/Movimiento.types";
 import { useMovimientos } from "@/features/movimiento/presentation/hook/useMovimientos";
-import { formatMoney } from "@/helpers/FormatHelpers";
+import { buildPieData, formatMoney } from "@/helpers/FormatHelpers";
 import { formatFecha, formatHora } from "@/helpers/TimeHelpers";
 import { Ionicons } from "@expo/vector-icons";
-import { Formik, FormikHelpers } from "formik";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     FlatList,
     Modal,
     Pressable,
     ScrollView,
     Text,
-    TextInput,
     View,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import * as Yup from "yup";
-
-/**
- * CajaScreen — Centro financiero de la sucursal.
- *
- * IMPORTANTE — este archivo es SOLO LA INTERFAZ (UI), autocontenida con datos
- * mock y estado local, tal como se pidió. NO está conectado a Redux, a los
- * use cases reales (obtenerCajaPorId / abrirCaja / cerrarCaja) ni a los
- * DTOs/enums reales del proyecto. Cada punto de integración está marcado
- * con // TODO para que se conecte a la arquitectura real de Appos:
- *
- *   - Reemplazar los tipos/enums placeholder por los reales del dominio.
- *   - Reemplazar `CAJAS_MOCK` / `MOVIMIENTOS_MOCK` por datos de Redux
- *     (selector de caja actual, selector de sucursal actual) y por
- *     query use cases reales.
- *   - Reemplazar cada `// TODO: ejecutar use case` por el dispatch/llamada
- *     al use case correspondiente (abrirCaja, cerrarCaja, crearMovimiento,
- *     crearCaja) y manejar loading/error reales en vez de los estados locales.
- *   - La gráfica usa react-native-svg de forma genérica porque no se conoce
- *     qué librería de gráficas ya está instalada en el proyecto; si ya existe
- *     una (Victory, react-native-chart-kit, etc.) reemplazar `DonutChart` por
- *     esa, reutilizando el cálculo de `agruparPorCategoria`.
- */
-
-// =====================================================================
-// Tipos y enums placeholder — TODO: reemplazar por los reales del dominio
-// =====================================================================
+import { useSucursal } from "../hook/useSucursal";
+import ModalCrearCaja from "@/features/caja/presentation/components/modal/ModalCrearCaja";
+import ModalAbrirCaja from "@/features/caja/presentation/components/modal/ModalAbrirCaja";
+import PieCard from "@/components/graficas/PieCard";
+import { AMARILLO, AZUL } from "@/types/colors";
 
 const CATEGORIA_INGRESO_LABELS: Partial<Record<CategoriaMovimiento, string>> = {
     [CategoriaMovimiento.VENTA]: "Venta",
@@ -72,8 +48,9 @@ const HISTORIAL_CORTES_MOCK = [
     { id: 3, fecha: "11 Sep 2026", saldoFinal: 9120, cerradoAt: "21:58" },
 ]; // TODO: sustituir por query use case "obtenerHistorialCortes" cuando exista
 
-const DENOMINACIONES = [1000, 500, 200, 100, 50, 20, 10, 5, 2, 1];
 
+const PALETA_INGRESOS = ["#1857B6", "#3568C4", "#5580D1", "#7A9BDE", "#A9C1EA"];
+const PALETA_GASTOS = ["#8A6D00", "#B98600", "#D9A400", "#F0BE33", "#FFD666"];
 // =====================================================================
 // Helpers
 // =====================================================================
@@ -104,76 +81,34 @@ function agruparPorCategoria(
 }
 
 // =====================================================================
-// Sub-componente: Donut chart (genérico con react-native-svg)
-// TODO: reemplazar por la librería de gráficas ya instalada en el proyecto
-// =====================================================================
-
-function DonutChart({
-    data,
-}: {
-    data: { categoria: string; total: number; porcentaje: number; color: string }[];
-}) {
-    const size = 160;
-    const strokeWidth = 22;
-    const radius = (size - strokeWidth) / 2;
-    const circumference = 2 * Math.PI * radius;
-
-    let acumulado = 0;
-
-    return (
-        <View className="items-center">
-            <Svg width={size} height={size}>
-                <Circle
-                    cx={size / 2}
-                    cy={size / 2}
-                    r={radius}
-                    stroke="#F1EEF4"
-                    strokeWidth={strokeWidth}
-                    fill="none"
-                />
-                {data.map((segmento, i) => {
-                    const dash = (segmento.porcentaje / 100) * circumference;
-                    const offset = circumference - (acumulado / 100) * circumference;
-                    acumulado += segmento.porcentaje;
-                    return (
-                        <Circle
-                            key={i}
-                            cx={size / 2}
-                            cy={size / 2}
-                            r={radius}
-                            stroke={segmento.color}
-                            strokeWidth={strokeWidth}
-                            fill="none"
-                            strokeDasharray={`${dash} ${circumference - dash}`}
-                            strokeDashoffset={offset}
-                            strokeLinecap="butt"
-                            rotation={-90}
-                            origin={`${size / 2}, ${size / 2}`}
-                        />
-                    );
-                })}
-            </Svg>
-        </View>
-    );
-}
-
-// =====================================================================
 // Componente principal
 // =====================================================================
 
 export default function CajaScreen() {
 
-    const { cajas, cajaSeleccionadaId,findCajasBySucursalId, loading, error } = useCaja();
+    const {
+        cajas,
+        cajaSeleccionadaId,
+        findCajasBySucursalId,
+        handleSeleccionarCaja,
+        crearCaja,
+        cerrarCaja,
+        abrirCaja,
+        loading,
+        error
+    } = useCaja();
+    const { sucursalSeleccionadaId } = useSucursal();
+    const { movimientos } = useMovimientos();
 
-    const { movimientos } = useMovimientos()
+    useEffect(() => {
+        findCajasBySucursalId(sucursalSeleccionadaId || 0);
+    }, [findCajasBySucursalId, sucursalSeleccionadaId]);
 
     const caja = useMemo(
         () => cajas.find((c) => c.id === cajaSeleccionadaId)!,
         [cajas, cajaSeleccionadaId]
     );
 
-    // Resumen financiero derivado de los movimientos (mock).
-    // TODO: sustituir por los campos reales de CorteCajaDto (ingresos, egresos, ventas, gastos)
     const resumen = useMemo(() => {
         const ingresos = movimientos
             .filter((m) => m.tipo === TipoMovimiento.INGRESO && m.categoria !== CategoriaMovimiento.VENTA)
@@ -191,9 +126,6 @@ export default function CajaScreen() {
         return { ingresos, ventas, egresos, gastos };
     }, [movimientos]);
 
-    const saldoEsperado =
-        caja.saldoInicial + resumen.ventas + resumen.ingresos - resumen.egresos - resumen.gastos;
-
     // --- Estado de UI (modales, tabs) ---
     const [selectorCajaVisible, setSelectorCajaVisible] = useState(false);
     const [crearCajaVisible, setCrearCajaVisible] = useState(false);
@@ -204,23 +136,33 @@ export default function CajaScreen() {
     const [tabMovimientos, setTabMovimientos] = useState<TipoMovimiento>(TipoMovimiento.INGRESO);
     const [tabGrafica, setTabGrafica] = useState<TipoMovimiento>(TipoMovimiento.INGRESO);
 
+    const gastos = useMemo(
+        () => movimientos.filter((m) => m.tipo === TipoMovimiento.EGRESO),
+        [movimientos]
+    );
+    const ingresos = useMemo(
+        () => movimientos.filter((m) => m.tipo === TipoMovimiento.INGRESO),
+        [movimientos]
+    );
+
+    const totalGastos = gastos.reduce((sum, m) => sum + m.monto, 0);
+    const totalIngresos = ingresos.reduce((sum, m) => sum + m.monto, 0);
+
+    const dataGastos = useMemo(() => buildPieData(gastos, PALETA_GASTOS), [gastos]);
+    const dataIngresos = useMemo(() => buildPieData(ingresos, PALETA_INGRESOS), [ingresos]);
+
     const movimientosFiltrados = movimientos.filter((m) => m.tipo === tabMovimientos);
     const dataGrafica = agruparPorCategoria(movimientos.filter((m) => m.tipo === tabGrafica));
 
     // --- Acciones (placeholders — TODO: conectar use cases reales) ---
 
-    const abrirCaja = (saldoInicial: number) => {
-        // TODO: dispatch(abrirCajaThunk({ cajaId: caja.id, saldoInicial }))
-        setCajas((prev) =>
-            prev.map((c) =>
-                c.id === caja.id ? { ...c, estado: EstadoCaja.ABIERTA, saldoInicial, saldo: saldoInicial } : c
-            )
-        );
+    const handleAbrirCaja = () => {
+        abrirCaja();
+
         setAbrirCajaVisible(false);
     };
 
-    const crearCaja = (nombre: string) => {
-        // TODO: dispatch(crearCajaThunk({ sucursalId, nombre }))
+    const handleCrearCaja = (nombre: string) => {
         const nueva: CajaDto = {
             id: Date.now(),
             nombre,
@@ -228,221 +170,253 @@ export default function CajaScreen() {
             saldoInicial: 0,
             estado: EstadoCaja.CERRADA,
         };
-        setCajas((prev) => [...prev, nueva]);
-        setCajaSeleccionadaId(nueva.id);
+
+        crearCaja(nueva);
+
         setCrearCajaVisible(false);
     };
 
-    const cerrarCaja = () => {
-        // TODO: dispatch(cerrarCajaThunk({ cajaId: caja.id, corte: {...} }))
-        setCajas((prev) =>
-            prev.map((c) => (c.id === caja.id ? { ...c, estado: EstadoCaja.CERRADA, saldo: 0 } : c))
-        );
+    const handleCerrarCaja = () => {
+
         setCorteVisible(false);
     };
 
+    const saldoEsperado =
+        (Number(caja?.saldoInicial) || 0) +
+        (Number(resumen?.ventas) || 0) +
+        (Number(resumen?.ingresos) || 0) -
+        (Number(resumen?.egresos) || 0) -
+        (Number(resumen?.gastos) || 0);
+
     return (
         <View className="flex-1 bg-[#FAF9FC]">
-            <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 32 }}>
-                {/* 1. Selector de caja */}
-                <View>
-                    <Text className="text-xs font-medium text-[#79747E] mb-1">Caja</Text>
+
+            {!caja ? (
+                <View className="flex-1 items-center justify-center px-6">
+                    <Ionicons name="cash-outline" size={32} color="#79747E" />
+                    <Text className="text-sm text-[#79747E] mt-3 text-center">
+                        Aún no hay cajas registradas.
+                    </Text>
                     <Pressable
-                        onPress={() => setSelectorCajaVisible(true)}
-                        className="flex-row items-center justify-between bg-white border border-[#E7E0EC] rounded-2xl px-4 py-3"
+                        onPress={() => setCrearCajaVisible(true)}
+                        className="flex-row items-center gap-2 bg-[#1857B6] rounded-full px-5 py-3 mt-4 active:opacity-90"
                     >
-                        <View>
-                            <Text className="text-base font-semibold text-[#1C1B1F]">{caja.nombre}</Text>
-                            <Text className="text-xs text-[#79747E] mt-0.5">
-                                Saldo actual: {formatMoney(caja.saldo)}
-                            </Text>
-                        </View>
-                        <Ionicons name="chevron-down" size={18} color="#79747E" />
+                        <Ionicons name="add" size={18} color="#FFFFFF" />
+                        <Text className="text-sm font-medium text-white">
+                            Crear caja
+                        </Text>
                     </Pressable>
                 </View>
+            ) : (
+                <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 32 }}>
+                    {/* 1. Selector de caja */}
+                    <View>
+                        <Text className="text-xs font-medium text-[#79747E] mb-1">Caja</Text>
+                        <Pressable
+                            onPress={() => setSelectorCajaVisible(true)}
+                            className="flex-row items-center justify-between bg-white border border-[#E7E0EC] rounded-2xl px-4 py-3"
+                        >
+                            <View>
+                                <Text className="text-base font-semibold text-[#1C1B1F]">{caja.nombre}</Text>
+                                <Text className="text-xs text-[#79747E] mt-0.5">
+                                    Saldo actual: {formatMoney(caja.saldo)}
+                                </Text>
+                            </View>
+                            <Ionicons name="chevron-down" size={18} color="#79747E" />
+                        </Pressable>
+                    </View>
 
-                {/* 2/3. Estado de caja + saldo */}
-                <View
-                    className={`rounded-2xl p-5 border ${caja.estado === EstadoCaja.ABIERTA
+                    {/* 2/3. Estado de caja + saldo */}
+                    <View
+                        className={`rounded-2xl p-5 border ${caja.estado === EstadoCaja.ABIERTA
                             ? "bg-[#E7EFFC] border-[#1857B6]"
                             : "bg-white border-[#E7E0EC]"
-                        }`}
-                >
-                    <View className="flex-row items-center justify-between mb-3">
-                        <Text className="text-sm font-semibold text-[#1C1B1F]">{caja.nombre}</Text>
-                        <View
-                            className={`flex-row items-center gap-1 px-2 py-1 rounded-full ${caja.estado === EstadoCaja.ABIERTA ? "bg-[#1857B6]" : "bg-[#79747E]"
-                                }`}
-                        >
-                            <Ionicons
-                                name={caja.estado === EstadoCaja.ABIERTA ? "lock-open" : "lock-closed"}
-                                size={12}
-                                color="#FFFFFF"
-                            />
-                            <Text className="text-[10px] font-bold text-white tracking-wide">
-                                {caja.estado === EstadoCaja.ABIERTA ? "ABIERTA" : "CERRADA"}
-                            </Text>
-                        </View>
-                    </View>
-
-                    <Text className="text-xs text-[#79747E]">
-                        {caja.estado === EstadoCaja.ABIERTA ? "Saldo actual" : "Último saldo"}
-                    </Text>
-                    <Text className="text-3xl font-bold text-[#1C1B1F] mt-1 mb-4">
-                        {formatMoney(caja.estado === EstadoCaja.ABIERTA ? saldoEsperado : caja.saldo)}
-                    </Text>
-
-                    {caja.estado === EstadoCaja.CERRADA ? (
-                        <Pressable
-                            onPress={() => setAbrirCajaVisible(true)}
-                            className="bg-[#1857B6] rounded-xl py-3 items-center active:opacity-90"
-                        >
-                            <Text className="text-white text-sm font-semibold">Abrir caja</Text>
-                        </Pressable>
-                    ) : (
-                        <Pressable
-                            onPress={() => setCorteVisible(true)}
-                            className="bg-white border border-[#1857B6] rounded-xl py-3 items-center active:bg-[#F1EEF4]"
-                        >
-                            <Text className="text-[#1857B6] text-sm font-semibold">Realizar corte</Text>
-                        </Pressable>
-                    )}
-                </View>
-
-                {caja.estado === EstadoCaja.ABIERTA && (
-                    <>
-                        {/* 4. Resumen financiero */}
-                        <View className="bg-white rounded-2xl border border-[#E7E0EC] p-4">
-                            <Text className="text-xs font-medium text-[#79747E] mb-3">Resumen financiero</Text>
-                            <View className="flex-row flex-wrap gap-y-3">
-                                <ResumenItem label="Inicial" value={caja.saldoInicial} />
-                                <ResumenItem label="Ventas" value={resumen.ventas} />
-                                <ResumenItem label="Ingresos" value={resumen.ingresos} />
-                                <ResumenItem label="Gastos" value={resumen.gastos} negativo />
-                                <ResumenItem label="Egresos" value={resumen.egresos} negativo />
+                            }`}
+                    >
+                        <View className="flex-row items-center justify-between mb-3">
+                            <Text className="text-sm font-semibold text-[#1C1B1F]">{caja.nombre}</Text>
+                            <View
+                                className={`flex-row items-center gap-1 px-2 py-1 rounded-full ${caja.estado === EstadoCaja.ABIERTA ? "bg-[#1857B6]" : "bg-[#79747E]"
+                                    }`}
+                            >
+                                <Ionicons
+                                    name={caja.estado === EstadoCaja.ABIERTA ? "lock-open" : "lock-closed"}
+                                    size={12}
+                                    color="#FFFFFF"
+                                />
+                                <Text className="text-[10px] font-bold text-white tracking-wide">
+                                    {caja.estado === EstadoCaja.ABIERTA ? "ABIERTA" : "CERRADA"}
+                                </Text>
                             </View>
                         </View>
 
-                        {/* 5. Acción principal: nuevo movimiento */}
-                        <Pressable
-                            onPress={() => setNuevoMovimientoVisible(true)}
-                            className="flex-row items-center justify-center gap-2 bg-[#1857B6] rounded-2xl py-3 active:opacity-90"
-                        >
-                            <Ionicons name="add" size={18} color="#FFFFFF" />
-                            <Text className="text-white text-sm font-semibold">Movimiento</Text>
-                        </Pressable>
+                        <Text className="text-xs text-[#79747E]">
+                            {caja.estado === EstadoCaja.ABIERTA ? "Saldo actual" : "Último saldo"}
+                        </Text>
+                        <Text className="text-3xl font-bold text-[#1C1B1F] mt-1 mb-4">
+                            {formatMoney(caja.estado === EstadoCaja.ABIERTA ? saldoEsperado : caja.saldo)}
+                        </Text>
 
-                        {/* 6. Gráfica por categoría */}
-                        <View className="bg-white rounded-2xl border border-[#E7E0EC] p-4">
-                            <Text className="text-xs font-medium text-[#79747E] mb-3">
-                                Distribución por categoría
-                            </Text>
-                            <SegmentedTabs
-                                value={tabGrafica}
-                                onChange={setTabGrafica}
-                                options={[
-                                    { value: TipoMovimiento.INGRESO, label: "Ingresos" },
-                                    { value: TipoMovimiento.EGRESO, label: "Egresos" },
-                                ]}
-                            />
-                            {dataGrafica.length === 0 ? (
-                                <Text className="text-sm text-[#79747E] text-center py-8">
-                                    Sin datos para graficar.
-                                </Text>
-                            ) : (
-                                <View className="mt-4 items-center">
-                                    <DonutChart data={dataGrafica} />
-                                    <View className="w-full mt-4 gap-2">
-                                        {dataGrafica.map((seg) => (
-                                            <View key={seg.categoria} className="flex-row items-center justify-between">
-                                                <View className="flex-row items-center gap-2">
-                                                    <View
-                                                        className="w-2.5 h-2.5 rounded-full"
-                                                        style={{ backgroundColor: seg.color }}
-                                                    />
-                                                    <Text className="text-sm text-[#1C1B1F]">{seg.categoria}</Text>
-                                                </View>
-                                                <Text className="text-sm text-[#79747E]">{seg.porcentaje}%</Text>
-                                            </View>
-                                        ))}
-                                    </View>
+                        {caja.estado === EstadoCaja.CERRADA ? (
+                            <Pressable
+                                onPress={() => setAbrirCajaVisible(true)}
+                                className="bg-[#1857B6] rounded-xl py-3 items-center active:opacity-90"
+                            >
+                                <Text className="text-white text-sm font-semibold">Abrir caja</Text>
+                            </Pressable>
+                        ) : (
+                            <Pressable
+                                onPress={() => setCorteVisible(true)}
+                                className="bg-white border border-[#1857B6] rounded-xl py-3 items-center active:bg-[#F1EEF4]"
+                            >
+                                <Text className="text-[#1857B6] text-sm font-semibold">Realizar corte</Text>
+                            </Pressable>
+                        )}
+                    </View>
+
+                    {caja.estado === EstadoCaja.ABIERTA && (
+                        <>
+                            {/* 4. Resumen financiero */}
+                            <View className="bg-white rounded-2xl border border-[#E7E0EC] p-4">
+                                <Text className="text-xs font-medium text-[#79747E] mb-3">Resumen financiero</Text>
+                                <View className="flex-row flex-wrap gap-y-3">
+                                    <ResumenItem label="Inicial" value={caja.saldoInicial} />
+                                    <ResumenItem label="Ventas" value={resumen.ventas} />
+                                    <ResumenItem label="Ingresos" value={resumen.ingresos} />
+                                    <ResumenItem label="Gastos" value={resumen.gastos} negativo />
+                                    <ResumenItem label="Egresos" value={resumen.egresos} negativo />
                                 </View>
-                            )}
-                        </View>
+                            </View>
 
-                        {/* 7. Movimientos con tabs */}
-                        <View className="bg-white rounded-2xl border border-[#E7E0EC] p-4">
-                            <Text className="text-xs font-medium text-[#79747E] mb-3">Movimientos</Text>
-                            <SegmentedTabs
-                                value={tabMovimientos}
-                                onChange={setTabMovimientos}
-                                options={[
-                                    { value: TipoMovimiento.INGRESO, label: "Ingresos" },
-                                    { value: TipoMovimiento.EGRESO, label: "Egresos" },
-                                ]}
-                            />
-                            <View className="mt-3 gap-2">
-                                {movimientosFiltrados.length === 0 ? (
+                            {/* 5. Acción principal: nuevo movimiento */}
+                            <Pressable
+                                onPress={() => setNuevoMovimientoVisible(true)}
+                                className="flex-row items-center justify-center gap-2 bg-[#1857B6] rounded-2xl py-3 active:opacity-90"
+                            >
+                                <Ionicons name="add" size={18} color="#FFFFFF" />
+                                <Text className="text-white text-sm font-semibold">Movimiento</Text>
+                            </Pressable>
+
+                            {/* 6. Gráfica por categoría */}
+                            <View className="bg-white rounded-2xl border border-[#E7E0EC] p-4">
+                                <Text className="text-xs font-medium text-[#79747E] mb-3">
+                                    Distribución por categoría
+                                </Text>
+                                <SegmentedTabs
+                                    value={tabGrafica}
+                                    onChange={setTabGrafica}
+                                    options={[
+                                        { value: TipoMovimiento.INGRESO, label: "Ingresos" },
+                                        { value: TipoMovimiento.EGRESO, label: "Egresos" },
+                                    ]}
+                                />
+                                {dataGrafica.length === 0 ? (
                                     <Text className="text-sm text-[#79747E] text-center py-8">
-                                        {tabMovimientos === TipoMovimiento.INGRESO
-                                            ? "No hay ingresos registrados hoy."
-                                            : "No hay egresos registrados hoy."}
+                                        Sin datos para graficar.
                                     </Text>
                                 ) : (
-                                    movimientosFiltrados.map((m) => (
-                                        <View
-                                            key={m.id}
-                                            className="flex-row items-center justify-between py-2 border-b border-[#F1EEF4]"
-                                        >
-                                            <View className="flex-1">
-                                                <Text className="text-sm font-medium text-[#1C1B1F]">
-                                                    {m.descripcion}
-                                                </Text>
-                                                <Text className="text-xs text-[#79747E] mt-0.5">
-                                                    {formatFecha(m.createdAt)} · {formatHora(m.createdAt)} ·{" "}
-                                                    {m.tipo === TipoMovimiento.INGRESO
-                                                        ? CATEGORIA_INGRESO_LABELS[m.categoria as CategoriaMovimiento]
-                                                        : CATEGORIA_EGRESO_LABELS[m.categoria as CategoriaMovimiento]}
-                                                </Text>
-                                            </View>
-                                            <Text
-                                                className={`text-sm font-semibold ${m.tipo === TipoMovimiento.INGRESO
-                                                        ? "text-[#1C7C3F]"
-                                                        : "text-[#B3261E]"
-                                                    }`}
-                                            >
-                                                {m.tipo === TipoMovimiento.INGRESO ? "+" : "-"}
-                                                {formatMoney(m.monto)}
-                                            </Text>
-                                        </View>
-                                    ))
+                                    <View className="mt-4">
+                                        {/* <DonutChart data={dataGrafica} />
+                                        <View className="w-full mt-4 gap-2">
+                                            {dataGrafica.map((seg) => (
+                                                <View key={seg.categoria} className="flex-row items-center justify-between">
+                                                    <View className="flex-row items-center gap-2">
+                                                        <View
+                                                            className="w-2.5 h-2.5 rounded-full"
+                                                            style={{ backgroundColor: seg.color }}
+                                                        />
+                                                        <Text className="text-sm text-[#1C1B1F]">{seg.categoria}</Text>
+                                                    </View>
+                                                    <Text className="text-sm text-[#79747E]">{seg.porcentaje}%</Text>
+                                                </View>
+                                            ))}
+                                        </View> */}
+
+                                        <PieCard
+                                            titulo={tabGrafica === TipoMovimiento.EGRESO ? "Gastos por categoría" : "Ingresos por categoría"}
+                                            total={tabGrafica === TipoMovimiento.EGRESO ? totalGastos : totalIngresos}
+                                            data={tabGrafica === TipoMovimiento.EGRESO ? dataGastos : dataIngresos}
+                                            colorTotal={tabGrafica === TipoMovimiento.EGRESO ? AMARILLO : AZUL}
+                                            vacio={tabGrafica === TipoMovimiento.EGRESO ? "Aún no registras gastos hoy." : "Aún no registras ingresos hoy."}
+                                        />
+                                    </View>
                                 )}
                             </View>
-                        </View>
-                    </>
-                )}
 
-                {/* 8. Historial de cortes */}
-                <View className="bg-white rounded-2xl border border-[#E7E0EC] p-4">
-                    <Text className="text-xs font-medium text-[#79747E] mb-3">Cortes recientes</Text>
-                    {/* TODO: falta el query use case "obtenerHistorialCortes" — esta sección
-                        usa datos mock mientras tanto, y debe ocultarse o mostrar empty state
-                        si el backend aún no lo expone. */}
-                    <View className="gap-3">
-                        {HISTORIAL_CORTES_MOCK.map((corte) => (
-                            <View key={corte.id} className="flex-row items-center justify-between">
-                                <Text className="text-sm text-[#1C1B1F]">{corte.fecha}</Text>
-                                <View className="items-end">
-                                    <Text className="text-sm font-semibold text-[#1C1B1F]">
-                                        {formatMoney(corte.saldoFinal)}
-                                    </Text>
-                                    <Text className="text-xs text-[#79747E]">Cerrado {corte.cerradoAt}</Text>
+                            {/* 7. Movimientos con tabs */}
+                            <View className="bg-white rounded-2xl border border-[#E7E0EC] p-4">
+                                <Text className="text-xs font-medium text-[#79747E] mb-3">Movimientos</Text>
+                                <SegmentedTabs
+                                    value={tabMovimientos}
+                                    onChange={setTabMovimientos}
+                                    options={[
+                                        { value: TipoMovimiento.INGRESO, label: "Ingresos" },
+                                        { value: TipoMovimiento.EGRESO, label: "Egresos" },
+                                    ]}
+                                />
+                                <View className="mt-3 gap-2">
+                                    {movimientosFiltrados.length === 0 ? (
+                                        <Text className="text-sm text-[#79747E] text-center py-8">
+                                            {tabMovimientos === TipoMovimiento.INGRESO
+                                                ? "No hay ingresos registrados hoy."
+                                                : "No hay egresos registrados hoy."}
+                                        </Text>
+                                    ) : (
+                                        movimientosFiltrados.map((m) => (
+                                            <View
+                                                key={m.id}
+                                                className="flex-row items-center justify-between py-2 border-b border-[#F1EEF4]"
+                                            >
+                                                <View className="flex-1">
+                                                    <Text className="text-sm font-medium text-[#1C1B1F]">
+                                                        {m.descripcion}
+                                                    </Text>
+                                                    <Text className="text-xs text-[#79747E] mt-0.5">
+                                                        {formatFecha(m.createdAt)} · {formatHora(m.createdAt)} ·{" "}
+                                                        {m.tipo === TipoMovimiento.INGRESO
+                                                            ? CATEGORIA_INGRESO_LABELS[m.categoria as CategoriaMovimiento]
+                                                            : CATEGORIA_EGRESO_LABELS[m.categoria as CategoriaMovimiento]}
+                                                    </Text>
+                                                </View>
+                                                <Text
+                                                    className={`text-sm font-semibold ${m.tipo === TipoMovimiento.INGRESO
+                                                        ? "text-[#1C7C3F]"
+                                                        : "text-[#B3261E]"
+                                                        }`}
+                                                >
+                                                    {m.tipo === TipoMovimiento.INGRESO ? "+" : "-"}
+                                                    {formatMoney(m.monto)}
+                                                </Text>
+                                            </View>
+                                        ))
+                                    )}
                                 </View>
                             </View>
-                        ))}
+                        </>
+                    )}
+
+                    {/* 8. Historial de cortes */}
+                    <View className="bg-white rounded-2xl border border-[#E7E0EC] p-4">
+                        <Text className="text-xs font-medium text-[#79747E] mb-3">Cortes recientes</Text>
+                        {/* TODO: falta el query use case "obtenerHistorialCortes" — esta sección
+                        usa datos mock mientras tanto, y debe ocultarse o mostrar empty state
+                        si el backend aún no lo expone. */}
+                        <View className="gap-3">
+                            {HISTORIAL_CORTES_MOCK.map((corte) => (
+                                <View key={corte.id} className="flex-row items-center justify-between">
+                                    <Text className="text-sm text-[#1C1B1F]">{corte.fecha}</Text>
+                                    <View className="items-end">
+                                        <Text className="text-sm font-semibold text-[#1C1B1F]">
+                                            {formatMoney(corte.saldoFinal)}
+                                        </Text>
+                                        <Text className="text-xs text-[#79747E]">Cerrado {corte.cerradoAt}</Text>
+                                    </View>
+                                </View>
+                            ))}
+                        </View>
                     </View>
-                </View>
-            </ScrollView>
+                </ScrollView>
+            )}
 
             {/* Modal: selector de caja */}
             <Modal
@@ -463,7 +437,7 @@ export default function CajaScreen() {
                             renderItem={({ item }) => (
                                 <Pressable
                                     onPress={() => {
-                                        setCajaSeleccionadaId(item.id);
+                                        handleSeleccionarCaja(item.id);
                                         setSelectorCajaVisible(false);
                                     }}
                                     className={`flex-row items-center justify-between py-3 px-2 rounded-xl ${item.id === cajaSeleccionadaId ? "bg-[#F1EEF4]" : ""
@@ -500,28 +474,28 @@ export default function CajaScreen() {
             <ModalCrearCaja
                 visible={crearCajaVisible}
                 onClose={() => setCrearCajaVisible(false)}
-                onCrear={crearCaja}
+                onCrear={handleCrearCaja}
             />
 
             {/* Modal: abrir caja */}
             <ModalAbrirCaja
                 visible={abrirCajaVisible}
                 onClose={() => setAbrirCajaVisible(false)}
-                onAbrir={abrirCaja}
+                onAbrir={handleAbrirCaja}
             />
 
             {/* Modal: nuevo movimiento */}
-            <ModalNuevoMovimiento
+            {/* <ModalNuevoMovimiento
                 visible={nuevoMovimientoVisible}
                 onClose={() => setNuevoMovimientoVisible(false)}
                 onRegistrar={() => {
                     // TODO: dispatch(crearMovimientoThunk(payload)) y refrescar movimientos
                     setNuevoMovimientoVisible(false);
                 }}
-            />
+            /> */}
 
             {/* Modal: corte de caja */}
-            <ModalCorte
+            {/* <ModalCorte
                 visible={corteVisible}
                 onClose={() => setCorteVisible(false)}
                 saldoInicial={caja.saldoInicial}
@@ -530,8 +504,8 @@ export default function CajaScreen() {
                 gastos={resumen.gastos}
                 egresos={resumen.egresos}
                 saldoEsperado={saldoEsperado}
-                onCerrarCaja={cerrarCaja}
-            />
+                onCerrarCaja={handleCerrarCaja}
+            /> */}
         </View>
     );
 }
@@ -591,169 +565,11 @@ function SegmentedTabs<T extends string>({
     );
 }
 
-// --- Modal: crear caja ---
 
-interface CrearCajaForm {
-    nombre: string;
-}
-
-function ModalCrearCaja({
-    visible,
-    onClose,
-    onCrear,
-}: {
-    visible: boolean;
-    onClose: () => void;
-    onCrear: (nombre: string) => void;
-}) {
-    return (
-        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <View className="flex-1 justify-end bg-black/40">
-                <View className="bg-white rounded-t-3xl">
-                    <ModalHeader title="Nueva caja" onClose={onClose} />
-                    <View className="px-4 pt-6 pb-8">
-                        <Formik<CrearCajaForm>
-                            initialValues={{ nombre: "" }}
-                            validationSchema={Yup.object({
-                                nombre: Yup.string()
-                                    .trim()
-                                    .required("El nombre de la caja es obligatorio")
-                                    .min(3, "Debe tener al menos 3 caracteres")
-                                    .max(50, "No puede superar los 50 caracteres"),
-                            })}
-                            onSubmit={(values, helpers: FormikHelpers<CrearCajaForm>) => {
-                                onCrear(values.nombre.trim());
-                                helpers.resetForm();
-                            }}
-                        >
-                            {({ values, errors, touched, handleChange, handleBlur, handleSubmit }) => (
-                                <View>
-                                    <Text className="text-sm font-medium text-[#1C1B1F] mb-1">Nombre</Text>
-                                    <TextInput
-                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.nombre && errors.nombre ? "border-[#B3261E]" : "border-[#E7E0EC]"
-                                            }`}
-                                        placeholder="Ej. Caja Terraza"
-                                        placeholderTextColor="#79747E"
-                                        value={values.nombre}
-                                        onChangeText={handleChange("nombre")}
-                                        onBlur={handleBlur("nombre")}
-                                        autoFocus
-                                    />
-                                    {touched.nombre && errors.nombre ? (
-                                        <Text className="text-[#B3261E] text-xs mb-2">{errors.nombre}</Text>
-                                    ) : (
-                                        <View className="mb-2" />
-                                    )}
-
-                                    <View className="flex-row gap-3 mt-4">
-                                        <Pressable
-                                            onPress={onClose}
-                                            className="flex-1 border border-[#E7E0EC] rounded-xl py-3 items-center"
-                                        >
-                                            <Text className="text-sm font-medium text-[#1C1B1F]">Cancelar</Text>
-                                        </Pressable>
-                                        <Pressable
-                                            onPress={() => handleSubmit()}
-                                            className="flex-1 bg-[#1857B6] rounded-xl py-3 items-center"
-                                        >
-                                            <Text className="text-sm font-semibold text-white">Crear caja</Text>
-                                        </Pressable>
-                                    </View>
-                                </View>
-                            )}
-                        </Formik>
-                    </View>
-                </View>
-            </View>
-        </Modal>
-    );
-}
-
-// --- Modal: abrir caja ---
-
-interface AbrirCajaForm {
-    saldoInicial: string;
-}
-
-function ModalAbrirCaja({
-    visible,
-    onClose,
-    onAbrir,
-}: {
-    visible: boolean;
-    onClose: () => void;
-    onAbrir: (saldoInicial: number) => void;
-}) {
-    return (
-        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <View className="flex-1 justify-end bg-black/40">
-                <View className="bg-white rounded-t-3xl">
-                    <ModalHeader title="Abrir caja" onClose={onClose} />
-                    <View className="px-4 pt-6 pb-8">
-                        <Formik<AbrirCajaForm>
-                            initialValues={{ saldoInicial: "" }}
-                            validationSchema={Yup.object({
-                                saldoInicial: Yup.string()
-                                    .required("El saldo inicial es obligatorio")
-                                    .test("valido", "Debe ser un monto válido (puede ser 0)", (value) => {
-                                        if (value === undefined) return false;
-                                        const n = Number(value.replace(",", "."));
-                                        return !isNaN(n) && n >= 0;
-                                    }),
-                            })}
-                            onSubmit={(values) => {
-                                onAbrir(Number(values.saldoInicial.replace(",", ".")));
-                            }}
-                        >
-                            {({ values, errors, touched, handleChange, handleBlur, handleSubmit }) => (
-                                <View>
-                                    <Text className="text-sm font-medium text-[#1C1B1F] mb-1">Saldo inicial</Text>
-                                    <TextInput
-                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.saldoInicial && errors.saldoInicial
-                                                ? "border-[#B3261E]"
-                                                : "border-[#E7E0EC]"
-                                            }`}
-                                        placeholder="0.00"
-                                        placeholderTextColor="#79747E"
-                                        keyboardType="decimal-pad"
-                                        value={values.saldoInicial}
-                                        onChangeText={handleChange("saldoInicial")}
-                                        onBlur={handleBlur("saldoInicial")}
-                                        autoFocus
-                                    />
-                                    {touched.saldoInicial && errors.saldoInicial ? (
-                                        <Text className="text-[#B3261E] text-xs mb-2">{errors.saldoInicial}</Text>
-                                    ) : (
-                                        <View className="mb-2" />
-                                    )}
-
-                                    <View className="flex-row gap-3 mt-4">
-                                        <Pressable
-                                            onPress={onClose}
-                                            className="flex-1 border border-[#E7E0EC] rounded-xl py-3 items-center"
-                                        >
-                                            <Text className="text-sm font-medium text-[#1C1B1F]">Cancelar</Text>
-                                        </Pressable>
-                                        <Pressable
-                                            onPress={() => handleSubmit()}
-                                            className="flex-1 bg-[#1857B6] rounded-xl py-3 items-center"
-                                        >
-                                            <Text className="text-sm font-semibold text-white">Abrir caja</Text>
-                                        </Pressable>
-                                    </View>
-                                </View>
-                            )}
-                        </Formik>
-                    </View>
-                </View>
-            </View>
-        </Modal>
-    );
-}
 
 // --- Modal: nuevo movimiento ---
 
-interface NuevoMovimientoForm {
+/* interface NuevoMovimientoForm {
     monto: string;
     descripcion: string;
     categoria: string;
@@ -843,8 +659,8 @@ function ModalNuevoMovimiento({
                                     <Text className="text-sm font-medium text-[#1C1B1F] mb-1">Descripción</Text>
                                     <TextInput
                                         className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.descripcion && errors.descripcion
-                                                ? "border-[#B3261E]"
-                                                : "border-[#E7E0EC]"
+                                            ? "border-[#B3261E]"
+                                            : "border-[#E7E0EC]"
                                             }`}
                                         placeholder="Ej. Venta mostrador"
                                         placeholderTextColor="#79747E"
@@ -862,8 +678,8 @@ function ModalNuevoMovimiento({
                                     <Pressable
                                         onPress={() => setCategoriaModalVisible(true)}
                                         className={`border rounded-xl px-4 py-3 mb-1 flex-row items-center justify-between ${touched.categoria && errors.categoria
-                                                ? "border-[#B3261E]"
-                                                : "border-[#E7E0EC]"
+                                            ? "border-[#B3261E]"
+                                            : "border-[#E7E0EC]"
                                             }`}
                                     >
                                         <Text
@@ -921,8 +737,8 @@ function ModalNuevoMovimiento({
                                                     key={i}
                                                     onPress={() => setFecha(d)}
                                                     className={`flex-1 rounded-xl py-2 items-center border ${seleccionada
-                                                            ? "bg-[#1857B6] border-[#1857B6]"
-                                                            : "bg-white border-[#E7E0EC]"
+                                                        ? "bg-[#1857B6] border-[#1857B6]"
+                                                        : "bg-white border-[#E7E0EC]"
                                                         }`}
                                                 >
                                                     <Text
@@ -959,245 +775,5 @@ function ModalNuevoMovimiento({
         </Modal>
     );
 }
+ */
 
-// --- Modal: corte de caja (con calculadora de billetes) ---
-
-function ModalCorte({
-    visible,
-    onClose,
-    saldoInicial,
-    ventas,
-    ingresos,
-    gastos,
-    egresos,
-    saldoEsperado,
-    onCerrarCaja,
-}: {
-    visible: boolean;
-    onClose: () => void;
-    saldoInicial: number;
-    ventas: number;
-    ingresos: number;
-    gastos: number;
-    egresos: number;
-    saldoEsperado: number;
-    onCerrarCaja: () => void;
-}) {
-    const [conteo, setConteo] = useState<Record<number, string>>({});
-    const [confirmarConDiferencia, setConfirmarConDiferencia] = useState(false);
-
-    const efectivoContado = DENOMINACIONES.reduce((acc, d) => {
-        const cantidad = Number(conteo[d] ?? 0);
-        return acc + d * (isNaN(cantidad) ? 0 : cantidad);
-    }, 0);
-
-    const diferencia = efectivoContado - saldoEsperado;
-    const cuadra = Math.abs(diferencia) < 0.01;
-
-    const actualizarCantidad = (denominacion: number, delta: number) => {
-        setConteo((prev) => {
-            const actual = Number(prev[denominacion] ?? 0);
-            const nuevo = Math.max(0, actual + delta);
-            return { ...prev, [denominacion]: String(nuevo) };
-        });
-    };
-
-    const handleCerrar = () => {
-        if (!cuadra && !confirmarConDiferencia) {
-            setConfirmarConDiferencia(true);
-            return;
-        }
-        onCerrarCaja();
-        setConteo({});
-        setConfirmarConDiferencia(false);
-    };
-
-    const handleClose = () => {
-        setConteo({});
-        setConfirmarConDiferencia(false);
-        onClose();
-    };
-
-    return (
-        <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
-            <View className="flex-1 justify-end bg-black/40">
-                <View className="bg-white rounded-t-3xl max-h-[92%]">
-                    <ModalHeader title="Corte de caja" onClose={handleClose} />
-                    <ScrollView className="px-4 pt-4" contentContainerStyle={{ paddingBottom: 24 }}>
-                        {/* Resumen calculado por el sistema */}
-                        <View className="bg-[#F1EEF4] rounded-2xl p-4 mb-4">
-                            <ResumenLinea label="Saldo inicial" value={saldoInicial} />
-                            <ResumenLinea label="Ventas" value={ventas} />
-                            <ResumenLinea label="Ingresos" value={ingresos} />
-                            <ResumenLinea label="Gastos" value={gastos} negativo />
-                            <ResumenLinea label="Egresos" value={egresos} negativo />
-                            <View className="h-px bg-[#E7E0EC] my-2" />
-                            <ResumenLinea label="Saldo esperado" value={saldoEsperado} destacado />
-                        </View>
-
-                        {/* Calculadora de billetes y monedas */}
-                        <Text className="text-sm font-semibold text-[#1C1B1F] mb-2">Contar efectivo</Text>
-                        <View className="gap-2">
-                            {DENOMINACIONES.map((denominacion) => {
-                                const cantidad = Number(conteo[denominacion] ?? 0);
-                                return (
-                                    <View
-                                        key={denominacion}
-                                        className="flex-row items-center justify-between bg-white border border-[#E7E0EC] rounded-xl px-3 py-2"
-                                    >
-                                        <Text className="text-sm text-[#1C1B1F] w-16">
-                                            {formatMoney(denominacion)}
-                                        </Text>
-                                        <View className="flex-row items-center gap-3">
-                                            <Pressable
-                                                onPress={() => actualizarCantidad(denominacion, -1)}
-                                                className="w-8 h-8 rounded-full bg-[#F1EEF4] items-center justify-center"
-                                            >
-                                                <Ionicons name="remove" size={16} color="#1C1B1F" />
-                                            </Pressable>
-                                            <TextInput
-                                                className="w-12 text-center text-sm text-[#1C1B1F] border border-[#E7E0EC] rounded-lg py-1"
-                                                keyboardType="number-pad"
-                                                value={conteo[denominacion] ?? "0"}
-                                                onChangeText={(v) =>
-                                                    setConteo((prev) => ({
-                                                        ...prev,
-                                                        [denominacion]: v.replace(/[^0-9]/g, ""),
-                                                    }))
-                                                }
-                                            />
-                                            <Pressable
-                                                onPress={() => actualizarCantidad(denominacion, 1)}
-                                                className="w-8 h-8 rounded-full bg-[#F1EEF4] items-center justify-center"
-                                            >
-                                                <Ionicons name="add" size={16} color="#1C1B1F" />
-                                            </Pressable>
-                                        </View>
-                                        <Text className="text-sm font-semibold text-[#1C1B1F] w-20 text-right">
-                                            {formatMoney(denominacion * cantidad)}
-                                        </Text>
-                                    </View>
-                                );
-                            })}
-                        </View>
-
-                        <View className="flex-row items-center justify-between mt-4 px-1">
-                            <Text className="text-sm font-medium text-[#79747E]">EFECTIVO CONTADO</Text>
-                            <Text className="text-xl font-bold text-[#1C1B1F]">{formatMoney(efectivoContado)}</Text>
-                        </View>
-
-                        {/* Verificación */}
-                        <View
-                            className={`rounded-2xl p-4 mt-4 border ${cuadra ? "bg-[#E4F5E9] border-[#1C7C3F]" : "bg-[#FDECEA] border-[#B3261E]"
-                                }`}
-                        >
-                            <View className="flex-row items-center gap-2 mb-2">
-                                <Ionicons
-                                    name={cuadra ? "checkmark-circle" : "warning"}
-                                    size={18}
-                                    color={cuadra ? "#1C7C3F" : "#B3261E"}
-                                />
-                                <Text
-                                    className={`text-sm font-semibold ${cuadra ? "text-[#1C7C3F]" : "text-[#B3261E]"
-                                        }`}
-                                >
-                                    {cuadra ? "Caja cuadrada" : "Diferencia en caja"}
-                                </Text>
-                            </View>
-                            <ResumenLinea label="Esperado" value={saldoEsperado} />
-                            <ResumenLinea label="Contado" value={efectivoContado} />
-                            <ResumenLinea
-                                label="Diferencia"
-                                value={diferencia}
-                                negativo={diferencia < 0}
-                                destacado
-                            />
-                        </View>
-
-                        {!cuadra && confirmarConDiferencia && (
-                            <View className="bg-[#FDECEA] border border-[#B3261E] rounded-2xl p-4 mt-3">
-                                <Text className="text-sm text-[#B3261E] mb-3">
-                                    Existe una diferencia de {formatMoney(diferencia)}. ¿Deseas cerrar la caja de
-                                    todas formas?
-                                </Text>
-                                <View className="flex-row gap-3">
-                                    <Pressable
-                                        onPress={() => setConfirmarConDiferencia(false)}
-                                        className="flex-1 border border-[#B3261E] rounded-xl py-2.5 items-center"
-                                    >
-                                        <Text className="text-sm font-medium text-[#B3261E]">Volver al conteo</Text>
-                                    </Pressable>
-                                    <Pressable
-                                        onPress={handleCerrar}
-                                        className="flex-1 bg-[#B3261E] rounded-xl py-2.5 items-center"
-                                    >
-                                        <Text className="text-sm font-semibold text-white">Cerrar caja</Text>
-                                    </Pressable>
-                                </View>
-                            </View>
-                        )}
-
-                        {!confirmarConDiferencia && (
-                            <View className="flex-row gap-3 mt-5">
-                                <Pressable
-                                    onPress={handleClose}
-                                    className="flex-1 border border-[#E7E0EC] rounded-xl py-3 items-center"
-                                >
-                                    <Text className="text-sm font-medium text-[#1C1B1F]">Cancelar</Text>
-                                </Pressable>
-                                <Pressable
-                                    onPress={handleCerrar}
-                                    className={`flex-1 rounded-xl py-3 items-center ${cuadra ? "bg-[#1857B6]" : "bg-[#B3261E]"
-                                        }`}
-                                >
-                                    <Text className="text-sm font-semibold text-white">Cerrar caja</Text>
-                                </Pressable>
-                            </View>
-                        )}
-                    </ScrollView>
-                </View>
-            </View>
-        </Modal>
-    );
-}
-
-function ResumenLinea({
-    label,
-    value,
-    negativo = false,
-    destacado = false,
-}: {
-    label: string;
-    value: number;
-    negativo?: boolean;
-    destacado?: boolean;
-}) {
-    return (
-        <View className="flex-row items-center justify-between py-0.5">
-            <Text className={`text-sm ${destacado ? "font-semibold text-[#1C1B1F]" : "text-[#79747E]"}`}>
-                {label}
-            </Text>
-            <Text
-                className={`text-sm ${destacado ? "font-bold" : "font-medium"} ${negativo ? "text-[#B3261E]" : "text-[#1C1B1F]"
-                    }`}
-            >
-                {negativo && value > 0 ? "-" : ""}
-                {formatMoney(Math.abs(value))}
-            </Text>
-        </View>
-    );
-}
-
-function ModalHeader({ title, onClose }: { title: string; onClose: () => void }) {
-    return (
-        <View className="flex-row items-center justify-between px-4 py-4 border-b border-[#E7E0EC]">
-            <Text className="text-base font-semibold text-[#1C1B1F]">{title}</Text>
-            <Pressable
-                onPress={onClose}
-                className="w-8 h-8 items-center justify-center rounded-full active:bg-[#F1EEF4]"
-            >
-                <Ionicons name="close" size={20} color="#1C1B1F" />
-            </Pressable>
-        </View>
-    );
-}

@@ -41,4 +41,7 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
                         Long empresaId,
                         LocalDateTime inicio,
                         LocalDateTime fin);
+
+        List<Movimiento> findByCorteCajaId(Long corteCajaId);
+
 }

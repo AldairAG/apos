@@ -8,105 +8,19 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { PieChart } from "react-native-gifted-charts";
 import { router } from "expo-router";
 import { useUsuario } from "../../hook/useUsuario";
 import { useAuth } from "@/features/usuario/auth/presentation/hook/useAuth";
 import { CuentaDto } from "@/features/cuenta/domain/types/cuenta.types";
 import { AMARILLO, AMARILLO_CONTAINER, AZUL, AZUL_CONTAINER, ROJO } from "@/types/colors";
 import { ROUTES } from "@/routes/routes";
-import { MovimientoDto } from "@/features/movimiento/domain/types/Movimiento.types";
 import { useMovimientos } from "@/features/movimiento/presentation/hook/useMovimientos";
 import { TipoMovimiento } from "@/features/movimiento/domain/enum/TipoMovimiento";
+import { buildPieData, formatCurrency } from "@/helpers/FormatHelpers";
+import PieCard from "@/components/graficas/PieCard";
 
 const PALETA_INGRESOS = ["#1857B6", "#3568C4", "#5580D1", "#7A9BDE", "#A9C1EA"];
 const PALETA_GASTOS = ["#8A6D00", "#B98600", "#D9A400", "#F0BE33", "#FFD666"];
-
-
-const formatCurrency = (n: number) =>
-  `$${n.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-const buildPieData = (items: MovimientoDto[], paleta: string[]) => {
-  const total = items.reduce((sum, m) => sum + m.monto, 0);
-  const porCategoria = items.reduce<Record<string, number>>((acc, m) => {
-    acc[m.categoria] = (acc[m.categoria] ?? 0) + m.monto;
-    return acc;
-  }, {});
-
-  return Object.entries(porCategoria)
-    .sort((a, b) => b[1] - a[1])
-    .map(([categoria, monto], i) => ({
-      value: monto,
-      color: paleta[i % paleta.length],
-      categoria,
-      monto,
-      porcentaje: total > 0 ? Math.round((monto / total) * 100) : 0,
-    }));
-};
-
-
-// ---------- Tarjeta de gráfica de pastel ----------
-
-function PieCard({
-  titulo,
-  total,
-  data,
-  colorTotal,
-  vacio,
-}: {
-  titulo: string;
-  total: number;
-  data: ReturnType<typeof buildPieData>;
-  colorTotal: string;
-  vacio: string;
-}) {
-  return (
-    <View className="bg-white rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.08)]">
-      <Text className="text-sm font-medium text-[#1C1B1F] mb-4">{titulo}</Text>
-
-      {data.length === 0 ? (
-        <Text className="text-sm text-[#79747E] py-6 text-center">{vacio}</Text>
-      ) : (
-        <View className="items-center">
-          <PieChart
-            data={data}
-            donut
-            radius={78}
-            innerRadius={50}
-            innerCircleColor="#FFFFFF"
-            centerLabelComponent={() => (
-              <View className="items-center">
-                <Text className="text-[11px] text-[#79747E]">Total</Text>
-                <Text className="text-sm font-medium" style={{ color: colorTotal }}>
-                  {formatCurrency(total)}
-                </Text>
-              </View>
-            )}
-          />
-
-          <View className="w-full mt-5 gap-2.5">
-            {data.map((item) => (
-              <View key={item.categoria} className="flex-row items-center justify-between">
-                <View className="flex-row items-center gap-2 shrink">
-                  <View
-                    style={{ backgroundColor: item.color }}
-                    className="w-2.5 h-2.5 rounded-full"
-                  />
-                  <Text className="text-xs text-[#1C1B1F]" numberOfLines={1}>
-                    {item.categoria}
-                  </Text>
-                </View>
-                <Text className="text-xs text-[#49454F]">
-                  {item.porcentaje}% · {formatCurrency(item.monto)}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-    </View>
-  );
-}
 
 // ---------- Pantalla principal ----------
 
