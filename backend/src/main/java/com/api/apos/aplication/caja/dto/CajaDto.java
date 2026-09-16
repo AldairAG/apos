@@ -19,6 +19,7 @@ public class CajaDto {
     private BigDecimal saldo;
     private BigDecimal saldoInicial;
     private EstadoCaja estado;
+    private Long corteCajaId;
 
     private CorteCajaDto corteCaja;
 

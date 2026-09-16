@@ -40,4 +40,6 @@ public class MovimientoDto {
 
     private Long cajaId;
 
+    private Long corteCajaId;
+
 }

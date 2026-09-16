@@ -11,11 +11,14 @@ public class MovimientoMapper {
                 .monto(movimiento.getMonto())
                 .tipo(movimiento.getTipo())
                 .estado(movimiento.getEstado())
-                .cuentaId(movimiento.getCuenta().getId())
+                .cuentaId(movimiento.getCuenta() != null ? movimiento.getCuenta().getId() : null)
+                .corteCajaId(movimiento.getCorteCaja() != null ? movimiento.getCorteCaja().getId() : null)
+                .cajaId(movimiento.getCorteCaja() != null && movimiento.getCorteCaja().getCaja() != null ? movimiento.getCorteCaja().getCaja().getId() : null)
                 .categoria(movimiento.getCategoria())
                 .createdBy(movimiento.getCreatedBy())
                 .updatedAt(movimiento.getUpdatedAt())
                 .createdAt(movimiento.getCreatedAt())
+                .fecha(movimiento.getFecha())
                 .build();
     }
 

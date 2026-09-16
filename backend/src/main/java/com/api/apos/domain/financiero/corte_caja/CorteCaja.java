@@ -7,6 +7,8 @@ import java.util.List;
 import com.api.apos.domain.financiero.caja.Caja;
 import com.api.apos.domain.financiero.movimiento.Movimiento;
 import com.api.apos.enums.EstadoCaja;
+import com.api.apos.enums.EstadoMovimiento;
+import com.api.apos.enums.TipoMovimiento;
 import com.api.apos.domain.financiero.auditable.AuditableEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -58,7 +60,7 @@ public class CorteCaja extends AuditableEntity {
 
     private Long createdBy;
 
-    @ManyToOne(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "caja_id")
     private Caja caja;
 
@@ -69,5 +71,23 @@ public class CorteCaja extends AuditableEntity {
         this.estado = EstadoCaja.CERRADA;
         this.caja.cerrar(this.saldoFinal);
     }
-    
+
+    public void addIngreso(Movimiento movimiento) {
+        this.movimientos.add(movimiento);
+        movimiento.setCorteCaja(this);
+        movimiento.setTipo(TipoMovimiento.INGRESO);
+        movimiento.setEstado(EstadoMovimiento.COMPLETADO);
+        this.saldoFinal = this.saldoFinal.add(movimiento.getMonto());
+        this.ingresos= this.ingresos.add(movimiento.getMonto());
+    }
+
+    public void addEgreso(Movimiento movimiento) {
+        this.movimientos.add(movimiento);
+        movimiento.setCorteCaja(this);
+        movimiento.setTipo(TipoMovimiento.EGRESO);
+        movimiento.setEstado(EstadoMovimiento.COMPLETADO);
+        this.saldoFinal = this.saldoFinal.subtract(movimiento.getMonto());
+        this.egresos = this.egresos.add(movimiento.getMonto());
+    }
+
 }

@@ -48,9 +48,9 @@ public class CajaController {
         return ResponseEntity.ok(ApiResponseWrapper.success(closedCaja));
     }
 
-    @GetMapping("/sucursal/{cajaId}")
-    public ResponseEntity<ApiResponseWrapper<List<CajaDto>>> findCajaBySucursalId(@PathVariable String cajaId) {
-        List<CajaDto> cajas = findCajaBySucursalId.execute(Long.parseLong(cajaId));
+    @GetMapping("/sucursal/{sucursalId}")
+    public ResponseEntity<ApiResponseWrapper<List<CajaDto>>> findCajaBySucursalId(@PathVariable String sucursalId) {
+        List<CajaDto> cajas = findCajaBySucursalId.execute(Long.parseLong(sucursalId));
         return ResponseEntity.ok(new ApiResponseWrapper<>(true, cajas, null, null));
     }
 

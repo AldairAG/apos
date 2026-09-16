@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { CajaDto } from "../domain/Caja.types";
+import { CajaDto, CorteCajaDto } from "../domain/Caja.types";
 import {findCajasBySucursalIdThunk} from "../aplication/query/FindCajasBySucursalId.thunk";
 import {crearCajaThunk} from "../aplication/usecase/CrearCaja.thunk";
 import { ApiResponse } from "@/api/apiTypes";
@@ -9,6 +9,7 @@ import { CerrarCajaThunk } from "../aplication/usecase/CerrarCaja.thunk";
 interface CajaState {
     cajas: CajaDto[];
     cajaSeleccionadaId: number | null;
+    corteCaja:CorteCajaDto | null;
     loading: boolean;
     error: string | null;
 }
@@ -16,6 +17,7 @@ interface CajaState {
 const initialState: CajaState = {
     cajas: [],
     cajaSeleccionadaId: null,
+    corteCaja: null,
     loading: false,
     error: null,
 };

@@ -6,6 +6,8 @@ import { CategoriaMovimiento } from "../../domain/enum/CategoriaMovimiento";
 import { useUsuario } from "@/features/usuario/usuario/hook/useUsuario";
 import { useMovimientos } from "../hook/useMovimientos";
 import { dateStringToLocateDateTime } from "@/helpers/TimeHelpers";
+import { useLocalSearchParams } from "expo-router";
+import useCaja from "@/features/caja/presentation/hook/useCaja";
 
 const CATEGORIA_LABELS: Partial<Record<CategoriaMovimiento, string>> = {
   [CategoriaMovimiento.VENTA]: "Venta",
@@ -22,7 +24,8 @@ interface CrearIngresoForm {
   descripcion: string;
   categoria: CategoriaMovimiento | "";
   fecha: string; // formato ISO "yyyy-MM-dd"
-  cuentaId: string;
+  cuentaId: number | null;
+  cajaId: number | null;
 }
 
 // --- Helpers de fecha (últimos 4 días: hoy + 3 anteriores) ---
@@ -62,40 +65,70 @@ function buildQuickDateOptions(): { iso: string; label: string; sublabel: string
 
 const todayIso = toIsoDate(new Date());
 
-const initialValues: CrearIngresoForm = {
-  monto: "",
-  descripcion: "",
-  categoria: "",
-  fecha: todayIso,
-  cuentaId: "",
-};
-
-const validationSchema = Yup.object({
-  monto: Yup.string()
-    .required("El monto es obligatorio")
-    .test("monto-valido", "El monto debe ser mayor que 0", (value) => {
-      if (!value) return false;
-      const monto = Number(value.replace(",", "."));
-      return !isNaN(monto) && monto > 0;
-    }),
-
-  descripcion: Yup.string()
-    .trim()
-    .min(3, "La descripción debe tener al menos 3 caracteres")
-    .max(255, "La descripción no puede superar los 255 caracteres"),
-
-  categoria: Yup.string().required("Debes seleccionar una categoría"),
-
-  fecha: Yup.string().required("Debes seleccionar una fecha"),
-
-  cuentaId: Yup.string().required("Debes seleccionar una cuenta"),
-});
-
 export default function CrearIngresoScreen() {
   const { usuario } = useUsuario();
+  const { cajas, cajaSeleccionadaId } = useCaja();
   const { crearIngreso } = useMovimientos();
   const [categoriaModalVisible, setCategoriaModalVisible] = useState(false);
   const [cuentaModalVisible, setCuentaModalVisible] = useState(false);
+  const [cajaModalVisible, setCajaModalVisible] = useState(false);
+
+  const { modulo } = useLocalSearchParams();
+
+  const esContextoCaja = modulo === "caja";
+
+  // `cajaId` toma por defecto la caja seleccionada actualmente en el hook
+  // de Caja. Si aún no ha cargado (ej. primer render antes de que el hook
+  // resuelva), `cajaSeleccionadaId` será null y `enableReinitialize` lo
+  // actualizará en cuanto esté disponible.
+  const initialValues: CrearIngresoForm = useMemo(
+    () => ({
+      monto: "",
+      descripcion: "",
+      categoria: "",
+      fecha: todayIso,
+      cuentaId: null,
+      cajaId: cajaSeleccionadaId ?? null,
+    }),
+    [cajaSeleccionadaId]
+  );
+
+  const validationSchema = useMemo(
+    () =>
+      Yup.object({
+        monto: Yup.string()
+          .required("El monto es obligatorio")
+          .test("monto-valido", "El monto debe ser mayor que 0", (value) => {
+            if (!value) return false;
+            const monto = Number(value.replace(",", "."));
+            return !isNaN(monto) && monto > 0;
+          }),
+
+        descripcion: Yup.string()
+          .trim()
+          .min(3, "La descripción debe tener al menos 3 caracteres")
+          .max(255, "La descripción no puede superar los 255 caracteres"),
+
+        categoria: Yup.string().required("Debes seleccionar una categoría"),
+
+        fecha: Yup.string().required("Debes seleccionar una fecha"),
+
+        cuentaId: esContextoCaja
+          ? Yup.number().nullable().notRequired()
+          : Yup.number()
+              .nullable()
+              .typeError("Debes seleccionar una cuenta")
+              .required("Debes seleccionar una cuenta"),
+
+        cajaId: esContextoCaja
+          ? Yup.number()
+              .nullable()
+              .typeError("Debes seleccionar una caja")
+              .required("Debes seleccionar una caja")
+          : Yup.number().nullable().notRequired(),
+      }),
+    [esContextoCaja]
+  );
 
   const quickDates = useMemo(buildQuickDateOptions, []);
 
@@ -106,13 +139,16 @@ export default function CrearIngresoScreen() {
     helpers: FormikHelpers<CrearIngresoForm>
   ) => {
 
-    crearIngreso({
+    const nuevoMovimiento = {
       monto: Number(values.monto.replace(",", ".")),
       descripcion: values.descripcion,
       categoria: values.categoria,
       fecha: dateStringToLocateDateTime(values.fecha),
-      cuentaId: Number(values.cuentaId),
-    });
+      cuentaId: values.cuentaId,
+      cajaId: values.cajaId,
+    };
+
+    crearIngreso(nuevoMovimiento);
 
     helpers.setSubmitting(false);
     helpers.resetForm();
@@ -131,6 +167,7 @@ export default function CrearIngresoScreen() {
         initialValues={initialValues}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
+        enableReinitialize
       >
         {({
           values,
@@ -147,7 +184,10 @@ export default function CrearIngresoScreen() {
             : "";
 
           const cuentaLabel =
-            usuario?.empresa.cuentas.find((c) => c.id === Number(values.cuentaId))?.nombre ?? "";
+            usuario?.empresa.cuentas.find((c) => c.id === values.cuentaId)?.nombre ?? "";
+
+          const cajaLabel =
+            cajas.find((c) => c.id === values.cajaId)?.nombre ?? "";
 
           return (
             <View className="gap-1">
@@ -215,31 +255,65 @@ export default function CrearIngresoScreen() {
                 <View className="mb-2" />
               )}
 
-              {/* Cuenta (Select) */}
-              <Text className="text-sm font-medium text-gray-700 mb-1">
-                Cuenta
-              </Text>
-              <Pressable
-                onPress={() => setCuentaModalVisible(true)}
-                className={`border rounded-xl px-4 py-3 mb-1 flex-row items-center justify-between ${touched.cuentaId && errors.cuentaId
-                    ? "border-red-500"
-                    : "border-gray-300"
-                  }`}
-              >
-                <Text
-                  className={`text-base ${cuentaLabel ? "text-gray-900" : "text-gray-400"
-                    }`}
-                >
-                  {cuentaLabel || "Selecciona una cuenta"}
-                </Text>
-                <Text className="text-gray-400">▾</Text>
-              </Pressable>
-              {touched.cuentaId && errors.cuentaId ? (
-                <Text className="text-red-500 text-xs mb-2">
-                  {errors.cuentaId}
-                </Text>
+              {/* Cuenta / Caja (Select) */}
+              {esContextoCaja ? (
+                <>
+                  {/* Caja (Select) */}
+                  <Text className="text-sm font-medium text-gray-700 mb-1">
+                    Caja
+                  </Text>
+                  <Pressable
+                    onPress={() => setCajaModalVisible(true)}
+                    className={`border rounded-xl px-4 py-3 mb-1 flex-row items-center justify-between ${touched.cajaId && errors.cajaId
+                        ? "border-red-500"
+                        : "border-gray-300"
+                      }`}
+                  >
+                    <Text
+                      className={`text-base ${cajaLabel ? "text-gray-900" : "text-gray-400"
+                        }`}
+                    >
+                      {cajaLabel || "Selecciona una caja"}
+                    </Text>
+                    <Text className="text-gray-400">▾</Text>
+                  </Pressable>
+                  {touched.cajaId && errors.cajaId ? (
+                    <Text className="text-red-500 text-xs mb-2">
+                      {errors.cajaId}
+                    </Text>
+                  ) : (
+                    <View className="mb-2" />
+                  )}
+                </>
               ) : (
-                <View className="mb-2" />
+                <>
+                  {/* Cuenta (Select) */}
+                  <Text className="text-sm font-medium text-gray-700 mb-1">
+                    Cuenta
+                  </Text>
+                  <Pressable
+                    onPress={() => setCuentaModalVisible(true)}
+                    className={`border rounded-xl px-4 py-3 mb-1 flex-row items-center justify-between ${touched.cuentaId && errors.cuentaId
+                        ? "border-red-500"
+                        : "border-gray-300"
+                      }`}
+                  >
+                    <Text
+                      className={`text-base ${cuentaLabel ? "text-gray-900" : "text-gray-400"
+                        }`}
+                    >
+                      {cuentaLabel || "Selecciona una cuenta"}
+                    </Text>
+                    <Text className="text-gray-400">▾</Text>
+                  </Pressable>
+                  {touched.cuentaId && errors.cuentaId ? (
+                    <Text className="text-red-500 text-xs mb-2">
+                      {errors.cuentaId}
+                    </Text>
+                  ) : (
+                    <View className="mb-2" />
+                  )}
+                </>
               )}
 
               <Modal
@@ -263,13 +337,46 @@ export default function CrearIngresoScreen() {
                         <Pressable
                           className="py-3 border-b border-gray-100"
                           onPress={() => {
-                            setFieldValue("cuentaId", String(item.id));
+                            setFieldValue("cuentaId", item.id);
                             setCuentaModalVisible(false);
                           }}
                         >
                           <Text className="text-base text-gray-900">
                             {item.nombre}
                           </Text>
+                        </Pressable>
+                      )}
+                    />
+                  </View>
+                </Pressable>
+              </Modal>
+
+              <Modal
+                visible={cajaModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setCajaModalVisible(false)}
+              >
+                <Pressable
+                  className="flex-1 bg-black/40 justify-end"
+                  onPress={() => setCajaModalVisible(false)}
+                >
+                  <View className="bg-white rounded-t-2xl p-4">
+                    <Text className="text-base font-semibold text-gray-900 mb-2">
+                      Selecciona una caja
+                    </Text>
+                    <FlatList
+                      data={cajas}
+                      keyExtractor={(item) => String(item.id)}
+                      renderItem={({ item }) => (
+                        <Pressable
+                          className="py-3 border-b border-gray-100"
+                          onPress={() => {
+                            setFieldValue("cajaId", item.id);
+                            setCajaModalVisible(false);
+                          }}
+                        >
+                          <Text className="text-base text-gray-900">{item.nombre}</Text>
                         </Pressable>
                       )}
                     />

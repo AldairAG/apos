@@ -6,6 +6,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.api.apos.aplication.movimiento.dto.MovimientoDto;
 import com.api.apos.aplication.movimiento.mapper.MovimientoMapper;
 import com.api.apos.domain.auth.usuario.UsuarioService;
+import com.api.apos.domain.financiero.corte_caja.CorteCaja;
+import com.api.apos.domain.financiero.corte_caja.CorteCajaService;
 import com.api.apos.domain.financiero.cuenta.Cuenta;
 import com.api.apos.domain.financiero.cuenta.CuentaService;
 import com.api.apos.domain.financiero.movimiento.Movimiento;
@@ -13,7 +15,7 @@ import com.api.apos.domain.financiero.movimiento.MovimientoService;
 
 import lombok.AllArgsConstructor;
 
-@Service 
+@Service
 @AllArgsConstructor
 public class RegistrarEgresoUseCase {
 
@@ -23,9 +25,22 @@ public class RegistrarEgresoUseCase {
 
     private final UsuarioService usuarioService;
 
+    private final CorteCajaService corteCajaService;
+
     @Transactional
     public MovimientoDto execute(MovimientoDto movimientoDto) {
 
+        Movimiento movimiento;
+
+        if (movimientoDto.getCajaId() != null) {
+            movimiento = crearEgresoACorteCaja(movimientoDto);
+        } else {
+            movimiento = crearEgresoACuenta(movimientoDto);
+        }
+        return MovimientoMapper.toDto(movimiento);
+    }
+
+    private Movimiento crearEgresoACuenta(MovimientoDto movimientoDto) {
         Cuenta cuenta = cuentaService.findById(movimientoDto.getCuentaId());
 
         Movimiento movimiento = Movimiento.builder()
@@ -39,8 +54,24 @@ public class RegistrarEgresoUseCase {
         cuenta.addEgreso(movimiento);
 
         movimientoService.save(movimiento);
+        return movimiento;
+    }
 
-        return MovimientoMapper.toDto(movimiento);
+    private Movimiento crearEgresoACorteCaja(MovimientoDto movimientoDto) {
+
+        CorteCaja corteCaja = corteCajaService.findCorteActivo(movimientoDto.getCajaId());
+
+        Movimiento movimiento = Movimiento.builder()
+                .descripcion(movimientoDto.getDescripcion())
+                .monto(movimientoDto.getMonto())
+                .categoria(movimientoDto.getCategoria())
+                .createdBy(usuarioService.getUsuarioAutenticadoId())
+                .fecha(movimientoDto.getFecha())
+                .build();
+
+        corteCaja.addEgreso(movimiento);
+        movimientoService.save(movimiento);
+        return movimiento;
     }
 
 }

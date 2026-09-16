@@ -38,4 +38,5 @@ public class CorteCajaService {
             .orElseThrow(() -> new AppException(ErrorCode.CORTE_CAJA_NO_ENCONTRADO));
     }
 
+
 }

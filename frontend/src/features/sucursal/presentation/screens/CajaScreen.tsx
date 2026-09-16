@@ -23,6 +23,9 @@ import ModalCrearCaja from "@/features/caja/presentation/components/modal/ModalC
 import ModalAbrirCaja from "@/features/caja/presentation/components/modal/ModalAbrirCaja";
 import PieCard from "@/components/graficas/PieCard";
 import { AMARILLO, AZUL } from "@/types/colors";
+import { router } from "expo-router";
+import { ROUTES } from "@/routes/routes";
+import { rutaCrearGasto, rutaCrearIngreso } from "@/helpers/RutaHelpers";
 
 const CATEGORIA_INGRESO_LABELS: Partial<Record<CategoriaMovimiento, string>> = {
     [CategoriaMovimiento.VENTA]: "Venta",
@@ -289,13 +292,27 @@ export default function CajaScreen() {
                             </View>
 
                             {/* 5. Acción principal: nuevo movimiento */}
-                            <Pressable
-                                onPress={() => setNuevoMovimientoVisible(true)}
-                                className="flex-row items-center justify-center gap-2 bg-[#1857B6] rounded-2xl py-3 active:opacity-90"
-                            >
-                                <Ionicons name="add" size={18} color="#FFFFFF" />
-                                <Text className="text-white text-sm font-semibold">Movimiento</Text>
-                            </Pressable>
+                            <View className="flex-row gap-3">
+                                <Pressable
+                                    onPress={() => router.push(rutaCrearIngreso("caja") as any)}
+                                    className="flex-1 h-12 rounded-full flex-row items-center justify-center gap-1.5"
+                                    style={{ backgroundColor: AZUL }}
+                                >
+                                    <Ionicons name="add" size={18} color="#FFFFFF" />
+                                    <Text className="text-sm font-medium text-white">Ingreso</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    onPress={() => router.push(rutaCrearGasto("caja") as any)}
+                                    className="flex-1 h-12 rounded-full flex-row items-center justify-center gap-1.5 border-2"
+                                    style={{ borderColor: AMARILLO }}
+                                >
+                                    <Ionicons name="add" size={18} color={AMARILLO} />
+                                    <Text className="text-sm font-medium" style={{ color: AMARILLO }}>
+                                        Gasto
+                                    </Text>
+                                </Pressable>
+                            </View>
 
                             {/* 6. Gráfica por categoría */}
                             <View className="bg-white rounded-2xl border border-[#E7E0EC] p-4">
@@ -316,22 +333,6 @@ export default function CajaScreen() {
                                     </Text>
                                 ) : (
                                     <View className="mt-4">
-                                        {/* <DonutChart data={dataGrafica} />
-                                        <View className="w-full mt-4 gap-2">
-                                            {dataGrafica.map((seg) => (
-                                                <View key={seg.categoria} className="flex-row items-center justify-between">
-                                                    <View className="flex-row items-center gap-2">
-                                                        <View
-                                                            className="w-2.5 h-2.5 rounded-full"
-                                                            style={{ backgroundColor: seg.color }}
-                                                        />
-                                                        <Text className="text-sm text-[#1C1B1F]">{seg.categoria}</Text>
-                                                    </View>
-                                                    <Text className="text-sm text-[#79747E]">{seg.porcentaje}%</Text>
-                                                </View>
-                                            ))}
-                                        </View> */}
-
                                         <PieCard
                                             titulo={tabGrafica === TipoMovimiento.EGRESO ? "Gastos por categoría" : "Ingresos por categoría"}
                                             total={tabGrafica === TipoMovimiento.EGRESO ? totalGastos : totalIngresos}
@@ -482,6 +483,7 @@ export default function CajaScreen() {
                 visible={abrirCajaVisible}
                 onClose={() => setAbrirCajaVisible(false)}
                 onAbrir={handleAbrirCaja}
+                saldoInicial={caja?.saldoInicial ||0}
             />
 
             {/* Modal: nuevo movimiento */}
