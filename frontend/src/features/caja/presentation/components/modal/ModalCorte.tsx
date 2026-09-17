@@ -9,7 +9,7 @@ import ResumenLinea from "../ResumenLinea";
 
 const DENOMINACIONES = [1000, 500, 200, 100, 50, 20, 10, 5, 2, 1];
 
-export default function ModalCorte({
+export const ModalCorte = ({
     visible,
     onClose,
     saldoInicial,
@@ -29,7 +29,7 @@ export default function ModalCorte({
     egresos: number;
     saldoEsperado: number;
     onCerrarCaja: () => void;
-}) {
+})=> {
     const [conteo, setConteo] = useState<Record<number, string>>({});
     const [confirmarConDiferencia, setConfirmarConDiferencia] = useState(false);
 
@@ -207,3 +207,5 @@ export default function ModalCorte({
         </Modal>
     );
 }
+
+export default ModalCorte;

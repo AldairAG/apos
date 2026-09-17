@@ -4,7 +4,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.api.apos.aplication.caja.dto.CajaDto;
+import com.api.apos.aplication.caja.dto.CorteCajaDto;
 import com.api.apos.aplication.caja.query.FindCajaBySucursalId;
+import com.api.apos.aplication.caja.query.FindCorteCajaActualByCajaId;
 import com.api.apos.aplication.caja.usecase.AbrirCajaUseCase;
 import com.api.apos.aplication.caja.usecase.CerrarCajaUseCase;
 import com.api.apos.aplication.caja.usecase.CrearCajaUseCase;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 
 
+
 @RestController 
 @RequestMapping("/api/cajas")
 @AllArgsConstructor 
@@ -34,6 +37,8 @@ public class CajaController {
     private final AbrirCajaUseCase abrirCajaUseCase;
 
     private final CrearCajaUseCase crearCajaUseCase;
+
+    private final FindCorteCajaActualByCajaId findCorteCajaActualByCajaId;
     
 
     @PostMapping("/{cajaId}/abrir")
@@ -59,6 +64,13 @@ public class CajaController {
         CajaDto createdCaja = crearCajaUseCase.execute(cajaDto, Long.parseLong(sucursalId));
         return ResponseEntity.ok(ApiResponseWrapper.success(createdCaja));
     }
+
+    @GetMapping("/{cajaId}/corte")
+    public ResponseEntity<ApiResponseWrapper<CorteCajaDto>> getCorteCajaActualByCajaId(@PathVariable Long cajaId) {
+        CorteCajaDto corteCajaDto= findCorteCajaActualByCajaId.execute(cajaId);
+        return ResponseEntity.ok(ApiResponseWrapper.success(corteCajaDto));
+    }
+    
     
     
 

@@ -1,8 +1,12 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { crearEgresoThunk } from "../aplication/usecase/CrearEgresoThunk";
 import { crearIngresoThunk } from "../aplication/usecase/CrearIngresoThunk";
 import { findByDateQueryThunk } from "../aplication/query/FindByDateQueryThunk";
 import { MovimientoDto } from "../domain/types/Movimiento.types";
+import { findCorteCajaByCajaIdThunk } from "@/features/caja/aplication/query/FindCorteCajaByCajaId.thunk";
+import { ApiResponse } from "@/api/apiTypes";
+import { CajaDto, CorteCajaDto } from "@/features/caja/domain/Caja.types";
+import { CerrarCajaThunk } from "@/features/caja/aplication/usecase/CerrarCaja.thunk";
 
 
 interface MovimientoState {
@@ -71,8 +75,14 @@ const movimientoSlice = createSlice({
             state.error = action.error.message || "Error";
             state.loading = false;
         });
+        builder.addCase(findCorteCajaByCajaIdThunk.fulfilled,(state, action: PayloadAction<ApiResponse<CorteCajaDto>>) => {
+                state.movimientos = action.payload.data?.movimientos ?? [];
+        });
+        builder.addCase(CerrarCajaThunk.fulfilled, (state) => {
+            state.movimientos = [];
+        });
     }
 
 });
-
+export const { setMovimientos, addMovimiento } = movimientoSlice.actions;
 export default movimientoSlice.reducer;

@@ -29,25 +29,28 @@ public class CerrarCajaUseCase {
 
     private final MovimientoService movimientoService;
 
-    @Transactional 
+    @Transactional
     public CajaDto execute(Long cajaId) {
 
         Caja caja = cajaService.findById(cajaId);
 
-        if(caja.getEstado()==EstadoCaja.CERRADA) {
+        if (caja.getEstado() == EstadoCaja.CERRADA) {
             throw new AppException(ErrorCode.ERROR_AL_CERRAR_CAJA);
         }
 
         CorteCaja corteActivo = corteCajaService.findCorteActivo(cajaId);
 
-        BigDecimal totalIngresos = movimientoService.getTotalPorTipo(corteActivo.getId(), TipoMovimiento.INGRESO);
-        BigDecimal totalEgresos = movimientoService.getTotalPorTipo(corteActivo.getId(), TipoMovimiento.EGRESO);
+        BigDecimal totalIngresos = movimientoService.getTotalPorTipo(corteActivo.getId(),TipoMovimiento.INGRESO);
 
-        BigDecimal saldoFinal = totalIngresos.subtract(totalEgresos);
+        BigDecimal totalEgresos = movimientoService.getTotalPorTipo(corteActivo.getId(),TipoMovimiento.EGRESO);
 
         BigDecimal totalVentas = movimientoService.getTotalVentasByCorteCajaId(corteActivo.getId());
 
         BigDecimal totalGastos = movimientoService.getTotalGastosByCorteCajaId(corteActivo.getId());
+
+        BigDecimal saldoInicial = corteActivo.getSaldoInicial();
+
+        BigDecimal saldoFinal = saldoInicial.add(totalIngresos).subtract(totalEgresos);
 
         corteActivo.setIngresos(totalIngresos);
         corteActivo.setEgresos(totalEgresos);
@@ -56,11 +59,10 @@ public class CerrarCajaUseCase {
         corteActivo.setGastos(totalGastos);
 
         corteActivo.cerrar();
+
         corteCajaService.save(corteActivo);
-        
+
         return CajaMapper.toDto(caja);
     }
-
-
 
 }

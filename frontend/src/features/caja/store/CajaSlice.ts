@@ -5,6 +5,8 @@ import {crearCajaThunk} from "../aplication/usecase/CrearCaja.thunk";
 import { ApiResponse } from "@/api/apiTypes";
 import { AbrirCajaThunk } from "../aplication/usecase/AbrirCaja.thunk";
 import { CerrarCajaThunk } from "../aplication/usecase/CerrarCaja.thunk";
+import { findCorteCajaByCajaIdThunk } from "../aplication/query/FindCorteCajaByCajaId.thunk";
+import { MovimientoDto } from "@/features/movimiento/domain/types/Movimiento.types";
 
 interface CajaState {
     cajas: CajaDto[];
@@ -88,6 +90,18 @@ const cajaSlice = createSlice({
             }
         });
         builder.addCase(CerrarCajaThunk.rejected, (state, action: PayloadAction<string | undefined>) => {
+            state.loading = false;
+            state.error = action.payload ?? "Error desconocido";
+        });
+        builder.addCase(findCorteCajaByCajaIdThunk.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(findCorteCajaByCajaIdThunk.fulfilled, (state, action: PayloadAction<ApiResponse<CorteCajaDto>>) => {
+            state.loading = false;
+            state.corteCaja = action.payload.data;
+        });
+        builder.addCase(findCorteCajaByCajaIdThunk.rejected, (state, action: PayloadAction<string | undefined>) => {
             state.loading = false;
             state.error = action.payload ?? "Error desconocido";
         });

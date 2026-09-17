@@ -10,6 +10,7 @@ import { formatFecha, formatHora } from "@/helpers/TimeHelpers";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 import {
+    ActivityIndicator,
     FlatList,
     Modal,
     Pressable,
@@ -17,15 +18,14 @@ import {
     Text,
     View,
 } from "react-native";
-import Svg, { Circle } from "react-native-svg";
 import { useSucursal } from "../hook/useSucursal";
 import ModalCrearCaja from "@/features/caja/presentation/components/modal/ModalCrearCaja";
 import ModalAbrirCaja from "@/features/caja/presentation/components/modal/ModalAbrirCaja";
 import PieCard from "@/components/graficas/PieCard";
 import { AMARILLO, AZUL } from "@/types/colors";
 import { router } from "expo-router";
-import { ROUTES } from "@/routes/routes";
 import { rutaCrearGasto, rutaCrearIngreso } from "@/helpers/RutaHelpers";
+import ModalCorte from "@/features/caja/presentation/components/modal/ModalCorte";
 
 const CATEGORIA_INGRESO_LABELS: Partial<Record<CategoriaMovimiento, string>> = {
     [CategoriaMovimiento.VENTA]: "Venta",
@@ -68,7 +68,7 @@ function agruparPorCategoria(
             m.tipo === TipoMovimiento.INGRESO
                 ? CATEGORIA_INGRESO_LABELS[m.categoria as CategoriaMovimiento]
                 : CATEGORIA_EGRESO_LABELS[m.categoria as CategoriaMovimiento];
-        mapa.set(label, (mapa.get(label) ?? 0) + m.monto);
+        mapa.set(label!, (mapa.get(label!) ?? 0) + m.monto);
     });
 
     const paleta = ["#1857B6", "#4C8DDA", "#79A9E3", "#B3261E", "#E46962", "#F2A93B", "#79747E"];
@@ -94,6 +94,7 @@ export default function CajaScreen() {
         cajaSeleccionadaId,
         findCajasBySucursalId,
         handleSeleccionarCaja,
+        findCorteCajaActualByCajaId,
         crearCaja,
         cerrarCaja,
         abrirCaja,
@@ -107,12 +108,22 @@ export default function CajaScreen() {
         findCajasBySucursalId(sucursalSeleccionadaId || 0);
     }, [findCajasBySucursalId, sucursalSeleccionadaId]);
 
+    useEffect(() => {
+        if (cajaSeleccionadaId) {
+            findCorteCajaActualByCajaId(cajaSeleccionadaId);
+        }
+    }, [cajaSeleccionadaId, findCorteCajaActualByCajaId]);
+
     const caja = useMemo(
         () => cajas.find((c) => c.id === cajaSeleccionadaId)!,
         [cajas, cajaSeleccionadaId]
     );
 
     const resumen = useMemo(() => {
+        if (!movimientos || movimientos.length === 0) {
+            return { ingresos: 0, ventas: 0, egresos: 0, gastos: 0 };
+        }
+
         const ingresos = movimientos
             .filter((m) => m.tipo === TipoMovimiento.INGRESO && m.categoria !== CategoriaMovimiento.VENTA)
             .reduce((acc, m) => acc + m.monto, 0);
@@ -133,7 +144,6 @@ export default function CajaScreen() {
     const [selectorCajaVisible, setSelectorCajaVisible] = useState(false);
     const [crearCajaVisible, setCrearCajaVisible] = useState(false);
     const [abrirCajaVisible, setAbrirCajaVisible] = useState(false);
-    const [nuevoMovimientoVisible, setNuevoMovimientoVisible] = useState(false);
     const [corteVisible, setCorteVisible] = useState(false);
 
     const [tabMovimientos, setTabMovimientos] = useState<TipoMovimiento>(TipoMovimiento.INGRESO);
@@ -161,7 +171,6 @@ export default function CajaScreen() {
 
     const handleAbrirCaja = () => {
         abrirCaja();
-
         setAbrirCajaVisible(false);
     };
 
@@ -180,7 +189,7 @@ export default function CajaScreen() {
     };
 
     const handleCerrarCaja = () => {
-
+        cerrarCaja();
         setCorteVisible(false);
     };
 
@@ -483,31 +492,23 @@ export default function CajaScreen() {
                 visible={abrirCajaVisible}
                 onClose={() => setAbrirCajaVisible(false)}
                 onAbrir={handleAbrirCaja}
-                saldoInicial={caja?.saldoInicial ||0}
+                saldoInicial={caja?.saldoInicial || 0}
             />
 
-            {/* Modal: nuevo movimiento */}
-            {/* <ModalNuevoMovimiento
-                visible={nuevoMovimientoVisible}
-                onClose={() => setNuevoMovimientoVisible(false)}
-                onRegistrar={() => {
-                    // TODO: dispatch(crearMovimientoThunk(payload)) y refrescar movimientos
-                    setNuevoMovimientoVisible(false);
-                }}
-            /> */}
-
             {/* Modal: corte de caja */}
-            {/* <ModalCorte
-                visible={corteVisible}
-                onClose={() => setCorteVisible(false)}
-                saldoInicial={caja.saldoInicial}
-                ventas={resumen.ventas}
-                ingresos={resumen.ingresos}
-                gastos={resumen.gastos}
-                egresos={resumen.egresos}
-                saldoEsperado={saldoEsperado}
-                onCerrarCaja={handleCerrarCaja}
-            /> */}
+            {caja && (
+                <ModalCorte
+                    visible={corteVisible}
+                    onClose={() => setCorteVisible(false)}
+                    saldoInicial={caja.saldoInicial}
+                    ventas={resumen.ventas}
+                    ingresos={resumen.ingresos}
+                    gastos={resumen.gastos}
+                    egresos={resumen.egresos}
+                    saldoEsperado={saldoEsperado}
+                    onCerrarCaja={handleCerrarCaja}
+                />
+            )}
         </View>
     );
 }
@@ -566,216 +567,3 @@ function SegmentedTabs<T extends string>({
         </View>
     );
 }
-
-
-
-// --- Modal: nuevo movimiento ---
-
-/* interface NuevoMovimientoForm {
-    monto: string;
-    descripcion: string;
-    categoria: string;
-}
-
-function ModalNuevoMovimiento({
-    visible,
-    onClose,
-    onRegistrar,
-}: {
-    visible: boolean;
-    onClose: () => void;
-    onRegistrar: () => void;
-}) {
-    const [tipo, setTipo] = useState<TipoMovimiento>(TipoMovimiento.INGRESO);
-    const [categoriaModalVisible, setCategoriaModalVisible] = useState(false);
-    const [fecha, setFecha] = useState(new Date());
-
-    const opcionesCategoria =
-        tipo === TipoMovimiento.INGRESO
-            ? Object.entries(CATEGORIA_INGRESO_LABELS)
-            : Object.entries(CATEGORIA_EGRESO_LABELS);
-
-    const quickDates = useMemo(() => {
-        const hoy = new Date();
-        return Array.from({ length: 4 }).map((_, i) => {
-            const d = new Date(hoy);
-            d.setDate(hoy.getDate() - i);
-            return d;
-        });
-    }, []);
-
-    return (
-        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <View className="flex-1 justify-end bg-black/40">
-                <View className="bg-white rounded-t-3xl max-h-[90%]">
-                    <ModalHeader title="Nuevo movimiento" onClose={onClose} />
-                    <ScrollView className="px-4 pt-4" contentContainerStyle={{ paddingBottom: 24 }}>
-                        <SegmentedTabs
-                            value={tipo}
-                            onChange={setTipo}
-                            options={[
-                                { value: TipoMovimiento.INGRESO, label: "Ingreso" },
-                                { value: TipoMovimiento.EGRESO, label: "Egreso" },
-                            ]}
-                        />
-
-                        <Formik<NuevoMovimientoForm>
-                            initialValues={{ monto: "", descripcion: "", categoria: "" }}
-                            validationSchema={Yup.object({
-                                monto: Yup.string()
-                                    .required("El monto es obligatorio")
-                                    .test("valido", "Debe ser mayor que 0", (v) => {
-                                        if (!v) return false;
-                                        const n = Number(v.replace(",", "."));
-                                        return !isNaN(n) && n > 0;
-                                    }),
-                                descripcion: Yup.string()
-                                    .trim()
-                                    .required("La descripción es obligatoria")
-                                    .min(3, "Al menos 3 caracteres")
-                                    .max(255, "Máximo 255 caracteres"),
-                                categoria: Yup.string().required("Selecciona una categoría"),
-                            })}
-                            onSubmit={() => onRegistrar()}
-                            enableReinitialize
-                        >
-                            {({ values, errors, touched, handleChange, handleBlur, setFieldValue, handleSubmit }) => (
-                                <View className="mt-4">
-                                    <Text className="text-sm font-medium text-[#1C1B1F] mb-1">Monto</Text>
-                                    <TextInput
-                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.monto && errors.monto ? "border-[#B3261E]" : "border-[#E7E0EC]"
-                                            }`}
-                                        placeholder="0.00"
-                                        placeholderTextColor="#79747E"
-                                        keyboardType="decimal-pad"
-                                        value={values.monto}
-                                        onChangeText={handleChange("monto")}
-                                        onBlur={handleBlur("monto")}
-                                    />
-                                    {touched.monto && errors.monto ? (
-                                        <Text className="text-[#B3261E] text-xs mb-2">{errors.monto}</Text>
-                                    ) : (
-                                        <View className="mb-2" />
-                                    )}
-
-                                    <Text className="text-sm font-medium text-[#1C1B1F] mb-1">Descripción</Text>
-                                    <TextInput
-                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.descripcion && errors.descripcion
-                                            ? "border-[#B3261E]"
-                                            : "border-[#E7E0EC]"
-                                            }`}
-                                        placeholder="Ej. Venta mostrador"
-                                        placeholderTextColor="#79747E"
-                                        value={values.descripcion}
-                                        onChangeText={handleChange("descripcion")}
-                                        onBlur={handleBlur("descripcion")}
-                                    />
-                                    {touched.descripcion && errors.descripcion ? (
-                                        <Text className="text-[#B3261E] text-xs mb-2">{errors.descripcion}</Text>
-                                    ) : (
-                                        <View className="mb-2" />
-                                    )}
-
-                                    <Text className="text-sm font-medium text-[#1C1B1F] mb-1">Categoría</Text>
-                                    <Pressable
-                                        onPress={() => setCategoriaModalVisible(true)}
-                                        className={`border rounded-xl px-4 py-3 mb-1 flex-row items-center justify-between ${touched.categoria && errors.categoria
-                                            ? "border-[#B3261E]"
-                                            : "border-[#E7E0EC]"
-                                            }`}
-                                    >
-                                        <Text
-                                            className={`text-base ${values.categoria ? "text-[#1C1B1F]" : "text-[#79747E]"
-                                                }`}
-                                        >
-                                            {values.categoria
-                                                ? opcionesCategoria.find(([v]) => v === values.categoria)?.[1]
-                                                : "Seleccionar"}
-                                        </Text>
-                                        <Ionicons name="chevron-down" size={16} color="#79747E" />
-                                    </Pressable>
-                                    {touched.categoria && errors.categoria ? (
-                                        <Text className="text-[#B3261E] text-xs mb-2">{errors.categoria}</Text>
-                                    ) : (
-                                        <View className="mb-2" />
-                                    )}
-
-                                    <Modal
-                                        visible={categoriaModalVisible}
-                                        transparent
-                                        animationType="fade"
-                                        onRequestClose={() => setCategoriaModalVisible(false)}
-                                    >
-                                        <Pressable
-                                            className="flex-1 bg-black/40 justify-end"
-                                            onPress={() => setCategoriaModalVisible(false)}
-                                        >
-                                            <View className="bg-white rounded-t-2xl p-4">
-                                                <Text className="text-base font-semibold text-[#1C1B1F] mb-2">
-                                                    Selecciona una categoría
-                                                </Text>
-                                                {opcionesCategoria.map(([value, label]) => (
-                                                    <Pressable
-                                                        key={value}
-                                                        className="py-3 border-b border-[#F1EEF4]"
-                                                        onPress={() => {
-                                                            setFieldValue("categoria", value);
-                                                            setCategoriaModalVisible(false);
-                                                        }}
-                                                    >
-                                                        <Text className="text-base text-[#1C1B1F]">{label}</Text>
-                                                    </Pressable>
-                                                ))}
-                                            </View>
-                                        </Pressable>
-                                    </Modal>
-
-                                    <Text className="text-sm font-medium text-[#1C1B1F] mb-1">Fecha</Text>
-                                    <View className="flex-row gap-2 mb-4">
-                                        {quickDates.map((d, i) => {
-                                            const seleccionada = d.toDateString() === fecha.toDateString();
-                                            return (
-                                                <Pressable
-                                                    key={i}
-                                                    onPress={() => setFecha(d)}
-                                                    className={`flex-1 rounded-xl py-2 items-center border ${seleccionada
-                                                        ? "bg-[#1857B6] border-[#1857B6]"
-                                                        : "bg-white border-[#E7E0EC]"
-                                                        }`}
-                                                >
-                                                    <Text
-                                                        className={`text-xs font-semibold ${seleccionada ? "text-white" : "text-[#1C1B1F]"
-                                                            }`}
-                                                    >
-                                                        {i === 0 ? "Hoy" : i === 1 ? "Ayer" : formatFecha(d)}
-                                                    </Text>
-                                                </Pressable>
-                                            );
-                                        })}
-                                    </View>
-
-                                    <View className="flex-row gap-3">
-                                        <Pressable
-                                            onPress={onClose}
-                                            className="flex-1 border border-[#E7E0EC] rounded-xl py-3 items-center"
-                                        >
-                                            <Text className="text-sm font-medium text-[#1C1B1F]">Cancelar</Text>
-                                        </Pressable>
-                                        <Pressable
-                                            onPress={() => handleSubmit()}
-                                            className="flex-1 bg-[#1857B6] rounded-xl py-3 items-center"
-                                        >
-                                            <Text className="text-sm font-semibold text-white">Registrar</Text>
-                                        </Pressable>
-                                    </View>
-                                </View>
-                            )}
-                        </Formik>
-                    </ScrollView>
-                </View>
-            </View>
-        </Modal>
-    );
-}
- */
-

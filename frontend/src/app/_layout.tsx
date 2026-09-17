@@ -24,6 +24,7 @@ export default function TabLayout() {
             <Stack.Screen name={ROUTES.ADMIN.MOVIMIENTOS.CREAR_INGRESO} />
             <Stack.Screen name={ROUTES.ADMIN.MOVIMIENTOS.CREAR_GASTO} />
             <Stack.Screen name={ROUTES.SUCURSAL.HOME} />
+            <Stack.Screen name={ROUTES.ADMIN.RECETAS.PANEL} />
           </Stack>
         </ThemeProvider>
       </PersistGate>

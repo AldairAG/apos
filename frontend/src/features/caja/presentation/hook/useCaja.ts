@@ -6,10 +6,11 @@ import { findCajasBySucursalIdThunk } from "../../aplication/query/FindCajasBySu
 import { CerrarCajaThunk } from "../../aplication/usecase/CerrarCaja.thunk";
 import { AbrirCajaThunk } from "../../aplication/usecase/AbrirCaja.thunk";
 import { CajaDto } from "../../domain/Caja.types";
+import { findCorteCajaByCajaIdThunk } from "../../aplication/query/FindCorteCajaByCajaId.thunk";
 
 const useCaja = () => {
     const dispatch = useDispatch<AppDispatch>();
-    const { cajas, cajaSeleccionadaId, loading, error } = useSelector(
+    const { cajas, cajaSeleccionadaId, loading, error,corteCaja } = useSelector(
         (state: RootState) => state.caja
     );
 
@@ -39,9 +40,13 @@ const useCaja = () => {
         dispatch(AbrirCajaThunk(cajaSeleccionadaId!));
     };
 
-    const cerrarCaja = (cajaId: number) => {
-        dispatch(CerrarCajaThunk(cajaId));
+    const cerrarCaja = () => {
+        dispatch(CerrarCajaThunk(cajaSeleccionadaId!));
     };
+
+    const findCorteCajaActualByCajaId = (cajaId: number) => {
+        dispatch(findCorteCajaByCajaIdThunk(cajaId));
+    }
 
     return {
         cajas,
@@ -49,12 +54,15 @@ const useCaja = () => {
         cajaActual,
         loading,
         error,
+        corteCaja,
         crearCaja,
         findCajasBySucursalId,
         handleSeleccionarCaja,
         handleLimpiarCajaSeleccionada,
         abrirCaja,
         cerrarCaja,
+        findCorteCajaActualByCajaId,
+        
     };
 
 
