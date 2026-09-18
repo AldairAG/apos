@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.api.apos.domain.financiero.caja.Caja;
+import com.api.apos.domain.inventario.existencia.Existencia;
 import com.api.apos.domain.organizacion.empresa.Empresa;
 
 import jakarta.persistence.Entity;
@@ -48,6 +49,9 @@ public class Sucursal {
     @ManyToOne
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
+
+    @OneToMany(mappedBy = "sucursal", fetch = FetchType.LAZY)
+    private List<Existencia> existencias;
 
     @OneToMany(mappedBy = "sucursal", fetch = FetchType.LAZY)
     private List<Caja> cajas;

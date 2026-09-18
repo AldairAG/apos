@@ -2,14 +2,20 @@ package com.api.apos.domain.inventario.material;
 
 import jakarta.persistence.Table;
 
+import java.util.List;
+
+import com.api.apos.domain.inventario.existencia.Existencia;
 import com.api.apos.enums.UnidadMedida;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -39,5 +45,8 @@ public class Material {
     private Double precio;
 
     private String descripcion;
+    
+    @OneToMany(mappedBy = "material", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Existencia > existencias;
 
 }

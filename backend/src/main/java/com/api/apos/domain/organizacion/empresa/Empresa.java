@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.financiero.cuenta.Cuenta;
+import com.api.apos.domain.inventario.receta.Receta;
 import com.api.apos.domain.organizacion.empresa.enums.TipoEmpresa;
 import com.api.apos.domain.organizacion.sucursal.Sucursal;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -51,6 +52,9 @@ public class Empresa {
     @JsonIgnore
     @OneToMany(mappedBy = "empresa",cascade = CascadeType.ALL)
     private List<Cuenta> cuentas;
+
+    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Receta> recetas;
 
     public void delete(){
         activa=false;

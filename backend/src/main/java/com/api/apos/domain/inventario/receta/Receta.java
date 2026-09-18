@@ -1,8 +1,11 @@
 package com.api.apos.domain.inventario.receta;
 
+import java.math.BigDecimal;
 import java.util.List;
 
+import com.api.apos.domain.catalogo.producto.Producto;
 import com.api.apos.domain.inventario.receta_detalle.RecetaDetalle;
+import com.api.apos.domain.organizacion.empresa.Empresa;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -13,6 +16,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
@@ -41,6 +45,10 @@ public class Receta {
 
     private Integer tiempoPreparacion;
 
+    private Float porcentajeSobreCostos;
+
+    private BigDecimal costoTotal;
+
     @ElementCollection
     @CollectionTable(name = "receta_instrucciones", joinColumns = @JoinColumn(name = "receta_id"))
     @Column(name = "instruccion", nullable = false)
@@ -49,5 +57,12 @@ public class Receta {
 
     @OneToMany(mappedBy = "receta", orphanRemoval = true, cascade = CascadeType.ALL) 
     private List<RecetaDetalle> recetaDetalles;
+
+    @OneToMany(mappedBy = "receta", orphanRemoval = true, cascade = CascadeType.ALL)
+    private List<Producto> productos;
+
+    @ManyToOne 
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
 
 }
