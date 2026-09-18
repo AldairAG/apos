@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.financiero.cuenta.Cuenta;
+import com.api.apos.domain.inventario.material.Material;
 import com.api.apos.domain.inventario.receta.Receta;
 import com.api.apos.domain.organizacion.empresa.enums.TipoEmpresa;
 import com.api.apos.domain.organizacion.sucursal.Sucursal;
@@ -56,6 +57,9 @@ public class Empresa {
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Receta> recetas;
 
+    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Material> materiales;
+
     public void delete(){
         activa=false;
     }
@@ -84,5 +88,7 @@ public class Empresa {
         sucursales.add(sucursal);
         sucursal.setEmpresa(this);
     }
+
+
 
 }
