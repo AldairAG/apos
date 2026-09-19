@@ -1,13 +1,16 @@
 package com.api.apos.domain.inventario.existencia;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import lombok.AllArgsConstructor;
 
-@Service 
-@AllArgsConstructor 
+@Service
+@AllArgsConstructor
 public class ExistenciaService {
-    
+
     private final ExistenciaRepository existenciaRepository;
 
     public Existencia save(Existencia existencia) {
@@ -16,6 +19,17 @@ public class ExistenciaService {
 
     public Existencia findById(Long id) {
         return existenciaRepository.findById(id).orElse(null);
+    }
+
+    public List<Long> findMaterialIdsWithoutExistencia(
+            List<Long> materialIds,
+            Long sucursalId) {
+        if (materialIds == null || materialIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return existenciaRepository
+                .findMaterialIdsWithoutExistencia(materialIds, sucursalId);
     }
 
 }

@@ -3,6 +3,7 @@ package com.api.apos.domain.organizacion.sucursal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.api.apos.domain.catalogo.producto.Producto;
 import com.api.apos.domain.financiero.caja.Caja;
 import com.api.apos.domain.inventario.existencia.Existencia;
 import com.api.apos.domain.organizacion.empresa.Empresa;
@@ -55,6 +56,9 @@ public class Sucursal {
 
     @OneToMany(mappedBy = "sucursal", fetch = FetchType.LAZY)
     private List<Caja> cajas;
+
+    @OneToMany(mappedBy = "sucursal", fetch = FetchType.LAZY)
+    private List<Producto> productos;
 
     public void delete() {
         this.activa = false;

@@ -4,19 +4,31 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.api.apos.domain.catalogo.complemento.Modificador;
-import com.api.apos.domain.catalogo.complemento.ModificadorRepository;
+import com.api.apos.aplication.modificadores.dto.ModificadorDto;
+import com.api.apos.aplication.modificadores.mapper.ModificadorMapper;
+import com.api.apos.domain.auth.usuario.UsuarioService;
+import com.api.apos.domain.catalogo.complemento.ModificadorService;
+import com.api.apos.domain.organizacion.empresa.Empresa;
 
 import lombok.AllArgsConstructor;
 
-@Service 
-@AllArgsConstructor 
+@Service
+@AllArgsConstructor
 public class FindModificadoresByEmpresa {
 
-    private final ModificadorRepository modificadorRepository;
+    private final ModificadorService modificadorService;
 
-    public List<Modificador> execute(){
-         
+    private final UsuarioService usuarioService;
+
+    public List<ModificadorDto> execute() {
+
+        Empresa empresa = usuarioService.getEmpresaFromAuthenticatedUser();
+
+        return modificadorService.findByEmpresaId(empresa.getId())
+                .stream()
+                .map(ModificadorMapper::toDto)
+                .toList();
+
     }
 
 }

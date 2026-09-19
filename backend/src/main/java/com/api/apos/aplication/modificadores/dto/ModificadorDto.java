@@ -9,7 +9,7 @@ import lombok.Data;
 @Builder 
 @Data 
 @AllArgsConstructor 
-public class ModifcadorDto {
+public class ModificadorDto {
      
     private Long id;
 

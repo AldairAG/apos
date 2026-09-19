@@ -133,7 +133,13 @@ public enum ErrorCode {
         "ERROR_AL_ELIMINAR_CORTE_CAJA",
         "Ocurrió un error al eliminar el corte de caja",
         HttpStatus.INTERNAL_SERVER_ERROR
-    );
+    )
+    
+    //VALIDACIONES
+    
+
+    
+    ;
 
 
 

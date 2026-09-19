@@ -4,8 +4,9 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import com.api.apos.domain.catalogo.categoria.Categoria;
-import com.api.apos.domain.catalogo.grupo_producto.GrupoProducto;
+import com.api.apos.domain.catalogo.grupo_producto.ModificadorProducto;
 import com.api.apos.domain.inventario.receta.Receta;
+import com.api.apos.domain.organizacion.sucursal.Sucursal;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -47,10 +48,14 @@ public class Producto {
     private Receta receta;
 
     @OneToMany(mappedBy = "producto", orphanRemoval = true)
-    private List<GrupoProducto> grupoProductos;
+    private List<ModificadorProducto> grupoProductos;
 
     @ManyToOne
     @JoinColumn(name = "categoria_id")
     private Categoria categoria;
+
+    @ManyToOne 
+    @JoinColumn(name = "sucursal_id")
+    private Sucursal sucursal;
 
 }

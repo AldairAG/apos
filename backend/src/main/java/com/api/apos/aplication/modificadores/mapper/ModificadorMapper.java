@@ -4,17 +4,17 @@ import com.api.apos.domain.catalogo.complemento.Modificador;
 
 import java.util.List;
 
-import com.api.apos.aplication.modificadores.dto.ModifcadorDto;
+import com.api.apos.aplication.modificadores.dto.ModificadorDto;
 import com.api.apos.aplication.modificadores.dto.OpcionDto;
 
 public class ModificadorMapper {
 
-    public static ModifcadorDto toDto(Modificador modificador) {
+    public static ModificadorDto toDto(Modificador modificador) {
 
         List<OpcionDto> opciones = modificador.getOpciones().stream()
             .map(OpcionMapper::toDto).toList();
 
-        return ModifcadorDto.builder()
+        return ModificadorDto.builder()
                 .id(modificador.getId())
                 .nombre(modificador.getNombre())
                 .opciones(opciones)

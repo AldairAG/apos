@@ -1,5 +1,7 @@
 package com.api.apos.domain.catalogo.complemento;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import lombok.AllArgsConstructor;
@@ -8,14 +10,22 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor 
 public class ModificadorService {
     
-    private final ModificadorRepository grupoModificadorRepository;
+    private final ModificadorRepository modificadorRepository;
 
     public Modificador save(Modificador modificador) {
-        return grupoModificadorRepository.save(modificador);
+        return modificadorRepository.save(modificador);
     }
 
     public Modificador findById(Long id) {
-        return grupoModificadorRepository.findById(id).orElse(null);
+        return modificadorRepository.findById(id).orElse(null);
+    }
+
+    public List<Modificador> findByEmpresaId(long empresaId){
+        return modificadorRepository.findByEmpresaId(empresaId);
+    }
+
+    public List<Modificador> findByIds(List<Long> ids){
+        return modificadorRepository.findAllById(ids);
     }
 
 }

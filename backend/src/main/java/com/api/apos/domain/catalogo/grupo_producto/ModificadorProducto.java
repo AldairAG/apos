@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GrupoProducto {
+public class ModificadorProducto {
 
     @Id 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,6 +33,6 @@ public class GrupoProducto {
 
     @ManyToOne
     @JoinColumn(name = "modificador_id")
-    private Modificador grupoModificador;
+    private Modificador modificador;
 
 }
