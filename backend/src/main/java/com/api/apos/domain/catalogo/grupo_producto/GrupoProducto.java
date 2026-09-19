@@ -1,6 +1,6 @@
 package com.api.apos.domain.catalogo.grupo_producto;
 
-import com.api.apos.domain.catalogo.complemento.GrupoModificador;
+import com.api.apos.domain.catalogo.complemento.Modificador;
 import com.api.apos.domain.catalogo.producto.Producto;
 
 import jakarta.persistence.Entity;
@@ -16,7 +16,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "grupo_producto")
+@Table(name = "modificador_producto")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,7 +32,7 @@ public class GrupoProducto {
     private Producto producto;
 
     @ManyToOne
-    @JoinColumn(name = "grupo_modificador_id")
-    private GrupoModificador grupoModificador;
+    @JoinColumn(name = "modificador_id")
+    private Modificador grupoModificador;
 
 }

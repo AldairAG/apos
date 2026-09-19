@@ -1,14 +1,15 @@
-package com.api.apos.domain.catalogo.complemento;
+package com.api.apos.domain.catalogo.modificadores;
 
-import java.util.List;
+import java.math.BigDecimal;
 
-import com.api.apos.domain.catalogo.modificadores.Modificador;
+import com.api.apos.domain.catalogo.complemento.Modificador;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,21 +17,27 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "grupo_modificador")
+@Table(name = "opciones")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GrupoModificador {
+public class Opcion {
 
     @Id 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne
+    @JoinColumn (name = "modificador_id")
+    private Modificador modificador;
+
     private String nombre;
 
-    @OneToMany (mappedBy = "grupoModificador", orphanRemoval = true)
-    private List<Modificador> modificadores;
+    private BigDecimal precio;
 
+    private BigDecimal costo;
+
+    private BigDecimal maximo;
     
 }
