@@ -48,7 +48,7 @@ public class Producto {
     private Receta receta;
 
     @OneToMany(mappedBy = "producto", orphanRemoval = true)
-    private List<ModificadorProducto> grupoProductos;
+    private List<ModificadorProducto> modificadorProductos;
 
     @ManyToOne
     @JoinColumn(name = "categoria_id")
@@ -57,5 +57,10 @@ public class Producto {
     @ManyToOne 
     @JoinColumn(name = "sucursal_id")
     private Sucursal sucursal;
+
+    public void addModificador(ModificadorProducto modificador){
+        modificador.setProducto(this);
+        modificadorProductos.add(modificador);
+    }
 
 }

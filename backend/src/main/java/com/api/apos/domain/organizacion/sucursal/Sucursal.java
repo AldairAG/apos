@@ -63,4 +63,10 @@ public class Sucursal {
     public void delete() {
         this.activa = false;
     }
+
+    public void addProducto(Producto producto){
+        productos.add(producto);
+        producto.setSucursal(this);
+    }
+    
 }
