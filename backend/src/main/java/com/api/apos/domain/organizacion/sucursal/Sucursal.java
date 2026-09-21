@@ -68,5 +68,10 @@ public class Sucursal {
         productos.add(producto);
         producto.setSucursal(this);
     }
+
+    public void addExistencia(Existencia existencia){
+        existencias.add(existencia);
+        existencia.setSucursal(this);
+    }
     
 }

@@ -54,4 +54,12 @@ public class Existencia {
     @JoinColumn(name = "sucursal_id", nullable = false)
     private Sucursal sucursal;
 
+    public Existencia initCero(){
+        this.cantidadActual=BigDecimal.ZERO;
+        this.cantidadMinima=BigDecimal.ZERO;
+        this.estado=EstadoStock.SIN_STOCK;
+
+        return this;
+    }
+
 }

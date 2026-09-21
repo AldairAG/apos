@@ -1,0 +1,33 @@
+package com.api.apos.aplication.tesoreria.cuenta.dto;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.api.apos.aplication.tesoreria.movimiento.dto.MovimientoDto;
+import com.api.apos.enums.TipoCuenta;
+
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class CuentaDto {
+    private Long id;
+
+    private String nombre;
+
+    private BigDecimal saldo;
+
+    @Enumerated(EnumType.STRING)
+    private TipoCuenta tipo;
+
+    private LocalDateTime updatedAt;
+
+    private LocalDateTime createdAt;
+
+    private List<MovimientoDto> movimientos;
+
+}

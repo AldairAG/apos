@@ -1,0 +1,19 @@
+package com.api.apos.aplication.identidad.sucursal.mapper;
+
+import com.api.apos.aplication.identidad.sucursal.dto.SucursalDto;
+import com.api.apos.domain.organizacion.sucursal.Sucursal;
+
+public class SucursalMapper {
+    
+    public static SucursalDto toDto(Sucursal sucursal) {
+        SucursalDto dto = SucursalDto.builder()
+                .id(sucursal.getId())
+                .nombre(sucursal.getNombre())
+                .codigo(sucursal.getCodigo())
+                .direccion(sucursal.getDireccion())
+                .telefono(sucursal.getTelefono())
+                .build();
+        return dto;
+    }
+
+}

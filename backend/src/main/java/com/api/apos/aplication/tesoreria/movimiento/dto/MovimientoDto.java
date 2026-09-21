@@ -1,0 +1,45 @@
+package com.api.apos.aplication.tesoreria.movimiento.dto;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import com.api.apos.enums.CategoriaMovimiento;
+import com.api.apos.enums.EstadoMovimiento;
+import com.api.apos.enums.TipoMovimiento;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+@AllArgsConstructor 
+public class MovimientoDto {
+    private Long id;
+
+    private String descripcion;
+
+    private BigDecimal monto;
+
+    private TipoMovimiento tipo;
+
+    private EstadoMovimiento estado;
+
+    private CategoriaMovimiento categoria;
+
+    private Long createdBy;
+
+    private LocalDateTime updatedAt;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime fecha;
+
+    //Metodos de formulario
+    private Long cuentaId;
+
+    private Long cajaId;
+
+    private Long corteCajaId;
+
+}
