@@ -1,5 +1,7 @@
-package com.api.apos.domain.pos.Orden;
+package com.api.apos.domain.pos.orden;
 
-public class OrdenRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface OrdenRepository extends JpaRepository<Orden,Long>  {
     
 }
