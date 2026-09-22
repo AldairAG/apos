@@ -1,6 +1,5 @@
 package com.api.apos.aplication.inventario.receta.query;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -8,6 +7,7 @@ import com.api.apos.aplication.inventario.receta.dto.RecetaDto;
 import com.api.apos.aplication.inventario.receta.mapper.RecetaMapper;
 import com.api.apos.domain.auth.usuario.UsuarioService;
 import com.api.apos.domain.inventario.receta.RecetaService;
+import com.api.apos.dto.PageResponse;
 
 import lombok.AllArgsConstructor;
 
@@ -19,13 +19,15 @@ public class FindRecetasByEmpresaId {
 
     private final UsuarioService usuarioService;
 
-    public Page<RecetaDto> execute(String nombre,Pageable pageable) {
+    public PageResponse<RecetaDto> execute(String nombre,Pageable pageable) {
 
         Long empresaId = usuarioService.getEmpresaFromAuthenticatedUser().getId();
 
-        return recetaService
+        return PageResponse.from(
+            recetaService
                 .findByEmpresaId(empresaId, nombre, pageable)
-                .map(RecetaMapper::toDto);
+                .map(RecetaMapper::toDto)
+        );
     }
 
 }

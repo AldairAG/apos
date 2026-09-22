@@ -1,36 +1,12 @@
+import UnidadMedidaSelector from "@/components/UnidadMedidaSelector";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Formik, FormikHelpers } from "formik";
+import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import * as Yup from "yup";
-import { MaterialDto, UnidadMedida } from "../../domain/types/material.types";
+import { MaterialDto, UNIDAD_MEDIDA_LABELS, UnidadMedida } from "../../domain/types/material.types";
 import { useMaterial } from "../hook/useMaterial";
-
-const UNIDAD_LABELS: Record<UnidadMedida, string> = {
-    [UnidadMedida.GR]: "Gramos (g)",
-    [UnidadMedida.KG]: "Kilogramos (kg)",
-    [UnidadMedida.MG]: "Miligramos (mg)",
-    [UnidadMedida.LB]: "Libras (lb)",
-    [UnidadMedida.ML]: "Mililitros (ml)",
-    [UnidadMedida.LT]: "Litros (l)",
-    [UnidadMedida.OZ]: "Onzas (oz)",
-    [UnidadMedida.GAL]: "Galones (gal)",
-    [UnidadMedida.CUP]: "Tazas",
-    [UnidadMedida.TBSP]: "Cucharadas",
-    [UnidadMedida.TSP]: "Cucharaditas",
-    [UnidadMedida.PZ]: "Piezas (pz)",
-    [UnidadMedida.UNIDAD]: "Unidad",
-    [UnidadMedida.USO]: "Uso",
-    [UnidadMedida.POR]: "Porción",
-    [UnidadMedida.REBANADA]: "Rebanada",
-    [UnidadMedida.PAQUETE]: "Paquete",
-    [UnidadMedida.BARRA]: "Barra",
-    [UnidadMedida.RAMO]: "Ramo",
-    [UnidadMedida.LATA]: "Lata",
-    [UnidadMedida.BOLSA]: "Bolsa",
-};
-
-const UNIDADES = Object.values(UnidadMedida);
 
 interface MaterialForm {
     nombre: string;
@@ -88,6 +64,7 @@ const validationSchema = Yup.object({
 export default function CrearMaterialScreen() {
     const router = useRouter();
     const { crearMaterial } = useMaterial();
+    const [selectorVisible, setSelectorVisible] = useState(false);
 
     const handleSubmit = (values: MaterialForm, helpers: FormikHelpers<MaterialForm>) => {
         const nuevoMaterial: MaterialDto = {
@@ -177,37 +154,29 @@ export default function CrearMaterialScreen() {
                         <Text className="text-sm font-medium text-[#1C1B1F] mb-1">
                             Unidad de medida
                         </Text>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            className="mb-1"
-                            contentContainerStyle={{ gap: 8 }}
+                        <Pressable
+                            onPress={() => setSelectorVisible(true)}
+                            onBlur={handleBlur("unidad")}
+                            className={`flex-row items-center justify-between border rounded-xl px-4 py-3 mb-1 ${
+                                touched.unidad && errors.unidad ? "border-[#B3261E]" : "border-[#E7E0EC]"
+                            }`}
                         >
-                            {UNIDADES.map((u) => (
-                                <Pressable
-                                    key={u}
-                                    onPress={() => setFieldValue("unidad", u)}
-                                    className={`px-3 py-2 rounded-full border ${
-                                        values.unidad === u
-                                            ? "bg-[#1857B6] border-[#1857B6]"
-                                            : "border-[#E7E0EC]"
-                                    }`}
-                                >
-                                    <Text
-                                        className={`text-xs font-medium ${
-                                            values.unidad === u ? "text-white" : "text-[#1C1B1F]"
-                                        }`}
-                                    >
-                                        {UNIDAD_LABELS[u]}
-                                    </Text>
-                                </Pressable>
-                            ))}
-                        </ScrollView>
+                            <Text className={`text-base ${values.unidad ? "text-[#1C1B1F]" : "text-[#79747E]"}`}>
+                                {values.unidad ? UNIDAD_MEDIDA_LABELS[values.unidad] : "Selecciona una unidad"}
+                            </Text>
+                            <Ionicons name="chevron-down" size={18} color="#79747E" />
+                        </Pressable>
                         {touched.unidad && errors.unidad ? (
                             <Text className="text-[#B3261E] text-xs mb-2">{errors.unidad}</Text>
                         ) : (
                             <View className="mb-2" />
                         )}
+                        <UnidadMedidaSelector
+                            visible={selectorVisible}
+                            value={values.unidad}
+                            onChange={(u) => setFieldValue("unidad", u)}
+                            onClose={() => setSelectorVisible(false)}
+                        />
 
                         <Text className="text-sm font-medium text-[#1C1B1F] mb-1">
                             Cantidad

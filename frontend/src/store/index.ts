@@ -8,7 +8,9 @@ import { apiBase } from '../api/apiBase';
 //slices
 import cajaReducer from '../features/caja/store/CajaSlice';
 import materialReducer from '../features/material/store/material.slice';
+import modificadorReducer from '../features/modificador/store/modificador.slice';
 import movimientoReducer from '../features/movimiento/store/MovimientoSlice';
+import recetaReducer from '../features/receta/store/receta.slice';
 import sucursalReducer from '../features/sucursal/store/sucursal.slice';
 import authReducer from '../features/usuario/auth/store/auth.slice';
 import usuarioReducer from '../features/usuario/usuario/store/usuario.slice';
@@ -26,6 +28,8 @@ const rootReducer = combineReducers({
     sucursal: sucursalReducer,
     caja: cajaReducer,
     material: materialReducer,
+    modificador: modificadorReducer,
+    receta: recetaReducer,
 });
 
 const persistedReducer = persistReducer(

@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.api.apos.aplication.cataogo.modificadores.dto.ModificadorDto;
+import com.api.apos.aplication.cataogo.modificadores.mapper.ModificadorMapper;
 import com.api.apos.aplication.cataogo.modificadores.mapper.OpcionMapper;
 import com.api.apos.domain.catalogo.complemento.Modificador;
 import com.api.apos.domain.catalogo.complemento.ModificadorService;
@@ -18,7 +19,7 @@ public class CrearModificadorUseCase {
 
     private ModificadorService modificadorService;
 
-    public void execute(ModificadorDto modifcadorDto){
+    public ModificadorDto execute(ModificadorDto modifcadorDto){
 
         List<Opcion> opciones = modifcadorDto.getOpciones().stream()
             .map(OpcionMapper::toEntity).toList();
@@ -29,7 +30,7 @@ public class CrearModificadorUseCase {
 
         modficador.addOpciones(opciones);
 
-        modificadorService.save(modficador);
+        return ModificadorMapper.toDto(modificadorService.save(modficador));
 
     }
 

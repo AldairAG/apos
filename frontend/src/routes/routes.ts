@@ -24,6 +24,10 @@ export const ROUTES = {
       PANEL: '/materiales/MaterialesPanel',
       CREAR: '/materiales/CrearMaterial',
     },
+    MODIFICADORES: {
+      PANEL: '/modificadores/ModificadoresPanel',
+      CREAR: '/modificadores/CrearModificador',
+    },
   },
 
   SUCURSAL: {
@@ -139,10 +143,3 @@ export const tienePermisoParaRuta = (rol: string | null, ruta: string): boolean 
   return permisosRol.includes(ruta);
 };
 
-/**
- * Obtiene todas las rutas permitidas para un rol
- */
-export const obtenerRutasPermitidas = (rol: string | null): string[] => {
-  if (!rol) return [];
-  return PERMISOS_POR_ROL[rol] || [];
-};

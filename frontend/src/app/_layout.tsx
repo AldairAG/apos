@@ -18,14 +18,16 @@ export default function TabLayout() {
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
-            <Stack.Screen name="login" />
-            <Stack.Screen name="register" />
+            <Stack.Screen name={ROUTES.LOGIN} />
+            <Stack.Screen name={ROUTES.REGISTER} />
             <Stack.Screen name={ROUTES.ADMIN.HOME} />
             <Stack.Screen name={ROUTES.ADMIN.MOVIMIENTOS.CREAR_INGRESO} />
             <Stack.Screen name={ROUTES.ADMIN.MOVIMIENTOS.CREAR_GASTO} />
             <Stack.Screen name={ROUTES.SUCURSAL.HOME} />
             <Stack.Screen name={ROUTES.ADMIN.RECETAS.PANEL} />
             <Stack.Screen name={ROUTES.ADMIN.MATERIALES.PANEL} />
+            <Stack.Screen name={ROUTES.ADMIN.MODIFICADORES.PANEL} />
+            <Stack.Screen name={ROUTES.ADMIN.MODIFICADORES.CREAR} />
           </Stack>
         </ThemeProvider>
       </PersistGate>

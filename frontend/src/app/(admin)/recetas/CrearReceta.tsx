@@ -1,6 +1,6 @@
 import CrearNuevaRecetaScreen from "@/features/receta/presentation/screens/CrearRecetaScreen";
 
-// Ruta: /sucursal/SeleccionarSucursal — listado para elegir la sucursal de trabajo.
-export default function SeleccionarSucursal() {
+// Ruta: /recetas/CrearReceta — modal de creación/edición de receta.
+export default function CrearReceta() {
   return <CrearNuevaRecetaScreen />;
 }
