@@ -3,11 +3,14 @@ package com.api.apos.domain.catalogo.complemento;
 import java.util.List;
 
 import com.api.apos.domain.catalogo.modificadores.Opcion;
+import com.api.apos.domain.organizacion.empresa.Empresa;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -31,6 +34,10 @@ public class Modificador {
 
     @OneToMany(mappedBy = "modificador", orphanRemoval = true)
     private List<Opcion> opciones;
+
+    @ManyToOne
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
 
     public void addOpciones(List<Opcion> opciones) {
 

@@ -3,8 +3,6 @@ package com.api.apos.domain.pos.detalle_orden;
 import java.math.BigDecimal;
 import java.util.List;
 
-import org.springframework.data.annotation.Id;
-
 import com.api.apos.domain.catalogo.producto.Producto;
 import com.api.apos.domain.pos.detalle_modificador.DetalleModificador;
 import com.api.apos.domain.pos.orden.Orden;
@@ -14,6 +12,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;

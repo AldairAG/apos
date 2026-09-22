@@ -35,12 +35,13 @@ export default function Sidebar() {
         <View
             pointerEvents={visible ? "auto" : "none"}
             className="absolute inset-0 z-50"
+
         >
             {/* Overlay */}
             {visible && (
                 <Pressable
                     onPress={closeSidebar}
-                    className="absolute inset-0 bg-black/40"
+                    className="absolute inset-0 bg-black/40}}"
                     accessibilityLabel="Cerrar menú"
                 />
             )}
@@ -50,8 +51,9 @@ export default function Sidebar() {
                 style={{
                     width: SIDEBAR_WIDTH,
                     transform: [{ translateX }],
+                    backgroundColor: '#fff',
                 }}
-                className="absolute left-0 top-0 bottom-0 bg-white"
+                className="absolute left-0 top-0 bottom-0"
             >
                 {/* Header */}
                 <View className="h-16 flex-row items-center justify-between px-4 border-b border-[#E7E0EC]">

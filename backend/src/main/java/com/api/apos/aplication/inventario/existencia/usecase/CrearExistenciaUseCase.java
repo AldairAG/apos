@@ -1,5 +1,7 @@
 package com.api.apos.aplication.inventario.existencia.usecase;
 
+import org.springframework.stereotype.Service;
+
 import com.api.apos.aplication.inventario.existencia.dto.ExistenciaDto;
 import com.api.apos.aplication.inventario.existencia.mapper.ExistenciaMapper;
 import com.api.apos.domain.inventario.existencia.Existencia;
@@ -8,6 +10,10 @@ import com.api.apos.domain.inventario.material.MaterialService;
 import com.api.apos.domain.organizacion.sucursal.Sucursal;
 import com.api.apos.domain.organizacion.sucursal.SucursalService;
 
+import lombok.AllArgsConstructor;
+
+@AllArgsConstructor 
+@Service 
 public class CrearExistenciaUseCase {
 
     private SucursalService sucursalService;

@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 
 import lombok.AllArgsConstructor;
 
-@Service
 @AllArgsConstructor
+@Service
 public class MaterialService {
 
     private final MaterialRepository materialRepository;

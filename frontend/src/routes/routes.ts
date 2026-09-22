@@ -20,6 +20,10 @@ export const ROUTES = {
       PANEL: '/recetas/RecetasPanel',
       CREAR: '/recetas/CrearReceta',
     },
+    MATERIALES: {
+      PANEL: '/materiales/MaterialesPanel',
+      CREAR: '/materiales/CrearMaterial',
+    },
   },
 
   SUCURSAL: {

@@ -13,9 +13,9 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.AllArgsConstructor;
 
 @RestController
-@RequestMapping("/api/materiales")
+@RequestMapping("/api/categorias")
 @AllArgsConstructor
-public class CatgoriaController {
+public class CategoriaController {
 
     private final CrearCategoriaUseCase crearCategoriaUseCase;
 

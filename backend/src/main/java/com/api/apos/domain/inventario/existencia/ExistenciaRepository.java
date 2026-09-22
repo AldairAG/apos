@@ -17,9 +17,9 @@ public interface ExistenciaRepository extends JpaRepository<Existencia, Long> {
                 WHERE m.id IN :materialIds
                   AND NOT EXISTS (
                       SELECT 1
-                      FROM ExistenciaMaterial em
-                      WHERE em.material.id = m.id
-                        AND em.sucursal.id = :sucursalId
+                      FROM Existencia e
+                      WHERE e.material.id = m.id
+                        AND e.sucursal.id = :sucursalId
                   )
             """)
     List<Long> findMaterialIdsWithoutExistencia(

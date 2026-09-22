@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 import com.api.apos.domain.auth.usuario.Usuario;
+import com.api.apos.domain.catalogo.complemento.Modificador;
 import com.api.apos.domain.financiero.cuenta.Cuenta;
 import com.api.apos.domain.inventario.material.Material;
 import com.api.apos.domain.inventario.receta.Receta;
@@ -59,6 +60,9 @@ public class Empresa {
 
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Material> materiales;
+
+    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Modificador> modificadores;
 
     public void delete(){
         activa=false;

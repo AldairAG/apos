@@ -6,11 +6,12 @@ import {
 } from 'redux-persist';
 import { apiBase } from '../api/apiBase';
 //slices
+import cajaReducer from '../features/caja/store/CajaSlice';
+import materialReducer from '../features/material/store/material.slice';
+import movimientoReducer from '../features/movimiento/store/MovimientoSlice';
 import sucursalReducer from '../features/sucursal/store/sucursal.slice';
 import authReducer from '../features/usuario/auth/store/auth.slice';
 import usuarioReducer from '../features/usuario/usuario/store/usuario.slice';
-import movimientoReducer from '../features/movimiento/store/MovimientoSlice';
-import cajaReducer from '../features/caja/store/CajaSlice';
 
 const persistConfig = {
     key: 'root',
@@ -24,6 +25,7 @@ const rootReducer = combineReducers({
     movimiento: movimientoReducer,
     sucursal: sucursalReducer,
     caja: cajaReducer,
+    material: materialReducer,
 });
 
 const persistedReducer = persistReducer(
