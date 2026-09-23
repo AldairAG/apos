@@ -52,6 +52,7 @@ export const ROUTES = {
 export const MODULOS_SUCURSAL = [
   { key: 'dashboard', label: 'Panel' },
   { key: 'productos', label: 'Productos' },
+  { key: 'categoria', label: 'Categorías' },
   { key: 'inventario', label: 'Inventario' },
   { key: 'caja', label: 'Caja' },
   { key: 'mesas', label: 'Mesas' },

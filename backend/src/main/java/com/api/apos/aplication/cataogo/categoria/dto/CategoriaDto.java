@@ -15,4 +15,7 @@ public class CategoriaDto {
 
     //private List<Producto> productos;
 
+    //Atributos de formulario
+    private Long sucursalId;
+
 }

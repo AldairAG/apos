@@ -3,6 +3,9 @@ package com.api.apos.domain.catalogo.categoria;
 import java.util.List;
 
 import com.api.apos.domain.catalogo.producto.Producto;
+import com.api.apos.domain.organizacion.sucursal.Sucursal;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -31,5 +34,8 @@ public class Categoria {
 
     @OneToMany (mappedBy = "categoria", orphanRemoval = true)
     private List<Producto> productos;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Sucursal sucursal;
     
 }

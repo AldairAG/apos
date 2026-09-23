@@ -13,8 +13,9 @@ public class CategoriaMapper {
     public static CategoriaDto toDto(Categoria categoria){
 
         return CategoriaDto.builder()
-            .id(null)
-            .nombre(null)
+            .id(categoria.getId())
+            .nombre(categoria.getNombre())
+            .sucursalId(categoria.getSucursal() == null ? null : categoria.getSucursal().getId())
             .build();
     }
 

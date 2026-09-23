@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.api.apos.domain.catalogo.producto.Producto;
+import com.api.apos.domain.catalogo.categoria.Categoria;
 import com.api.apos.domain.financiero.caja.Caja;
 import com.api.apos.domain.inventario.existencia.Existencia;
 import com.api.apos.domain.organizacion.empresa.Empresa;
@@ -60,6 +61,9 @@ public class Sucursal {
     @OneToMany(mappedBy = "sucursal", fetch = FetchType.LAZY)
     private List<Producto> productos;
 
+    @OneToMany(mappedBy = "sucursal", fetch = FetchType.LAZY)
+    private List<Categoria> categorias;
+
     public void delete() {
         this.activa = false;
     }
@@ -72,6 +76,11 @@ public class Sucursal {
     public void addExistencia(Existencia existencia){
         existencias.add(existencia);
         existencia.setSucursal(this);
+    }
+
+    public void addCategoria(Categoria categoria){
+        categorias.add(categoria);
+        categoria.setSucursal(this);
     }
     
 }

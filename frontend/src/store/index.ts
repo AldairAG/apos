@@ -7,6 +7,7 @@ import {
 import { apiBase } from '../api/apiBase';
 //slices
 import cajaReducer from '../features/caja/store/CajaSlice';
+import categoriaReducer from '../features/categoria/store/categoria.slice';
 import materialReducer from '../features/material/store/material.slice';
 import modificadorReducer from '../features/modificador/store/modificador.slice';
 import movimientoReducer from '../features/movimiento/store/MovimientoSlice';
@@ -27,6 +28,7 @@ const rootReducer = combineReducers({
     movimiento: movimientoReducer,
     sucursal: sucursalReducer,
     caja: cajaReducer,
+    categoria: categoriaReducer,
     material: materialReducer,
     modificador: modificadorReducer,
     receta: recetaReducer,
