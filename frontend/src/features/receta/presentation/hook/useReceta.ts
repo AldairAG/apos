@@ -1,4 +1,5 @@
 import { AppDispatch, RootState } from "@/store";
+import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { FindRecetasParams, findRecetasThunk } from "../../aplication/query/FindRecetasThunk";
 import { crearRecetaThunk } from "../../aplication/usecase/CrearRecetaThunk";
@@ -10,9 +11,9 @@ export const useReceta = () => {
         (state: RootState) => state.receta
     );
 
-    const findRecetas = (params?: FindRecetasParams) => {
+    const findRecetas = useCallback((params?: FindRecetasParams) => {
         dispatch(findRecetasThunk(params));
-    };
+    }, [dispatch]);
 
     const crearReceta = (receta: RecetaDto) => {
         dispatch(crearRecetaThunk(receta));

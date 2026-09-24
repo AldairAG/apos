@@ -29,14 +29,6 @@ const opcionSchema = Yup.object({
         const number = Number(value?.replace(",", "."));
         return value !== undefined && value !== "" && !Number.isNaN(number) && number >= 0;
     }),
-    costo: Yup.string().required("Indica el costo").test("numero", "Debe ser mayor o igual a 0", (value) => {
-        const number = Number(value?.replace(",", "."));
-        return value !== undefined && value !== "" && !Number.isNaN(number) && number >= 0;
-    }),
-    maximo: Yup.string().required("Indica el máximo").test("numero", "Debe ser mayor o igual a 0", (value) => {
-        const number = Number(value?.replace(",", "."));
-        return value !== undefined && value !== "" && !Number.isNaN(number) && number >= 0;
-    }),
 });
 
 const validationSchema = Yup.object({

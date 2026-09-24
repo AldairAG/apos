@@ -6,6 +6,8 @@ import java.util.List;
 
 import com.api.apos.domain.organizacion.sucursal.Sucursal;
 import com.api.apos.domain.pos.detalle_orden.DetalleOrden;
+import com.api.apos.domain.pos.mesa.Mesa;
+import com.api.apos.domain.pos.venta.Venta;
 import com.api.apos.enums.EstadoOrden;
 
 import jakarta.persistence.CascadeType;
@@ -19,6 +21,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,6 +57,13 @@ public class Orden {
 
     @OneToMany(mappedBy = "orden",cascade = CascadeType.ALL,orphanRemoval = true)
     private List<DetalleOrden> detalles;
+
+    @ManyToOne
+    @JoinColumn(name = "mesa_id")
+    private Mesa mesa; 
+
+    @OneToOne(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Venta venta;
 
 
 }

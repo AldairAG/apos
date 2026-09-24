@@ -1,54 +1,12 @@
 import { ROUTES } from "@/routes/routes";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
-import { FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from "react-native";
+import { RecetaDto } from "../../domain/types/receta.types";
+import { useReceta } from "../hook/useReceta";
 
-/**
- * RecetasPanelScreen — Panel de administración de recetas.
- *
- * UI autocontenida con datos mock y estado local (búsqueda, paginación,
- * confirmación de eliminar). NO está conectado a Redux ni a los use cases
- * reales — cada punto de integración está marcado con // TODO.
- */
-
-// =====================================================================
-// Tipos y datos mock — TODO: reemplazar por el DTO real y por el query
-// use case / selector de Redux que traiga las recetas reales.
-// =====================================================================
-
-enum TipoReceta {
-    PRODUCCION = "PRODUCCION",
-    FINAL = "FINAL",
-}
-
-interface RecetaDto {
-    id: number;
-    nombre: string;
-    costo: number;
-    porcentajeGanancia: number;
-    tipo: TipoReceta;
-}
-
-const RECETAS_MOCK: RecetaDto[] = [
-    { id: 1, nombre: "Café americano", costo: 8.5, porcentajeGanancia: 65, tipo: TipoReceta.FINAL },
-    { id: 2, nombre: "Base de espresso", costo: 4.2, porcentajeGanancia: 40, tipo: TipoReceta.PRODUCCION },
-    { id: 3, nombre: "Capuchino", costo: 12.0, porcentajeGanancia: 58, tipo: TipoReceta.FINAL },
-    { id: 4, nombre: "Leche vaporizada", costo: 3.5, porcentajeGanancia: 20, tipo: TipoReceta.PRODUCCION },
-    { id: 5, nombre: "Latte vainilla", costo: 14.0, porcentajeGanancia: 55, tipo: TipoReceta.FINAL },
-    { id: 6, nombre: "Jarabe de vainilla casero", costo: 6.0, porcentajeGanancia: 30, tipo: TipoReceta.PRODUCCION },
-    { id: 7, nombre: "Mocha", costo: 16.5, porcentajeGanancia: 52, tipo: TipoReceta.FINAL },
-    { id: 8, nombre: "Ganache de chocolate", costo: 9.0, porcentajeGanancia: 35, tipo: TipoReceta.PRODUCCION },
-    { id: 9, nombre: "Frappé de café", costo: 18.0, porcentajeGanancia: 60, tipo: TipoReceta.FINAL },
-    { id: 10, nombre: "Base de frappé", costo: 7.5, porcentajeGanancia: 28, tipo: TipoReceta.PRODUCCION },
-    { id: 11, nombre: "Té chai latte", costo: 15.0, porcentajeGanancia: 50, tipo: TipoReceta.FINAL },
-    { id: 12, nombre: "Concentrado de chai", costo: 10.0, porcentajeGanancia: 32, tipo: TipoReceta.PRODUCCION },
-    { id: 13, nombre: "Pan de plátano", costo: 20.0, porcentajeGanancia: 45, tipo: TipoReceta.FINAL },
-    { id: 14, nombre: "Cheesecake individual", costo: 22.0, porcentajeGanancia: 48, tipo: TipoReceta.FINAL },
-    { id: 15, nombre: "Crema batida casera", costo: 5.5, porcentajeGanancia: 25, tipo: TipoReceta.PRODUCCION },
-];
-
-const RECETAS_POR_PAGINA = 6;
+const RECETAS_POR_PAGINA = 10;
 
 // =====================================================================
 // Helpers
@@ -65,30 +23,26 @@ function formatMoney(value: number): string {
 export default function RecetasPanelScreen() {
     const router = useRouter();
 
-    // TODO: reemplazar por selector de Redux / query use case de recetas
-    const [recetas, setRecetas] = useState<RecetaDto[]>(RECETAS_MOCK);
+    const { recetas, pageInfo, loading, error, findRecetas } = useReceta();
 
     const [busqueda, setBusqueda] = useState("");
-    const [pagina, setPagina] = useState(1);
-    const [recetaAEliminar, setRecetaAEliminar] = useState<RecetaDto | null>(null);
+    const [pagina, setPagina] = useState(0);
 
-    const recetasFiltradas = useMemo(() => {
-        const q = busqueda.trim().toLowerCase();
-        if (!q) return recetas;
-        return recetas.filter((r) => r.nombre.toLowerCase().includes(q));
-    }, [recetas, busqueda]);
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            findRecetas({
+                nombre: busqueda.trim() || undefined,
+                page: pagina,
+                size: RECETAS_POR_PAGINA,
+            });
+        }, 300);
 
-    const totalPaginas = Math.max(1, Math.ceil(recetasFiltradas.length / RECETAS_POR_PAGINA));
-    const paginaSegura = Math.min(pagina, totalPaginas);
-
-    const recetasPagina = useMemo(() => {
-        const inicio = (paginaSegura - 1) * RECETAS_POR_PAGINA;
-        return recetasFiltradas.slice(inicio, inicio + RECETAS_POR_PAGINA);
-    }, [recetasFiltradas, paginaSegura]);
+        return () => clearTimeout(timeout);
+    }, [busqueda, pagina, findRecetas]);
 
     const handleBuscar = (texto: string) => {
         setBusqueda(texto);
-        setPagina(1); // al buscar, siempre regresamos a la primera página
+        setPagina(0);
     };
 
     const handleEditar = (receta: RecetaDto) => {
@@ -99,13 +53,6 @@ export default function RecetasPanelScreen() {
     const handleNuevaReceta = () => {
         // TODO: ajustar a la ruta real de creación de recetas
         router.push(ROUTES.ADMIN.RECETAS.CREAR as any);
-    };
-
-    const confirmarEliminar = () => {
-        if (!recetaAEliminar) return;
-        // TODO: dispatch(eliminarRecetaThunk(recetaAEliminar.id)) y manejar error/loading
-        setRecetas((prev) => prev.filter((r) => r.id !== recetaAEliminar.id));
-        setRecetaAEliminar(null);
     };
 
     return (
@@ -141,9 +88,16 @@ export default function RecetasPanelScreen() {
                 </View>
             </View>
 
+            {error && <Text className="px-4 pt-2 text-xs text-[#B3261E]">{error}</Text>}
+
             {/* Lista de recetas */}
-            <FlatList
-                data={recetasPagina}
+            {loading && recetas.length === 0 ? (
+                <View className="flex-1 items-center justify-center">
+                    <ActivityIndicator color="#1857B6" />
+                </View>
+            ) : (
+                <FlatList
+                data={recetas}
                 keyExtractor={(item) => String(item.id)}
                 contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 8 }}
                 ListEmptyComponent={
@@ -165,15 +119,13 @@ export default function RecetasPanelScreen() {
                                 </Text>
                                 <View
                                     className={`self-start mt-1.5 px-2 py-0.5 rounded-full ${
-                                        item.tipo === TipoReceta.FINAL ? "bg-[#D8E2FF]" : "bg-[#FDEBD0]"
+                                        "bg-[#D8E2FF]"
                                     }`}
                                 >
                                     <Text
-                                        className={`text-[10px] font-bold tracking-wide ${
-                                            item.tipo === TipoReceta.FINAL ? "text-[#1857B6]" : "text-[#8A5A00]"
-                                        }`}
+                                        className="text-[10px] font-bold tracking-wide text-[#1857B6]"
                                     >
-                                        {item.tipo === TipoReceta.FINAL ? "RECETA FINAL" : "DE PRODUCCIÓN"}
+                                        RECETA
                                     </Text>
                                 </View>
                             </View>
@@ -185,12 +137,6 @@ export default function RecetasPanelScreen() {
                                 >
                                     <Ionicons name="pencil" size={16} color="#1857B6" />
                                 </Pressable>
-                                <Pressable
-                                    onPress={() => setRecetaAEliminar(item)}
-                                    className="w-9 h-9 rounded-full bg-[#FDECEA] items-center justify-center active:opacity-70"
-                                >
-                                    <Ionicons name="trash" size={16} color="#B3261E" />
-                                </Pressable>
                             </View>
                         </View>
 
@@ -198,28 +144,29 @@ export default function RecetasPanelScreen() {
                             <View>
                                 <Text className="text-xs text-[#79747E]">Costo</Text>
                                 <Text className="text-sm font-semibold text-[#1C1B1F]">
-                                    {formatMoney(item.costo)}
+                                    {formatMoney(item.costoTotal)}
                                 </Text>
                             </View>
                             <View>
-                                <Text className="text-xs text-[#79747E]">Ganancia</Text>
+                                <Text className="text-xs text-[#79747E]">Sobre costo</Text>
                                 <Text className="text-sm font-semibold text-[#1C7C3F]">
-                                    {item.porcentajeGanancia}%
+                                    {item.porcentajeSobreCostos ?? 0}%
                                 </Text>
                             </View>
                         </View>
                     </View>
                 )}
-            />
+                />
+            )}
 
             {/* Paginación */}
-            {recetasFiltradas.length > 0 && (
+            {pageInfo.totalElements > 0 && (
                 <View className="flex-row items-center justify-between px-4 py-3 bg-white border-t border-[#E7E0EC]">
                     <Pressable
-                        onPress={() => setPagina((p) => Math.max(1, p - 1))}
-                        disabled={paginaSegura === 1}
+                        onPress={() => setPagina((p) => Math.max(0, p - 1))}
+                        disabled={pagina === 0 || loading}
                         className={`flex-row items-center gap-1 px-3 py-2 rounded-lg ${
-                            paginaSegura === 1 ? "opacity-40" : "active:bg-[#F1EEF4]"
+                            pagina === 0 || loading ? "opacity-40" : "active:bg-[#F1EEF4]"
                         }`}
                     >
                         <Ionicons name="chevron-back" size={16} color="#1857B6" />
@@ -227,14 +174,14 @@ export default function RecetasPanelScreen() {
                     </Pressable>
 
                     <Text className="text-xs text-[#79747E]">
-                        Página {paginaSegura} de {totalPaginas}
+                        Página {pagina + 1} de {pageInfo.totalPages}
                     </Text>
 
                     <Pressable
-                        onPress={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
-                        disabled={paginaSegura === totalPaginas}
+                        onPress={() => setPagina((p) => Math.min(pageInfo.totalPages - 1, p + 1))}
+                        disabled={pagina >= pageInfo.totalPages - 1 || loading}
                         className={`flex-row items-center gap-1 px-3 py-2 rounded-lg ${
-                            paginaSegura === totalPaginas ? "opacity-40" : "active:bg-[#F1EEF4]"
+                            pagina >= pageInfo.totalPages - 1 || loading ? "opacity-40" : "active:bg-[#F1EEF4]"
                         }`}
                     >
                         <Text className="text-sm font-medium text-[#1857B6]">Siguiente</Text>
@@ -243,41 +190,6 @@ export default function RecetasPanelScreen() {
                 </View>
             )}
 
-            {/* Modal: confirmar eliminación */}
-            <Modal
-                visible={!!recetaAEliminar}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setRecetaAEliminar(null)}
-            >
-                <View className="flex-1 items-center justify-center bg-black/40 px-8">
-                    <View className="bg-white rounded-2xl p-5 w-full">
-                        <View className="flex-row items-center gap-2 mb-2">
-                            <Ionicons name="warning" size={20} color="#B3261E" />
-                            <Text className="text-base font-semibold text-[#1C1B1F]">Eliminar receta</Text>
-                        </View>
-                        <Text className="text-sm text-[#79747E] mb-5">
-                            ¿Seguro que deseas eliminar{" "}
-                            <Text className="font-semibold text-[#1C1B1F]">{recetaAEliminar?.nombre}</Text>?
-                            Esta acción no se puede deshacer.
-                        </Text>
-                        <View className="flex-row gap-3">
-                            <Pressable
-                                onPress={() => setRecetaAEliminar(null)}
-                                className="flex-1 border border-[#E7E0EC] rounded-xl py-3 items-center"
-                            >
-                                <Text className="text-sm font-medium text-[#1C1B1F]">Cancelar</Text>
-                            </Pressable>
-                            <Pressable
-                                onPress={confirmarEliminar}
-                                className="flex-1 bg-[#B3261E] rounded-xl py-3 items-center"
-                            >
-                                <Text className="text-sm font-semibold text-white">Eliminar</Text>
-                            </Pressable>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
         </View>
     );
 }

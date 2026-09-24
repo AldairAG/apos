@@ -10,6 +10,7 @@ public class OpcionMapper {
                 .id(opcion.getId())
                 .maximo(opcion.getMaximo())
                 .precio(opcion.getPrecio())
+                .nombre(opcion.getNombre())
                 .build();
     }
 

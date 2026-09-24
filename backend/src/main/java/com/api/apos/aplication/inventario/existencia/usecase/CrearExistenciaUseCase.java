@@ -5,11 +5,13 @@ import org.springframework.stereotype.Service;
 import com.api.apos.aplication.inventario.existencia.dto.ExistenciaDto;
 import com.api.apos.aplication.inventario.existencia.mapper.ExistenciaMapper;
 import com.api.apos.domain.inventario.existencia.Existencia;
+import com.api.apos.domain.inventario.existencia.ExistenciaService;
 import com.api.apos.domain.inventario.material.Material;
 import com.api.apos.domain.inventario.material.MaterialService;
 import com.api.apos.domain.organizacion.sucursal.Sucursal;
 import com.api.apos.domain.organizacion.sucursal.SucursalService;
 
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor 
@@ -20,6 +22,9 @@ public class CrearExistenciaUseCase {
 
     private MaterialService materialService;
 
+    private ExistenciaService existenciaService;
+
+    @Transactional 
     public ExistenciaDto execute(ExistenciaDto existenciaDto) {
 
         Sucursal sucursal = sucursalService.findById(existenciaDto.getSucursalId());
@@ -31,10 +36,12 @@ public class CrearExistenciaUseCase {
                 .cantidadMinima(existenciaDto.getCantidadMinima())
                 .estado(existenciaDto.getEstado())
                 .material(material)
-                .unidadMedida(existenciaDto.getUnidadMedida())
+                .unidadMedida(material.getUnidad())
                 .build();
         
         sucursal.addExistencia(existencia);
+
+        existenciaService.save(existencia);
 
         return ExistenciaMapper.toDto(existencia);
 

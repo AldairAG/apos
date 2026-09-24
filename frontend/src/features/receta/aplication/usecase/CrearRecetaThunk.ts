@@ -11,7 +11,7 @@ export const crearRecetaThunk = createAsyncThunk<
     'receta/crearReceta',
     async (recetaDto, { rejectWithValue }) => {
         try {
-            const response = await api.post<RecetaDto>(`${API_BASE_PATH}/`, recetaDto);
+            const response = await api.post<RecetaDto>(`${API_BASE_PATH}`, recetaDto);
             if (!response.success) {
                 return rejectWithValue(response.message);
             }

@@ -6,7 +6,6 @@ export const NAV_ITEMS: { label: string; icon: keyof typeof Ionicons.glyphMap; r
   { label: "Sucursales", icon: "business-outline", route: ROUTES.ADMIN_SUCURSAL.SELECCIONAR },
   { label: "POS", icon: "storefront-outline", route: ROUTES.POS.HOME },
   { label: "Recetas", icon: "book-outline", route: ROUTES.ADMIN.RECETAS.PANEL },
-  { label: "Productos", icon: "pricetags-outline", route: "/productos" },
   { label: "Reportes", icon: "bar-chart-outline", route: "/reportes" },
   { label: "Materiales", icon: "cube-outline", route: ROUTES.ADMIN.MATERIALES.PANEL },
   { label: "Modificadores", icon: "options-outline", route: ROUTES.ADMIN.MODIFICADORES.PANEL }

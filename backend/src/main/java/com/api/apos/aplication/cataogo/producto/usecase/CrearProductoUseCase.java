@@ -86,12 +86,16 @@ public class CrearProductoUseCase {
                                         materialIds,
                                         sucursal.getId());
 
-                        for (Long id : materialesSinExistencia) {
-                                ExistenciaDto existenciaDto=ExistenciaMapper.toDto(new Existencia().initCero());
+                        if (!materialesSinExistencia.isEmpty()) {
+                                for (Long id : materialesSinExistencia) {
+                                        ExistenciaDto existenciaDto = ExistenciaMapper
+                                                        .toDto(new Existencia().initCero());
 
-                                existenciaDto.setMaterialId(id);
+                                        existenciaDto.setMaterialId(id);
+                                        existenciaDto.setSucursalId(sucursal.getId());
 
-                                crearExistenciaUseCase.execute(existenciaDto);
+                                        crearExistenciaUseCase.execute(existenciaDto);
+                                }
                         }
                 }
 

@@ -39,7 +39,7 @@ public class ProductoDto {
 
     private Long recetaId;
 
-    private List<Long> ModificadorIds;
+    private List<Long> modificadorIds;
 
     private Long sucursalId;
 

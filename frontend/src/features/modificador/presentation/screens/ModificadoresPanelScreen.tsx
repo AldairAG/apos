@@ -68,9 +68,9 @@ export default function ModificadoresPanelScreen() {
                                     >
                                         <View className="flex-1 pr-2">
                                             <Text className="text-sm text-[#1C1B1F]">{opcion.nombre}</Text>
-                                            <Text className="text-xs text-[#79747E]">
+                                            {/* <Text className="text-xs text-[#79747E]">
                                                 Costo {formatMoney(opcion.costo)} · Máximo {opcion.maximo}
-                                            </Text>
+                                            </Text> */}
                                         </View>
                                         <Text className="text-sm font-semibold text-[#1C7C3F]">
                                             {formatMoney(opcion.precio)}

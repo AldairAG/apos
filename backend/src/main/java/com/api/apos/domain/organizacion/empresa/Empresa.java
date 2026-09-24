@@ -93,6 +93,14 @@ public class Empresa {
         sucursal.setEmpresa(this);
     }
 
+    public void addModificador(Modificador modificador) {
+        if (modificadores == null) {
+            modificadores = new ArrayList<>();
+        }
+        modificadores.add(modificador);
+        modificador.setEmpresa(this);
+    }
+
 
 
 }

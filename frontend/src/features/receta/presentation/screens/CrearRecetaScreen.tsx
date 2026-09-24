@@ -6,7 +6,7 @@ import { useMaterial } from "@/features/material/presentation/hook/useMaterial";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Formik, FormikHelpers } from "formik";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import * as Yup from "yup";
 import { RecetaDetalleDto, RecetaDto } from "../../domain/types/receta.types";
@@ -35,6 +35,36 @@ const initialValues: RecetaForm = {
 function parseNumero(texto: string): number {
     const n = Number(texto.replace(",", "."));
     return isNaN(n) ? 0 : n;
+}
+
+const FACTORES_UNIDAD: Partial<Record<UnidadMedida, number>> = {
+    [UnidadMedida.MG]: 0.001,
+    [UnidadMedida.GR]: 1,
+    [UnidadMedida.KG]: 1000,
+    [UnidadMedida.LB]: 453.59237,
+    [UnidadMedida.ML]: 1,
+    [UnidadMedida.LT]: 1000,
+    [UnidadMedida.OZ]: 29.5735,
+    [UnidadMedida.GAL]: 3785.411784,
+};
+
+function calcularCostoMaterial(
+    cantidadUsada: number,
+    unidadUsada: UnidadMedida,
+    material: MaterialDto | undefined
+): number {
+    if (!material || cantidadUsada <= 0 || material.cantidad <= 0) return 0;
+
+    const factorUsado = FACTORES_UNIDAD[unidadUsada];
+    const factorMaterial = FACTORES_UNIDAD[material.unidad];
+    if (factorUsado === undefined || factorMaterial === undefined) {
+        return unidadUsada === material.unidad
+            ? (cantidadUsada / material.cantidad) * material.precio
+            : 0;
+    }
+
+    const cantidadEnUnidadDelMaterial = (cantidadUsada * factorUsado) / factorMaterial;
+    return (cantidadEnUnidadDelMaterial / material.cantidad) * material.precio;
 }
 
 const validationSchema = Yup.object({
@@ -75,6 +105,7 @@ export default function CrearEditarRecetaScreen() {
 
     const { crearReceta } = useReceta();
     const { materiales, findMateriales } = useMaterial();
+    const materialesDisponibles = useMemo(() => materiales, [materiales]);
 
     const [pasoTexto, setPasoTexto] = useState("");
     const [selectorMaterialVisible, setSelectorMaterialVisible] = useState(false);
@@ -131,7 +162,12 @@ export default function CrearEditarRecetaScreen() {
                     setFieldValue,
                     isSubmitting,
                 }) => {
-                    const costoTotal = values.recetaDetalles.reduce((acc, d) => acc + d.costo, 0);
+                    const costoTotal =
+                        (1 + Number(values.porcentajeSobreCostos ?? 0) / 100) *
+                        values.recetaDetalles.reduce(
+                            (acc, d) => acc + Number(d.costo ?? 0),
+                            0
+                        );
 
                     const agregarPaso = () => {
                         const texto = pasoTexto.trim();
@@ -158,9 +194,25 @@ export default function CrearEditarRecetaScreen() {
                         setFieldValue("recetaDetalles", [...values.recetaDetalles, nuevoDetalle]);
                     };
 
+                    const materialesNoAgregados = materialesDisponibles.filter(
+                        (material) => !values.recetaDetalles.some((detalle) => detalle.materialId === material.id)
+                    );
+
                     const actualizarDetalle = (index: number, cambios: Partial<RecetaDetalleDto>) => {
+                        const detalleActual = values.recetaDetalles[index];
+                        const detalleActualizado = { ...detalleActual, ...cambios };
+                        const material = materiales.find((item) => item.id === detalleActualizado.materialId);
+
+                        if (cambios.cantidad !== undefined || cambios.unidadMedida !== undefined) {
+                            detalleActualizado.costo = calcularCostoMaterial(
+                                detalleActualizado.cantidad,
+                                detalleActualizado.unidadMedida,
+                                material
+                            );
+                        }
+
                         const detalles = values.recetaDetalles.map((d, i) =>
-                            i === index ? { ...d, ...cambios } : d
+                            i === index ? detalleActualizado : d
                         );
                         setFieldValue("recetaDetalles", detalles);
                     };
@@ -178,9 +230,8 @@ export default function CrearEditarRecetaScreen() {
                                 Nombre de la receta
                             </Text>
                             <TextInput
-                                className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${
-                                    touched.nombre && errors.nombre ? "border-[#B3261E]" : "border-[#E7E0EC]"
-                                }`}
+                                className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.nombre && errors.nombre ? "border-[#B3261E]" : "border-[#E7E0EC]"
+                                    }`}
                                 placeholder="Ej. Capuchino"
                                 placeholderTextColor="#79747E"
                                 value={values.nombre}
@@ -200,11 +251,10 @@ export default function CrearEditarRecetaScreen() {
                                         Rendimiento
                                     </Text>
                                     <TextInput
-                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${
-                                            touched.rendimiento && errors.rendimiento
+                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.rendimiento && errors.rendimiento
                                                 ? "border-[#B3261E]"
                                                 : "border-[#E7E0EC]"
-                                        }`}
+                                            }`}
                                         placeholder="Ej. 1"
                                         placeholderTextColor="#79747E"
                                         keyboardType="decimal-pad"
@@ -224,11 +274,10 @@ export default function CrearEditarRecetaScreen() {
                                         Tiempo de preparación (min)
                                     </Text>
                                     <TextInput
-                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${
-                                            touched.tiempoPreparacion && errors.tiempoPreparacion
+                                        className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.tiempoPreparacion && errors.tiempoPreparacion
                                                 ? "border-[#B3261E]"
                                                 : "border-[#E7E0EC]"
-                                        }`}
+                                            }`}
                                         placeholder="Ej. 10"
                                         placeholderTextColor="#79747E"
                                         keyboardType="number-pad"
@@ -250,11 +299,10 @@ export default function CrearEditarRecetaScreen() {
                                 Porcentaje sobre costos (%)
                             </Text>
                             <TextInput
-                                className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${
-                                    touched.porcentajeSobreCostos && errors.porcentajeSobreCostos
+                                className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.porcentajeSobreCostos && errors.porcentajeSobreCostos
                                         ? "border-[#B3261E]"
                                         : "border-[#E7E0EC]"
-                                }`}
+                                    }`}
                                 placeholder="Ej. 60"
                                 placeholderTextColor="#79747E"
                                 keyboardType="decimal-pad"
@@ -272,9 +320,8 @@ export default function CrearEditarRecetaScreen() {
 
                             <Text className="text-sm font-medium text-[#1C1B1F] mb-1">Notas</Text>
                             <TextInput
-                                className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${
-                                    touched.notas && errors.notas ? "border-[#B3261E]" : "border-[#E7E0EC]"
-                                }`}
+                                className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.notas && errors.notas ? "border-[#B3261E]" : "border-[#E7E0EC]"
+                                    }`}
                                 placeholder="Notas adicionales (opcional)"
                                 placeholderTextColor="#79747E"
                                 multiline
@@ -362,16 +409,15 @@ export default function CrearEditarRecetaScreen() {
                                                     {UNIDAD_MEDIDA_LABELS[detalle.unidadMedida]}
                                                 </Text>
                                             </Pressable>
-                                            <TextInput
-                                                className="flex-1 border border-[#E7E0EC] rounded-xl px-3 py-2 text-sm text-[#1C1B1F]"
-                                                placeholder="Costo"
-                                                placeholderTextColor="#79747E"
-                                                keyboardType="decimal-pad"
-                                                value={detalle.costo ? String(detalle.costo) : ""}
-                                                onChangeText={(t) =>
-                                                    actualizarDetalle(index, { costo: parseNumero(t) })
-                                                }
-                                            />
+                                            <View className="flex-1 border border-[#E7E0EC] rounded-xl px-3 py-2 justify-center">
+                                                <Text className="text-sm text-[#1C1B1F]">
+                                                    {detalle.costo.toLocaleString("es-MX", {
+                                                        style: "currency",
+                                                        currency: "MXN",
+                                                        minimumFractionDigits: 2,
+                                                    })}
+                                                </Text>
+                                            </View>
                                         </View>
                                     </View>
                                 ))}
@@ -399,9 +445,8 @@ export default function CrearEditarRecetaScreen() {
                             <Pressable
                                 onPress={() => formikSubmit()}
                                 disabled={isSubmitting}
-                                className={`rounded-xl py-4 items-center mt-4 ${
-                                    isSubmitting ? "bg-[#9EB7DE]" : "bg-[#1857B6]"
-                                }`}
+                                className={`rounded-xl py-4 items-center mt-4 ${isSubmitting ? "bg-[#9EB7DE]" : "bg-[#1857B6]"
+                                    }`}
                             >
                                 <Text className="text-white text-base font-semibold">
                                     {isSubmitting ? "Guardando..." : "Crear receta"}
@@ -410,7 +455,7 @@ export default function CrearEditarRecetaScreen() {
 
                             <MaterialSelector
                                 visible={selectorMaterialVisible}
-                                materiales={materiales}
+                                materiales={materialesNoAgregados}
                                 onSelect={agregarMaterial}
                                 onClose={() => setSelectorMaterialVisible(false)}
                             />

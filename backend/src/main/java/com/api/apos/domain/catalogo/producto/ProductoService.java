@@ -1,6 +1,7 @@
 package com.api.apos.domain.catalogo.producto;
 
 import org.springframework.stereotype.Service;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 
@@ -16,6 +17,10 @@ public class ProductoService {
 
     public Producto findById(Long id) {
         return productoRepository.findById(id).orElse(null);
+    }
+
+    public List<Producto> findBySucursalId(Long sucursalId) {
+        return productoRepository.findBySucursalId(sucursalId);
     }
 
 }

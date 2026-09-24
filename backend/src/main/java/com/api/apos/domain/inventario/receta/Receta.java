@@ -65,4 +65,14 @@ public class Receta {
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
 
+    public void addRecetaDetalle(RecetaDetalle recetaDetalle) {
+        if (this.recetaDetalles == null) {
+            this.recetaDetalles = new java.util.ArrayList<>();
+        }
+
+        this.recetaDetalles.add(recetaDetalle);
+        recetaDetalle.setReceta(this);
+    }
+
+
 }

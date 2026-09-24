@@ -17,7 +17,7 @@ export const findRecetasThunk = createAsyncThunk<
     'receta/findRecetas',
     async (params, { rejectWithValue }) => {
         try {
-            const response = await api.get<Page<RecetaDto>>(`${API_BASE_PATH}/`, {
+            const response = await api.get<Page<RecetaDto>>(`${API_BASE_PATH}`, {
                 params: {
                     nombre: params?.nombre || undefined,
                     page: params?.page ?? 0,

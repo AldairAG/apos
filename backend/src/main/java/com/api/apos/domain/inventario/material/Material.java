@@ -4,6 +4,7 @@ import jakarta.persistence.Table;
 
 import java.util.List;
 
+import com.api.apos.domain.inventario.detalle_compra.DetalleCompra;
 import com.api.apos.domain.inventario.existencia.Existencia;
 import com.api.apos.domain.organizacion.empresa.Empresa;
 import com.api.apos.enums.UnidadMedida;
@@ -55,4 +56,7 @@ public class Material {
     @ManyToOne 
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
+
+    @OneToMany(mappedBy = "material", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<DetalleCompra> detalleCompras;
 }

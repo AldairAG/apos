@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import com.api.apos.domain.financiero.auditable.AuditableEntity;
 import com.api.apos.domain.financiero.corte_caja.CorteCaja;
 import com.api.apos.domain.financiero.cuenta.Cuenta;
+import com.api.apos.domain.inventario.compra.Compra;
+import com.api.apos.domain.pos.venta.Venta;
 import com.api.apos.enums.EstadoMovimiento;
 import com.api.apos.enums.TipoMovimiento;
 import com.api.apos.enums.CategoriaMovimiento;
@@ -69,6 +71,14 @@ public class Movimiento extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "corte_caja_id")
     private CorteCaja corteCaja;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "venta_id")
+    private Venta venta;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "compra_id")
+    private Compra compra;
 
     public void delete() {
         this.estado = EstadoMovimiento.CANCELADO;

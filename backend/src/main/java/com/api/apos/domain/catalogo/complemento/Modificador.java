@@ -1,10 +1,12 @@
 package com.api.apos.domain.catalogo.complemento;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.api.apos.domain.catalogo.modificadores.Opcion;
 import com.api.apos.domain.organizacion.empresa.Empresa;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -32,7 +34,7 @@ public class Modificador {
 
     private String nombre;
 
-    @OneToMany(mappedBy = "modificador", orphanRemoval = true)
+    @OneToMany(mappedBy = "modificador", orphanRemoval = true,cascade = CascadeType.ALL)
     private List<Opcion> opciones;
 
     @ManyToOne
@@ -40,6 +42,10 @@ public class Modificador {
     private Empresa empresa;
 
     public void addOpciones(List<Opcion> opciones) {
+
+        if (this.opciones == null) {
+            this.opciones = new ArrayList<>();
+        }
 
         if (opciones == null || opciones.isEmpty()) {
             return;

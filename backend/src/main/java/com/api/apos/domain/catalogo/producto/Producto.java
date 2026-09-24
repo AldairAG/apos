@@ -2,12 +2,14 @@ package com.api.apos.domain.catalogo.producto;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.ArrayList;
 
 import com.api.apos.domain.catalogo.categoria.Categoria;
 import com.api.apos.domain.catalogo.grupo_producto.ModificadorProducto;
 import com.api.apos.domain.inventario.receta.Receta;
 import com.api.apos.domain.organizacion.sucursal.Sucursal;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -47,7 +49,7 @@ public class Producto {
     @JoinColumn (name = "receta_id")
     private Receta receta;
 
-    @OneToMany(mappedBy = "producto", orphanRemoval = true)
+    @OneToMany(mappedBy = "producto", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<ModificadorProducto> modificadorProductos;
 
     @ManyToOne
@@ -59,6 +61,11 @@ public class Producto {
     private Sucursal sucursal;
 
     public void addModificador(ModificadorProducto modificador){
+
+        if (modificadorProductos == null) {
+            modificadorProductos = new ArrayList<>();
+        }
+
         modificador.setProducto(this);
         modificadorProductos.add(modificador);
     }

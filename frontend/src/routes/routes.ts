@@ -27,11 +27,20 @@ export const ROUTES = {
     MODIFICADORES: {
       PANEL: '/modificadores/ModificadoresPanel',
       CREAR: '/modificadores/CrearModificador',
-    },
+    }
   },
 
   SUCURSAL: {
     HOME: '/sucursal_home',
+    PRODUCTOS: 'productos',
+    DASHBOARD: 'dashboard',
+    CATEGORIA: 'categoria',
+    INVENTARIO: 'inventario',
+    CAJA: 'caja',
+    MESAS: 'mesas',
+    ORDENES: 'ordenes',
+    CONFIGURACION: 'configuracion',
+
   },
 
   ADMIN_SUCURSAL: {
@@ -50,14 +59,14 @@ export const ROUTES = {
  * selector de sucursal para conservar el módulo actual al cambiar de sucursal.
  */
 export const MODULOS_SUCURSAL = [
-  { key: 'dashboard', label: 'Panel' },
-  { key: 'productos', label: 'Productos' },
-  { key: 'categoria', label: 'Categorías' },
-  { key: 'inventario', label: 'Inventario' },
-  { key: 'caja', label: 'Caja' },
-  { key: 'mesas', label: 'Mesas' },
-  { key: 'ordenes', label: 'Órdenes' },
-  { key: 'configuracion', label: 'Configuración' },
+  { key: ROUTES.SUCURSAL.DASHBOARD, label: 'Panel' },
+  { key: ROUTES.SUCURSAL.PRODUCTOS, label: 'Productos' },
+  { key: ROUTES.SUCURSAL.CATEGORIA, label: 'Categorías' },
+  { key: ROUTES.SUCURSAL.INVENTARIO, label: 'Inventario' },
+  { key: ROUTES.SUCURSAL.CAJA, label: 'Caja' },
+  { key: ROUTES.SUCURSAL.MESAS, label: 'Mesas' },
+  { key: ROUTES.SUCURSAL.ORDENES, label: 'Órdenes' },
+  { key: ROUTES.SUCURSAL.CONFIGURACION, label: 'Configuración' },
 ] as const;
 
 export type ModuloSucursalKey = typeof MODULOS_SUCURSAL[number]['key'];

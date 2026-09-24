@@ -47,10 +47,11 @@ public class CrearRecetaUseCase {
                 .instrucciones(recetaDto.getInstrucciones())
                 .notas(recetaDto.getNotas())
                 .porcentajeSobreCostos(recetaDto.getPorcentajeSobreCostos())
-                .recetaDetalles(recetaDetalles)
                 .rendimiento(recetaDto.getRendimiento())
                 .empresa(usuario.getEmpresa())
                 .build();
+
+        recetaDetalles.forEach(receta::addRecetaDetalle);
 
         Receta recetaGuardada = recetaServicio.save(receta);
         return RecetaMapper.toDto(recetaGuardada);
