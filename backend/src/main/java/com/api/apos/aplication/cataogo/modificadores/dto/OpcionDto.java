@@ -19,4 +19,7 @@ public class OpcionDto {
     private BigDecimal costo;
 
     private BigDecimal maximo;
+
+    //campos para formulario
+    private Integer cantidad;
 }

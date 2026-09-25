@@ -42,4 +42,9 @@ public class Mesa {
     @ManyToOne
     @JoinColumn(name = "sucursal_id", nullable = false)
     private Sucursal sucursal;
+
+    public void asignarOrdenActual(Orden orden) {
+        this.ordenActual = orden;
+        this.estado = EstadoMesa.OCUPADA;
+    }
 }
