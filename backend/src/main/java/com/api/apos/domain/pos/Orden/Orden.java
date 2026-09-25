@@ -65,5 +65,6 @@ public class Orden {
     @OneToOne(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true)
     private Venta venta;
 
+    
 
 }

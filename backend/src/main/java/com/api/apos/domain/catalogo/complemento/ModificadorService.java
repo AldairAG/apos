@@ -28,4 +28,8 @@ public class ModificadorService {
         return modificadorRepository.findAllById(ids);
     }
 
+    public List<Modificador> findByOpcionIds(List<Long> ids){
+        return modificadorRepository.findModificadoresByOpcionIds(ids);
+    }
+
 }

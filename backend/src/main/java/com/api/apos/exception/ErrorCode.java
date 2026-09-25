@@ -133,7 +133,68 @@ public enum ErrorCode {
         "ERROR_AL_ELIMINAR_CORTE_CAJA",
         "Ocurrió un error al eliminar el corte de caja",
         HttpStatus.INTERNAL_SERVER_ERROR
-    )
+    ),
+
+    //PRODUCTO
+    PRODUCTO_NO_ENCONTRADO(
+        "PRODUCTO_NO_ENCONTRADO",
+        "Producto no encontrado",
+        HttpStatus.NOT_FOUND
+    ),
+    ERROR_AL_GUARDAR_PRODUCTO(
+        "ERROR_AL_GUARDAR_PRODUCTO",
+        "Ocurrió un error al guardar el producto",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    ERROR_AL_ELIMINAR_PRODUCTO(
+        "ERROR_AL_ELIMINAR_PRODUCTO",
+        "Ocurrió un error al eliminar el producto",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+
+    //MODIFICADOR
+    MODIFICADOR_NO_ENCONTRADO(
+        "MODIFICADOR_NO_ENCONTRADO",
+        "Modificador no encontrado",
+        HttpStatus.NOT_FOUND
+    ),
+    ERROR_AL_GUARDAR_MODIFICADOR(
+        "ERROR_AL_GUARDAR_MODIFICADOR",
+        "Ocurrió un error al guardar el modificador",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    ERROR_AL_ELIMINAR_MODIFICADOR(
+        "ERROR_AL_ELIMINAR_MODIFICADOR",
+        "Ocurrió un error al eliminar el modificador",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    ERROR_AL_ACTUALIZAR_MODIFICADOR(
+        "ERROR_AL_ACTUALIZAR_MODIFICADOR",
+        "Ocurrió un error al actualizar el modificador",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+
+    //EXISTENCIA
+    EXISTENCIA_NO_ENCONTRADA(
+        "EXISTENCIA_NO_ENCONTRADA",
+        "Existencia no encontrada",
+        HttpStatus.NOT_FOUND
+    ),
+    EXISTENCIA_INSUFICIENTE(
+        "EXISTENCIA_INSUFICIENTE",
+        "Existencia insuficiente",
+        HttpStatus.BAD_REQUEST
+    ),
+    ERROR_AL_DESCONTAR_EXISTENCIA(
+        "ERROR_AL_DESCONTAR_EXISTENCIA",
+        "Ocurrió un error al descontar la existencia",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    ERROR_AL_ACTUALIZAR_EXISTENCIA(
+        "ERROR_AL_ACTUALIZAR_EXISTENCIA",
+        "Ocurrió un error al actualizar la existencia",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
     
     //VALIDACIONES
     

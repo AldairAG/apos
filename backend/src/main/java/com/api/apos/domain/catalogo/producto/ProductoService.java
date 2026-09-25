@@ -23,4 +23,8 @@ public class ProductoService {
         return productoRepository.findBySucursalId(sucursalId);
     }
 
+    public List<Producto> findAllById(List<Long> ids) {
+        return productoRepository.findAllById(ids);
+    }
+
 }
