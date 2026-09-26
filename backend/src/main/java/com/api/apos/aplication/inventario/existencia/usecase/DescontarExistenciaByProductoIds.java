@@ -7,8 +7,10 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.api.apos.aplication.inventario.existencia.dto.ProductoDescuentoDto;
 import com.api.apos.domain.inventario.existencia.Existencia;
-import com.api.apos.domain.inventario.receta.RecetaRepository;
+import com.api.apos.domain.inventario.existencia.ExistenciaService;
+import com.api.apos.domain.inventario.receta.RecetaService;
 import com.api.apos.domain.inventario.receta_detalle.RecetaDetalle;
 import com.api.apos.exception.AppException;
 import com.api.apos.exception.ErrorCode;
@@ -22,43 +24,47 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class DescontarExistenciaByProductoIds {
 
-    private final RecetaRepository recetaRepository;
+    private final RecetaService recetaService;
+
+    private final ExistenciaService existenciaService;
 
     @Transactional
-    public void execute(List<Long> productoIds) {
-        // Obtener detalles de la receta del producto
-        List<RecetaDetalle> recetaDetalles = recetaRepository.findDetallesByProductoIds(productoIds);
-        // Calcular la cantidad a descontar de cada material en base a los detalles de
-        // la receta
+    public void execute(ProductoDescuentoDto productoDescuentoDto) {
+
+        // 1. Obtener receta
+        List<RecetaDetalle> recetaDetalles = recetaService.findDetallesByProductoId(
+                productoDescuentoDto.getProductoId());
+
+        // 2. Calcular materiales necesarios
         Map<Long, BigDecimal> materialesNecesarios = new HashMap<>();
 
-        for (ProductoVenta venta : productosVendidos) {
+        BigDecimal cantidadVendida = BigDecimal.valueOf(productoDescuentoDto.getCantidad());
 
-            List<RecetaDetalle> receta = recetasPorProducto
-                    .get(venta.productoId());
+        for (RecetaDetalle detalle : recetaDetalles) {
 
-            for (RecetaDetalle detalle : receta) {
+            BigDecimal cantidadNecesaria = detalle.getCantidad().multiply(cantidadVendida);
 
-                BigDecimal cantidad = detalle.getCantidad()
-                        .multiply(BigDecimal.valueOf(venta.cantidad()));
-
-                materialesNecesarios.merge(
-                        detalle.getMaterial().getId(),
-                        cantidad,
-                        BigDecimal::add);
-            }
+            materialesNecesarios.merge(
+                    detalle.getMaterial().getId(),
+                    cantidadNecesaria,
+                    BigDecimal::add);
         }
 
-        // Obtener todas las existencias
-        Map<Long, Existencia> existencias = existenciasDb
-                .stream()
+        // 3. Obtener existencias en una sola consulta
+        List<Existencia> existenciasDb = existenciaService.findBySucursalIdAndMaterialIdIn(
+                productoDescuentoDto.getSucursalId(),
+                materialesNecesarios.keySet().stream().toList());
+
+        // 4. Convertir a Map para búsquedas rápidas
+        Map<Long, Existencia> existenciasPorMaterial = existenciasDb.stream()
                 .collect(Collectors.toMap(
-                        e -> e.getMaterial().getId(),
+                        existencia -> existencia.getMaterial().getId(),
                         Function.identity()));
-        // Vlidar existencias
+
+        // 5. Validar TODAS las existencias antes de modificar
         for (Map.Entry<Long, BigDecimal> entry : materialesNecesarios.entrySet()) {
 
-            Existencia existencia = existencias.get(entry.getKey());
+            Existencia existencia = existenciasPorMaterial.get(entry.getKey());
 
             if (existencia == null) {
                 throw new AppException(
@@ -72,15 +78,15 @@ public class DescontarExistenciaByProductoIds {
                         ErrorCode.EXISTENCIA_INSUFICIENTE);
             }
         }
-        // Actualizar existencia en sucursal
+
+        // 6. Descontar
         materialesNecesarios.forEach((materialId, cantidad) -> {
 
-            Existencia existencia = existencias.get(materialId);
+            Existencia existencia = existenciasPorMaterial.get(materialId);
 
             existencia.setCantidadActual(
                     existencia.getCantidadActual().subtract(cantidad));
         });
-
     }
 
 }

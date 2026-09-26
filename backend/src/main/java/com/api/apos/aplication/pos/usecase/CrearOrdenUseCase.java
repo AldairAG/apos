@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import com.api.apos.domain.catalogo.producto.Producto;
 import com.api.apos.domain.catalogo.producto.ProductoService;
 import com.api.apos.aplication.cataogo.modificadores.dto.OpcionDto;
+import com.api.apos.aplication.inventario.existencia.dto.ProductoDescuentoDto;
 import com.api.apos.aplication.inventario.existencia.usecase.DescontarExistenciaByProductoIds;
 import com.api.apos.aplication.pos.dto.DetalleOrdenDto;
 import com.api.apos.aplication.pos.dto.OrdenDto;
@@ -38,7 +39,7 @@ public class CrearOrdenUseCase {
     private final OrdenService ordenService;
 
     private final SucursalService sucursalService;
-
+    
     private final MesaService mesaService;
 
     private final ModificadorService modificadorService;
@@ -114,7 +115,7 @@ public class CrearOrdenUseCase {
                                 BigDecimal precioModificador = modificadorDto.getPrecio();
 
                                 return DetalleModificador.builder()
-                                        .modificador(modificador)
+                                        //.modificador(modificador)
                                         .cantidad(modificadorDto.getCantidad())
                                         .precioUnitario(precioModificador)
                                         .subtotal(
@@ -154,7 +155,15 @@ public class CrearOrdenUseCase {
         }
 
         // Descontar de inventario
-        descontarExistenciaByProductoId.execute(productoIds);
+        List<ProductoDescuentoDto> productosDescuentoDto = orden.getDetalles().stream()
+                .map(detalle -> ProductoDescuentoDto.builder()
+                        .productoId(detalle.getProducto().getId())
+                        .cantidad(detalle.getCantidad())
+                        .sucursalId(orden.getSucursal().getId())
+                        .build())
+                .toList();
+
+        productosDescuentoDto.forEach(descontarExistenciaByProductoId::execute);
 
         // Guardar la orden en la base de datos
         ordenService.save(orden);

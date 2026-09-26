@@ -1,8 +1,12 @@
 package com.api.apos.domain.inventario.receta;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import com.api.apos.domain.inventario.receta_detalle.RecetaDetalle;
 
 import lombok.AllArgsConstructor;
 
@@ -22,6 +26,10 @@ public class RecetaService {
 
     public Page<Receta> findByEmpresaId(Long empresaId, String nombre, Pageable pageable) {
         return recetaRepository.buscarPorEmpresaYNombre(empresaId, nombre, pageable);
+    }
+
+    public List<RecetaDetalle> findDetallesByProductoId(Long productoId) {
+        return recetaRepository.findDetallesByProductoId(productoId);
     }
 
 }

@@ -62,6 +62,7 @@ public class Orden {
     @JoinColumn(name = "mesa_id")
     private Mesa mesa; 
 
+
     @OneToOne(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true)
     private Venta venta;
 

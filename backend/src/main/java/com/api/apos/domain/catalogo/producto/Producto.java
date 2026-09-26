@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import com.api.apos.domain.catalogo.categoria.Categoria;
 import com.api.apos.domain.catalogo.grupo_producto.ModificadorProducto;
 import com.api.apos.domain.inventario.receta.Receta;
+import com.api.apos.domain.pos.detalle_orden.DetalleOrden;
 import com.api.apos.domain.organizacion.sucursal.Sucursal;
 
 import jakarta.persistence.CascadeType;
@@ -59,6 +60,9 @@ public class Producto {
     @ManyToOne 
     @JoinColumn(name = "sucursal_id")
     private Sucursal sucursal;
+
+    @OneToMany(mappedBy = "producto", orphanRemoval = true, cascade = CascadeType.ALL)
+    private List<DetalleOrden> detallesOrden; 
 
     public void addModificador(ModificadorProducto modificador){
 

@@ -16,6 +16,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -42,7 +43,8 @@ public class Venta{
     @Enumerated(EnumType.STRING)
     private MetodoPago metodoDePago;
 
-    @OneToOne(mappedBy = "venta")
+    @OneToOne
+    @JoinColumn(name = "orden_id")
     private Orden orden;
 
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)

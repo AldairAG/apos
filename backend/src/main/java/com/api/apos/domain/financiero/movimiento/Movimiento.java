@@ -58,10 +58,6 @@ public class Movimiento extends AuditableEntity {
 
     private Long createdBy;
 
-    private Long cuentaDestinoId;
-
-    private Long cuentaOrigenId;
-
     private LocalDateTime fecha;
 
     @ManyToOne

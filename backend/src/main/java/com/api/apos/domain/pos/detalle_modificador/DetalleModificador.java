@@ -34,7 +34,7 @@ public class DetalleModificador {
     @JoinColumn(name = "detalle_orden_id", nullable = false)
     private DetalleOrden detalleOrden;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "modificador_id", nullable = false)
     private Modificador modificador;
 

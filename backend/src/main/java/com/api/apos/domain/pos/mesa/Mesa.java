@@ -44,7 +44,7 @@ public class Mesa {
     private Sucursal sucursal;
 
     public void asignarOrdenActual(Orden orden) {
-        this.ordenActual = orden;
+        //this.ordenActual = orden;
         this.estado = EstadoMesa.OCUPADA;
     }
 }

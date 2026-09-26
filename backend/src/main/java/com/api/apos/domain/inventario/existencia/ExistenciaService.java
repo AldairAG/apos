@@ -32,4 +32,30 @@ public class ExistenciaService {
                 .findMaterialIdsWithoutExistencia(materialIds, sucursalId);
     }
 
+    public List<Existencia> findAllByMaterialIdAndSucursalId(Long materialId, Long sucursalId) {
+        if (materialId == null || sucursalId == null) {
+            return Collections.emptyList();
+        }
+
+        return existenciaRepository.findBySucursalIdAndMaterialIdIn(
+                sucursalId,
+                List.of(materialId));
+    }
+
+    public List<Existencia> findByMaterialIds(List<Long> materialIds) {
+        if (materialIds == null || materialIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return existenciaRepository.findByMaterialIds(materialIds);
+    }
+
+    public List<Existencia> findBySucursalIdAndMaterialIdIn(Long sucursalId, List<Long> materialIds) {
+        if (sucursalId == null || materialIds == null || materialIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return existenciaRepository.findBySucursalIdAndMaterialIdIn(sucursalId, materialIds);
+    }
+
 }
