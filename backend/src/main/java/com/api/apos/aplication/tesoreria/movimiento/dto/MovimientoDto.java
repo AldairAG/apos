@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import com.api.apos.enums.CategoriaMovimiento;
 import com.api.apos.enums.EstadoMovimiento;
+import com.api.apos.enums.MetodoPago;
 import com.api.apos.enums.TipoMovimiento;
 
 import lombok.AllArgsConstructor;
@@ -13,7 +14,7 @@ import lombok.Data;
 
 @Data
 @Builder
-@AllArgsConstructor 
+@AllArgsConstructor
 public class MovimientoDto {
     private Long id;
 
@@ -35,11 +36,13 @@ public class MovimientoDto {
 
     private LocalDateTime fecha;
 
-    //Metodos de formulario
+    // Metodos de formulario
     private Long cuentaId;
 
     private Long cajaId;
 
     private Long corteCajaId;
+
+    private MetodoPago metodoDePago;
 
 }

@@ -134,6 +134,21 @@ public enum ErrorCode {
         "Ocurrió un error al eliminar el corte de caja",
         HttpStatus.INTERNAL_SERVER_ERROR
     ),
+    ERROR_AL_ABRIR_CORTE_CAJA(
+        "ERROR_AL_ABRIR_CORTE_CAJA",
+        "Ocurrió un error al abrir el corte de caja",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    ERROR_AL_CERRAR_CORTE_CAJA(
+        "ERROR_AL_CERRAR_CORTE_CAJA",
+        "Ocurrió un error al cerrar el corte de caja",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    ERROR_CORTE_NO_ABIERTO(
+        "ERROR_CORTE_NO_ABIERTO",
+        "El corte de caja no está abierto",
+        HttpStatus.BAD_REQUEST
+    ),
 
     //PRODUCTO
     PRODUCTO_NO_ENCONTRADO(
@@ -193,6 +208,28 @@ public enum ErrorCode {
     ERROR_AL_ACTUALIZAR_EXISTENCIA(
         "ERROR_AL_ACTUALIZAR_EXISTENCIA",
         "Ocurrió un error al actualizar la existencia",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+
+    //ORDEN
+    ORDEN_NO_ENCONTRADA(
+        "ORDEN_NO_ENCONTRADA",
+        "Orden no encontrada",
+        HttpStatus.NOT_FOUND
+    ),
+    ERROR_AL_GUARDAR_ORDEN(
+        "ERROR_AL_GUARDAR_ORDEN",
+        "Ocurrió un error al guardar la orden",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    ERROR_AL_ELIMINAR_ORDEN(
+        "ERROR_AL_ELIMINAR_ORDEN",
+        "Ocurrió un error al eliminar la orden",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    ERROR_AL_ACTUALIZAR_ORDEN(
+        "ERROR_AL_ACTUALIZAR_ORDEN",
+        "Ocurrió un error al actualizar la orden",
         HttpStatus.INTERNAL_SERVER_ERROR
     ),
     

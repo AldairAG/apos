@@ -10,7 +10,7 @@ public class VentaService {
 
     private final VentaRepository ventaRepository;
 
-    public Venta saveVenta(Venta venta) {
+    public Venta save(Venta venta) {
         return ventaRepository.save(venta);
     }
 

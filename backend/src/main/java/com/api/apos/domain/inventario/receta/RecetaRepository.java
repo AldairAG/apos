@@ -12,31 +12,30 @@ import com.api.apos.domain.inventario.receta_detalle.RecetaDetalle;
 
 public interface RecetaRepository extends JpaRepository<Receta, Long> {
 
-    @Query("""
-            SELECT r
-            FROM Receta r
-            WHERE r.empresa.id = :empresaId
-              AND (
-                  :nombre IS NULL
-                  OR :nombre = ''
-                  OR LOWER(r.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))
-              )
-            """)
-    Page<Receta> buscarPorEmpresaYNombre(
-            @Param("empresaId") Long empresaId,
-            @Param("nombre") String nombre,
-            Pageable pageable);
+        @Query("""
+                        SELECT r
+                        FROM Receta r
+                        WHERE r.empresa.id = :empresaId
+                          AND (
+                              :nombre IS NULL
+                              OR :nombre = ''
+                              OR LOWER(r.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))
+                          )
+                        """)
+        Page<Receta> buscarPorEmpresaYNombre(
+                        @Param("empresaId") Long empresaId,
+                        @Param("nombre") String nombre,
+                        Pageable pageable);
 
-    @Query("""
-                SELECT rd
-                FROM RecetaDetalle rd
-                JOIN FETCH rd.receta r
-                JOIN FETCH rd.material m
-                WHERE r.producto.id = :productoId
-            """)
-    List<RecetaDetalle> findDetallesByProductoId(
-            @Param("productoId") Long productoId);
-
-    
+        @Query("""
+                            SELECT rd
+                            FROM RecetaDetalle rd
+                            JOIN FETCH rd.receta r
+                            JOIN FETCH rd.material m
+                            JOIN r.productos p
+                            WHERE p.id = :productoId
+                        """)
+        List<RecetaDetalle> findDetallesByProductoId(
+                        @Param("productoId") Long productoId);
 
 }

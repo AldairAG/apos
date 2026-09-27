@@ -50,4 +50,9 @@ public class Venta{
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Movimiento> movimientos;
 
+    public void addMovimiento(Movimiento movimiento) {
+        this.movimientos.add(movimiento);
+        movimiento.setVenta(this);
+    }
+
 }

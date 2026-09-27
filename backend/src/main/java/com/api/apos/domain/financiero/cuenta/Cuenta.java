@@ -84,4 +84,11 @@ public class Cuenta extends AuditableEntity {
         this.disminuirSaldo(movimiento.getMonto());
     }
 
+    public void addVenta(Movimiento movimiento) {
+        this.movimientos.add(movimiento);
+        movimiento.setCuenta(this);
+        movimiento.setTipo(TipoMovimiento.INGRESO);
+        movimiento.setEstado(EstadoMovimiento.COMPLETADO);
+        this.aumentarSaldo(movimiento.getMonto());
+    }
 }

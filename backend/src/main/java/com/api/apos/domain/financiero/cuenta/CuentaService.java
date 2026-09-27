@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.api.apos.enums.TipoCuenta;
 import com.api.apos.exception.AppException;
 import com.api.apos.exception.ErrorCode;
 
@@ -33,5 +34,9 @@ public class CuentaService {
     
     public List<Cuenta> findByEmpresaId(Long empresaId) {
         return cuentaRepository.findByEmpresaId(empresaId);
+    }
+
+    public Cuenta findByCuentaDestinoAndTipoAndEmpresaId( TipoCuenta tipo, Long empresaId) {
+        return cuentaRepository.findByCuentaDestinoTrueAndTipoAndEmpresaId(tipo, empresaId);
     }
 }

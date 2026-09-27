@@ -49,6 +49,8 @@ public class Orden {
 
     private BigDecimal subtotal;
 
+    private BigDecimal impuestos;
+
     private BigDecimal descuento;
 
     private BigDecimal total;
@@ -66,6 +68,8 @@ public class Orden {
     @OneToOne(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true)
     private Venta venta;
 
-    
+    public void avanzarEstadoOrden() {
+    this.estado = this.estado.siguiente();
+}
 
 }

@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.api.apos.domain.financiero.caja.Caja;
 import com.api.apos.domain.financiero.movimiento.Movimiento;
+import com.api.apos.enums.CategoriaMovimiento;
 import com.api.apos.enums.EstadoCaja;
 import com.api.apos.enums.EstadoMovimiento;
 import com.api.apos.enums.TipoMovimiento;
@@ -88,6 +89,26 @@ public class CorteCaja extends AuditableEntity {
         movimiento.setEstado(EstadoMovimiento.COMPLETADO);
         this.saldoFinal = this.saldoFinal.subtract(movimiento.getMonto());
         this.egresos = this.egresos.add(movimiento.getMonto());
+    }
+
+    public void addVenta(Movimiento movimiento) {
+        this.movimientos.add(movimiento);
+        movimiento.setCorteCaja(this);
+        movimiento.setTipo(TipoMovimiento.INGRESO);
+        movimiento.setEstado(EstadoMovimiento.COMPLETADO);
+        movimiento.setCategoria(CategoriaMovimiento.VENTA);
+        this.saldoFinal = this.saldoFinal.add(movimiento.getMonto());
+        this.ventas = this.ventas.add(movimiento.getMonto());
+    }
+
+    public void addVentaDigital(Movimiento movimiento) {
+        this.movimientos.add(movimiento);
+        movimiento.setCorteCaja(this);
+        movimiento.setTipo(TipoMovimiento.INGRESO);
+        movimiento.setEstado(EstadoMovimiento.COMPLETADO);
+        movimiento.setCategoria(CategoriaMovimiento.VENTA);
+        movimiento.setFecha(LocalDateTime.now());;
+        this.ventas = this.ventas.add(movimiento.getMonto());
     }
 
 }

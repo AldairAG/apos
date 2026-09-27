@@ -2,6 +2,7 @@ package com.api.apos.enums;
 
 public enum MetodoPago {
     EFECTIVO,
+    DIGITAL,
     TARJETA_DEBITO,
     TARJETA_CREDITO,
     TRANSFERENCIA_BANCARIA,

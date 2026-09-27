@@ -2,5 +2,7 @@ package com.api.apos.enums;
 
 public enum TipoMovimiento {
     INGRESO,
-    EGRESO
+    EGRESO,
+    INGRESO_DIGITAL,
+    EGRESO_DIGITAL
 }
