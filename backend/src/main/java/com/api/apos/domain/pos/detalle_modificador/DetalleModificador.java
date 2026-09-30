@@ -2,7 +2,7 @@ package com.api.apos.domain.pos.detalle_modificador;
 
 import java.math.BigDecimal;
 
-import com.api.apos.domain.catalogo.complemento.Modificador;
+import com.api.apos.domain.catalogo.modificadores.Opcion;
 import com.api.apos.domain.pos.detalle_orden.DetalleOrden;
 
 import jakarta.persistence.Entity;
@@ -34,13 +34,15 @@ public class DetalleModificador {
     @JoinColumn(name = "detalle_orden_id", nullable = false)
     private DetalleOrden detalleOrden;
 
-     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "modificador_id", nullable = false)
-    private Modificador modificador;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "opcion_id", nullable = false)
+    private Opcion opcion;
 
     private Integer cantidad;
 
     private BigDecimal precioUnitario;
 
     private BigDecimal subtotal;
+
+    private String opcionNombre;
 }

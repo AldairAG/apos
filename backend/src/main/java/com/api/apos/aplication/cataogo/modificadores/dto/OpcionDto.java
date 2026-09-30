@@ -20,6 +20,8 @@ public class OpcionDto {
 
     private BigDecimal maximo;
 
+    private BigDecimal subTotal;
+
     //campos para formulario
     private Integer cantidad;
 }

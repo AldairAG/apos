@@ -1,5 +1,7 @@
 package com.api.apos.domain.pos.orden;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import lombok.AllArgsConstructor;
@@ -17,6 +19,10 @@ public class OrdenService {
     public Orden findById(long id) {
         return ordenRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Orden no encotrada"));
+    }
+
+    public List<Orden> findBySucursalId(Long sucursalId) {
+        return ordenRepository.findBySucursalId(sucursalId);
     }
 
 }
