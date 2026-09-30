@@ -1,52 +1,483 @@
+import { EstadoCaja } from "@/features/caja/enum/Caja.Enums";
+import type { ProductoDto } from "@/features/productos/domain/types/producto.types";
+import { ROUTES } from "@/routes/routes";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import type { MetodoPago, OrdenDto } from "../../domain/types/pos.types";
+import { usePos } from "../hook/usePos";
 
-/**
- * Pantalla inicial del módulo POS (contexto independiente al panel administrativo).
- * Únicamente valida que la navegación del módulo funciona; los accesos son mock
- * y se implementarán en próximas iteraciones (órdenes, productos, categorías, carrito,
- * mesas, cobro, métodos de pago, caja, cocina).
- */
-const ACCESOS_MOCK: { label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-    { label: "Órdenes", icon: "receipt-outline" },
-    { label: "Productos", icon: "cube-outline" },
-    { label: "Categorías", icon: "pricetags-outline" },
-    { label: "Carrito", icon: "cart-outline" },
-    { label: "Mesas", icon: "restaurant-outline" },
-    { label: "Cobro", icon: "card-outline" },
-    { label: "Métodos de pago", icon: "wallet-outline" },
-    { label: "Caja", icon: "cash-outline" },
-    { label: "Cocina", icon: "flame-outline" },
+type VistaPos = "nueva" | "ordenes";
+
+interface LineaCarrito {
+    key: number;
+    producto: ProductoDto;
+    cantidad: number;
+    notas: string;
+    opcionesCantidad: Record<number, number>;
+}
+
+const METODOS_PAGO: { value: MetodoPago; label: string }[] = [
+    { value: "EFECTIVO", label: "Efectivo" },
+    { value: "DIGITAL", label: "Digital" },
+    { value: "TARJETA_DEBITO", label: "Débito" },
+    { value: "TARJETA_CREDITO", label: "Crédito" },
+    { value: "TRANSFERENCIA_BANCARIA", label: "Transferencia" },
 ];
 
+const ESTADOS_ORDEN: Record<string, { label: string; color: string }> = {
+    PENDIENTE: { label: "Pendiente", color: "#8A6D00" },
+    EN_PREPARACION: { label: "En preparación", color: "#1857B6" },
+    LISTA: { label: "Lista", color: "#3A7D44" },
+    ENTREGADA: { label: "Entregada", color: "#3A7D44" },
+    CANCELADA: { label: "Cancelada", color: "#B3261E" },
+    COBRADA: { label: "Cobrada", color: "#8B6914" },
+};
+
+const moneda = (monto: number) =>
+    `$${(monto||0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 const PosHomeScreen = () => {
-    return (
-        <View className="flex-1 bg-[#F9F7FA] px-4 pt-6">
-            <Text className="text-lg font-medium text-[#1C1B1F] mb-1">Punto de venta</Text>
-            <Text className="text-xs text-[#79747E] mb-5">
-                Módulo POS independiente. Los accesos se habilitarán en próximas iteraciones.
-            </Text>
+    const {
+        categoriasProductos,
+        ordenes,
+        catalogoLoading,
+        ordenesLoading,
+        saving,
+        error,
+        sucursalId,
+        cajaAbierta,
+        corteCaja,
+        cajaLoading,
+        cargarProductos,
+        cargarOrdenes,
+        cargarContextoCaja,
+        crearOrden,
+        actualizarEstadoOrden,
+        cobrarOrden,
+        limpiarError,
+    } = usePos();
 
-            <View className="flex-row flex-wrap gap-3">
-                {ACCESOS_MOCK.map((acceso) => (
-                    <Pressable
-                        key={acceso.label}
-                        className="w-[30%] items-center bg-white rounded-2xl py-4 border border-[#E7E0EC] active:bg-[#F1EEF4]"
-                    >
-                        <Ionicons name={acceso.icon} size={22} color="#1857B6" />
-                        <Text className="text-xs text-[#1C1B1F] mt-2 text-center">{acceso.label}</Text>
-                    </Pressable>
-                ))}
+    const [vista, setVista] = useState<VistaPos>("nueva");
+    const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
+    const [carrito, setCarrito] = useState<LineaCarrito[]>([]);
+    const [mesaId, setMesaId] = useState("");
+    const [modalCobro, setModalCobro] = useState<OrdenDto | null>(null);
+    const [metodoPago, setMetodoPago] = useState<MetodoPago>("EFECTIVO");
+    const [contextoCajaSucursalId, setContextoCajaSucursalId] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!sucursalId) {
+            setContextoCajaSucursalId(null);
+            return;
+        }
+
+        setContextoCajaSucursalId(null);
+        cargarProductos(sucursalId);
+        cargarOrdenes(sucursalId);
+        cargarContextoCaja(sucursalId).then((cargado) => {
+            setContextoCajaSucursalId(cargado ? sucursalId : null);
+        });
+    }, [sucursalId, cargarProductos, cargarOrdenes, cargarContextoCaja]);
+
+    const productosFiltrados = categoriasProductos
+        .filter((grupo) => !categoriaActiva || grupo.categoria === categoriaActiva)
+        .flatMap((grupo) => grupo.productos.filter((producto) => producto.disponible));
+
+    const subtotal = carrito.reduce((total, linea) => {
+        const opciones = linea.producto.modificadores?.flatMap((modificador) => modificador.opciones) ?? [];
+        const extra = opciones
+            .filter((opcion) => opcion.id !== undefined && (linea.opcionesCantidad[opcion.id] ?? 0) > 0)
+            .reduce((sum, opcion) => sum + opcion.precio * linea.opcionesCantidad[opcion.id!], 0);
+        return total + linea.producto.precio * linea.cantidad + extra;
+    }, 0);
+
+    const agregarProducto = (producto: ProductoDto) => {
+        const productoId = producto.id;
+        if (!productoId) return;
+        setCarrito((actual) => {
+            const existente = actual.find((linea) => linea.producto.id === productoId);
+            if (existente) {
+                return actual.map((linea) =>
+                    linea.producto.id === productoId
+                        ? { ...linea, cantidad: linea.cantidad + 1 }
+                        : linea
+                );
+            }
+            return [...actual, { key: productoId, producto, cantidad: 1, notas: "", opcionesCantidad: {} }];
+        });
+    };
+
+    const cambiarCantidad = (key: number, delta: number) => {
+        setCarrito((actual) => actual
+            .map((linea) => linea.key === key
+                ? { ...linea, cantidad: linea.cantidad + delta }
+                : linea)
+            .filter((linea) => linea.cantidad > 0));
+    };
+
+    const cambiarCantidadOpcion = (key: number, opcionId: number, delta: number) => {
+        setCarrito((actual) => actual.map((linea) => {
+            if (linea.key !== key) return linea;
+            const cantidad = Math.max(0, (linea.opcionesCantidad[opcionId] ?? 0) + delta);
+            const opcionesCantidad = { ...linea.opcionesCantidad };
+            if (cantidad === 0) {
+                delete opcionesCantidad[opcionId];
+            } else {
+                opcionesCantidad[opcionId] = cantidad;
+            }
+            return { ...linea, opcionesCantidad };
+        }));
+    };
+
+    const guardarOrden = async () => {
+        if (!sucursalId || carrito.length === 0) return;
+        limpiarError();
+        const orden = {
+            subtotal,
+            descuento: 0,
+            total: subtotal,
+            sucursalId,
+            mesaId: mesaId.trim() ? Number(mesaId) : null,
+            detalles: carrito.map((linea) => ({
+                productoId: linea.producto.id,
+                cantidad: linea.cantidad,
+                notas: linea.notas.trim(),
+                modificadores: (linea.producto.modificadores ?? [])
+                    .flatMap((modificador) => modificador.opciones)
+                    .filter((opcion) => opcion.id !== undefined && (linea.opcionesCantidad[opcion.id] ?? 0) > 0)
+                    .map((opcion) => ({
+                        id: opcion.id,
+                        precio: opcion.precio,
+                        cantidad: linea.opcionesCantidad[opcion.id!],
+                    })),
+            })),
+        };
+
+        try {
+            await crearOrden(orden).unwrap();
+            setCarrito([]);
+            setMesaId("");
+            setVista("ordenes");
+        } catch {
+            // El error se presenta desde el estado del feature.
+        }
+    };
+
+    const avanzarOrden = async (ordenId: number) => {
+        limpiarError();
+        try {
+            await actualizarEstadoOrden(ordenId).unwrap();
+        } catch {
+            // El error se presenta desde el estado del feature.
+        }
+    };
+
+    const confirmarCobro = async () => {
+        if (!modalCobro?.id || !cajaAbierta?.id || !corteCaja?.id) return;
+        limpiarError();
+        try {
+            await cobrarOrden({
+                ordenId: modalCobro.id,
+                cajaId: cajaAbierta.id,
+                corteCajaId: corteCaja.id,
+                movimientos: [{
+                    descripcion: `Cobro orden #${modalCobro.id}`,
+                    monto: modalCobro.total,
+                    metodoDePago: metodoPago,
+                }],
+            }).unwrap();
+            setModalCobro(null);
+        } catch {
+            // El error se presenta desde el estado del feature.
+        }
+    };
+
+    if (!sucursalId) {
+        return (
+            <View className="flex-1 items-center justify-center bg-[#F9F7FA] px-6">
+                <Ionicons name="storefront-outline" size={34} color="#1857B6" />
+                <Text className="mt-3 text-base font-semibold text-[#1C1B1F]">Selecciona una sucursal</Text>
+                <Text className="mt-1 text-center text-sm text-[#79747E]">
+                    El catálogo y las órdenes dependen de la sucursal activa.
+                </Text>
+                <Pressable
+                    onPress={() => router.push(ROUTES.ADMIN_SUCURSAL.SELECCIONAR as any)}
+                    className="mt-5 rounded-lg bg-[#1857B6] px-4 py-3"
+                >
+                    <Text className="font-semibold text-white">Elegir sucursal</Text>
+                </Pressable>
             </View>
+        );
+    }
 
-            <Pressable
-                onPress={() => router.replace("/admin_home" as any)}
-                className="flex-row items-center gap-2 mt-8 self-start"
-            >
-                <Ionicons name="arrow-back" size={16} color="#49454F" />
-                <Text className="text-sm text-[#49454F]">Volver a administración</Text>
-            </Pressable>
+    return (
+        <View className="flex-1 bg-[#F1EEF4]">
+            <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 36 }}>
+                <View className="mb-4 flex-row items-center justify-between">
+                    <View>
+                        <Text className="text-lg font-semibold text-[#1C1B1F]">Punto de venta</Text>
+                        <Text className="mt-1 text-xs text-[#79747E]">Sucursal #{sucursalId}</Text>
+                    </View>
+                    <Pressable
+                        onPress={() => router.replace("/admin_home" as any)}
+                        className="flex-row items-center gap-2 rounded-lg border border-[#D8D2DC] bg-white px-3 py-2"
+                    >
+                        <Ionicons name="arrow-back" size={16} color="#49454F" />
+                        <Text className="text-sm text-[#49454F]">Administración</Text>
+                    </Pressable>
+                </View>
+
+                <View className="mb-4 flex-row border-b border-[#D8D2DC]">
+                    {(["nueva", "ordenes"] as const).map((item) => (
+                        <Pressable
+                            key={item}
+                            onPress={() => setVista(item)}
+                            className={`mr-5 border-b-2 px-1 pb-3 ${vista === item ? "border-[#1857B6]" : "border-transparent"}`}
+                        >
+                            <Text className={`text-sm font-semibold ${vista === item ? "text-[#1857B6]" : "text-[#79747E]"}`}>
+                                {item === "nueva" ? "Nueva orden" : `Órdenes (${ordenes.length})`}
+                            </Text>
+                        </Pressable>
+                    ))}
+                </View>
+
+                {error ? (
+                    <View className="mb-4 flex-row items-center justify-between rounded-lg border border-[#F1B8B2] bg-[#FCEEEE] p-3">
+                        <Text className="mr-3 flex-1 text-sm text-[#8C1D18]">{error}</Text>
+                        <Pressable onPress={limpiarError} accessibilityLabel="Cerrar error">
+                            <Ionicons name="close" size={18} color="#8C1D18" />
+                        </Pressable>
+                    </View>
+                ) : null}
+
+                {vista === "nueva" ? (
+                    <View className="gap-4">
+                        <View className="rounded-lg border border-[#E7E0EC] bg-white p-4">
+                            <Text className="mb-3 text-base font-semibold text-[#1C1B1F]">Productos</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
+                                <Pressable
+                                    onPress={() => setCategoriaActiva(null)}
+                                    className={`mr-2 rounded-full px-3 py-2 ${categoriaActiva === null ? "bg-[#1857B6]" : "bg-[#F1EEF4]"}`}
+                                >
+                                    <Text className={`text-xs font-medium ${categoriaActiva === null ? "text-white" : "text-[#49454F]"}`}>Todos</Text>
+                                </Pressable>
+                                {categoriasProductos.map((grupo) => (
+                                    <Pressable
+                                        key={grupo.categoria}
+                                        onPress={() => setCategoriaActiva(grupo.categoria)}
+                                        className={`mr-2 rounded-full px-3 py-2 ${categoriaActiva === grupo.categoria ? "bg-[#1857B6]" : "bg-[#F1EEF4]"}`}
+                                    >
+                                        <Text className={`text-xs font-medium ${categoriaActiva === grupo.categoria ? "text-white" : "text-[#49454F]"}`}>
+                                            {grupo.categoria}
+                                        </Text>
+                                    </Pressable>
+                                ))}
+                            </ScrollView>
+
+                            {catalogoLoading ? <Text className="py-4 text-sm text-[#79747E]">Cargando catálogo...</Text> : null}
+                            {!catalogoLoading && productosFiltrados.length === 0 ? (
+                                <Text className="py-4 text-sm text-[#79747E]">No hay productos disponibles en esta categoría.</Text>
+                            ) : null}
+                            <View className="flex-row flex-wrap gap-2">
+                                {productosFiltrados.map((producto) => (
+                                    <Pressable
+                                        key={producto.id}
+                                        onPress={() => agregarProducto(producto)}
+                                        className="min-w-[145px] flex-1 rounded-lg border border-[#D8D2DC] p-3 active:bg-[#F1EEF4]"
+                                    >
+                                        <Text className="text-sm font-semibold text-[#1C1B1F]">{producto.nombre}</Text>
+                                        <Text className="mt-1 text-sm text-[#1857B6]">{moneda(producto.precio)}</Text>
+                                        <Text className="mt-2 text-xs font-medium text-[#79747E]">Agregar +</Text>
+                                    </Pressable>
+                                ))}
+                            </View>
+                        </View>
+
+                        <View className="rounded-lg border border-[#E7E0EC] bg-white p-4">
+                            <View className="mb-3 flex-row items-center justify-between">
+                                <Text className="text-base font-semibold text-[#1C1B1F]">Orden</Text>
+                                <Text className="text-xs text-[#79747E]">{carrito.length} productos</Text>
+                            </View>
+                            <Text className="mb-1 text-xs font-medium text-[#49454F]">Mesa (opcional)</Text>
+                            <TextInput
+                                value={mesaId}
+                                onChangeText={setMesaId}
+                                keyboardType="number-pad"
+                                placeholder="ID de mesa"
+                                className="mb-3 rounded-lg border border-[#D8D2DC] px-3 py-2 text-sm text-[#1C1B1F]"
+                            />
+
+                            {carrito.length === 0 ? (
+                                <Text className="py-3 text-sm text-[#79747E]">Agrega productos para iniciar una orden.</Text>
+                            ) : carrito.map((linea) => (
+                                <View key={linea.key} className="border-t border-[#EEEAF0] py-3">
+                                    <View className="flex-row items-center justify-between">
+                                        <View className="mr-3 flex-1">
+                                            <Text className="text-sm font-medium text-[#1C1B1F]">{linea.producto.nombre}</Text>
+                                            <Text className="mt-1 text-xs text-[#79747E]">{moneda(linea.producto.precio)} c/u</Text>
+                                        </View>
+                                        <View className="flex-row items-center gap-3">
+                                            <Pressable onPress={() => cambiarCantidad(linea.key, -1)} accessibilityLabel="Quitar una unidad">
+                                                <Ionicons name="remove-circle-outline" size={23} color="#49454F" />
+                                            </Pressable>
+                                            <Text className="min-w-[18px] text-center text-sm font-semibold text-[#1C1B1F]">{linea.cantidad}</Text>
+                                            <Pressable onPress={() => cambiarCantidad(linea.key, 1)} accessibilityLabel="Agregar una unidad">
+                                                <Ionicons name="add-circle-outline" size={23} color="#1857B6" />
+                                            </Pressable>
+                                        </View>
+                                    </View>
+                                    {linea.producto.modificadores?.map((modificador) => (
+                                        <View key={modificador.id ?? modificador.nombre} className="mt-2">
+                                            <Text className="mb-1 text-xs text-[#79747E]">{modificador.nombre}</Text>
+                                            <View className="flex-row flex-wrap gap-2">
+                                                {modificador.opciones.filter((opcion) => opcion.id !== undefined).map((opcion) => {
+                                                    const cantidad = linea.opcionesCantidad[opcion.id!] ?? 0;
+                                                    return (
+                                                        <View key={opcion.id} className={`flex-row items-center rounded-md border px-2 py-1 ${cantidad > 0 ? "border-[#1857B6] bg-[#EAF1FC]" : "border-[#D8D2DC]"}`}>
+                                                            <Text className={`mr-2 text-xs ${cantidad > 0 ? "text-[#1857B6]" : "text-[#49454F]"}`}>
+                                                                {opcion.nombre} +{moneda(opcion.precio)}
+                                                            </Text>
+                                                            <Pressable onPress={() => cambiarCantidadOpcion(linea.key, opcion.id!, -1)} accessibilityLabel={`Quitar una unidad de ${opcion.nombre}`}>
+                                                                <Ionicons name="remove-circle-outline" size={18} color={cantidad > 0 ? "#1857B6" : "#B8B3BC"} />
+                                                            </Pressable>
+                                                            <Text className="mx-1 min-w-[14px] text-center text-xs font-semibold text-[#1C1B1F]">{cantidad}</Text>
+                                                            <Pressable onPress={() => cambiarCantidadOpcion(linea.key, opcion.id!, 1)} accessibilityLabel={`Agregar una unidad de ${opcion.nombre}`}>
+                                                                <Ionicons name="add-circle-outline" size={18} color="#1857B6" />
+                                                            </Pressable>
+                                                        </View>
+                                                    );
+                                                })}
+                                            </View>
+                                        </View>
+                                    ))}
+                                    <TextInput
+                                        value={linea.notas}
+                                        onChangeText={(notas) => setCarrito((actual) => actual.map((item) => item.key === linea.key ? { ...item, notas } : item))}
+                                        placeholder="Nota para cocina"
+                                        className="mt-2 rounded-md border border-[#E7E0EC] px-2 py-2 text-xs text-[#1C1B1F]"
+                                    />
+                                </View>
+                            ))}
+
+                            <View className="mt-2 flex-row items-center justify-between border-t border-[#D8D2DC] pt-3">
+                                <Text className="text-sm font-semibold text-[#1C1B1F]">Total estimado</Text>
+                                <Text className="text-lg font-bold text-[#1C1B1F]">{moneda(subtotal)}</Text>
+                            </View>
+                            <Pressable
+                                disabled={carrito.length === 0 || saving || !sucursalId}
+                                onPress={guardarOrden}
+                                className={`mt-4 items-center rounded-lg px-4 py-3 ${carrito.length === 0 || saving ? "bg-[#B8B3BC]" : "bg-[#1857B6]"}`}
+                            >
+                                <Text className="font-semibold text-white">{saving ? "Guardando..." : "Crear orden"}</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                ) : (
+                    <View className="gap-3">
+                        {ordenesLoading ? <Text className="py-4 text-sm text-[#79747E]">Cargando órdenes...</Text> : null}
+                        {!ordenesLoading && ordenes.length === 0 ? (
+                            <View className="rounded-lg border border-[#E7E0EC] bg-white p-5">
+                                <Text className="text-sm text-[#79747E]">Todavía no hay órdenes en esta sucursal.</Text>
+                            </View>
+                        ) : null}
+                        {ordenes.map((orden) => {
+                            const estado = ESTADOS_ORDEN[orden.estado ?? "PENDIENTE"] ?? ESTADOS_ORDEN.PENDIENTE;
+                            const siguienteLabel = orden.estado === "PENDIENTE"
+                                ? "Preparar"
+                                : orden.estado === "EN_PREPARACION"
+                                    ? "Marcar lista"
+                                    : "Entregar";
+                            const puedeAvanzar = ["PENDIENTE", "EN_PREPARACION", "LISTA"].includes(orden.estado ?? "");
+                            const cajaLista = contextoCajaSucursalId === sucursalId
+                                && cajaAbierta?.estado === EstadoCaja.ABIERTA
+                                && corteCaja?.estado === EstadoCaja.ABIERTA;
+
+                            return (
+                                <View key={orden.id} className="rounded-lg border border-[#E7E0EC] bg-white p-4">
+                                    <View className="flex-row items-start justify-between">
+                                        <View className="flex-1">
+                                            <Text className="text-sm font-semibold text-[#1C1B1F]">
+                                                Orden #{orden.id}{orden.mesaNombre ? ` · ${orden.mesaNombre}` : orden.mesaId ? ` · Mesa ${orden.mesaId}` : ""}
+                                            </Text>
+                                            <Text className="mt-1 text-xs" style={{ color: estado.color }}>{estado.label}</Text>
+                                        </View>
+                                        <Text className="text-sm font-bold text-[#1C1B1F]">{moneda(orden.total)}</Text>
+                                    </View>
+                                    <View className="mt-3 gap-1 border-t border-[#EEEAF0] pt-3">
+                                        {orden.detalles.map((detalle, index) => (
+                                            <Text key={detalle.id ?? `${orden.id}-${index}`} className="text-xs text-[#49454F]">
+                                                {detalle.cantidad} × {detalle.producto?.nombre ?? `Producto #${detalle.productoId}`}
+                                                {detalle.notas ? ` · ${detalle.notas}` : ""}
+                                            </Text>
+                                        ))}
+                                    </View>
+                                    {puedeAvanzar || orden.estado === "ENTREGADA" ? (
+                                        <View className="mt-3 flex-row justify-end">
+                                            {puedeAvanzar ? (
+                                                <Pressable
+                                                    disabled={saving}
+                                                    onPress={() => orden.id && avanzarOrden(orden.id)}
+                                                    className="rounded-lg bg-[#1857B6] px-4 py-2"
+                                                >
+                                                    <Text className="text-xs font-semibold text-white">{siguienteLabel}</Text>
+                                                </Pressable>
+                                            ) : (
+                                                <Pressable
+                                                    disabled={saving || !cajaLista}
+                                                    onPress={() => setModalCobro(orden)}
+                                                    className={`rounded-lg px-4 py-2 ${cajaLista ? "bg-[#8B6914]" : "bg-[#B8B3BC]"}`}
+                                                >
+                                                    <Text className="text-xs font-semibold text-white">
+                                                        {cajaLoading ? "Cargando caja..." : cajaLista ? "Cobrar" : "Caja sin corte abierto"}
+                                                    </Text>
+                                                </Pressable>
+                                            )}
+                                        </View>
+                                    ) : null}
+                                </View>
+                            );
+                        })}
+                    </View>
+                )}
+            </ScrollView>
+
+            <Modal visible={modalCobro !== null} transparent animationType="slide" onRequestClose={() => setModalCobro(null)}>
+                <View className="flex-1 justify-end bg-black/40">
+                    <View className="rounded-t-xl bg-white p-5">
+                        <View className="mb-4 flex-row items-center justify-between">
+                            <Text className="text-lg font-semibold text-[#1C1B1F]">Cobrar orden #{modalCobro?.id}</Text>
+                            <Pressable onPress={() => setModalCobro(null)} accessibilityLabel="Cerrar cobro">
+                                <Ionicons name="close" size={22} color="#49454F" />
+                            </Pressable>
+                        </View>
+                        <Text className="mb-3 text-sm text-[#49454F]">Total: {moneda(modalCobro?.total ?? 0)}</Text>
+                        <Text className="mb-2 text-xs font-medium text-[#49454F]">Método de pago</Text>
+                        <View className="mb-5 flex-row flex-wrap gap-2">
+                            {METODOS_PAGO.map((metodo) => (
+                                <Pressable
+                                    key={metodo.value}
+                                    onPress={() => setMetodoPago(metodo.value)}
+                                    className={`rounded-md border px-3 py-2 ${metodoPago === metodo.value ? "border-[#1857B6] bg-[#EAF1FC]" : "border-[#D8D2DC]"}`}
+                                >
+                                    <Text className={`text-xs font-medium ${metodoPago === metodo.value ? "text-[#1857B6]" : "text-[#49454F]"}`}>{metodo.label}</Text>
+                                </Pressable>
+                            ))}
+                        </View>
+                        <Text className="mb-3 text-xs text-[#79747E]">
+                            Caja: {cajaAbierta?.nombre ?? "Sin caja abierta"} · Corte #{corteCaja?.id ?? "-"}
+                        </Text>
+                        <Pressable
+                            disabled={saving || !cajaAbierta || !corteCaja || corteCaja.estado !== EstadoCaja.ABIERTA}
+                            onPress={confirmarCobro}
+                            className={`items-center rounded-lg px-4 py-3 ${saving ? "bg-[#B8B3BC]" : "bg-[#8B6914]"}`}
+                        >
+                            <Text className="font-semibold text-white">{saving ? "Procesando..." : "Confirmar cobro"}</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };

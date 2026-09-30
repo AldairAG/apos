@@ -11,6 +11,7 @@ import categoriaReducer from '../features/categoria/store/categoria.slice';
 import materialReducer from '../features/material/store/material.slice';
 import modificadorReducer from '../features/modificador/store/modificador.slice';
 import movimientoReducer from '../features/movimiento/store/MovimientoSlice';
+import posReducer from '../features/pos/store/pos.slice';
 import productoReducer from '../features/productos/store/producto.slice';
 import recetaReducer from '../features/receta/store/receta.slice';
 import sucursalReducer from '../features/sucursal/store/sucursal.slice';
@@ -33,6 +34,7 @@ const rootReducer = combineReducers({
     material: materialReducer,
     modificador: modificadorReducer,
     producto: productoReducer,
+    pos: posReducer,
     receta: recetaReducer,
 });
 

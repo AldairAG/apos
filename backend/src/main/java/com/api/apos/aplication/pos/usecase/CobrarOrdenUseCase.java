@@ -4,7 +4,9 @@ import com.api.apos.domain.pos.venta.VentaService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.api.apos.aplication.pos.dto.OrdenDto;
 import com.api.apos.aplication.pos.dto.PagarVentaDto;
+import com.api.apos.aplication.pos.mapper.PosMapper;
 import com.api.apos.aplication.tesoreria.movimiento.dto.MovimientoDto;
 import com.api.apos.domain.financiero.corte_caja.CorteCaja;
 import com.api.apos.domain.financiero.corte_caja.CorteCajaService;
@@ -36,7 +38,7 @@ public class CobrarOrdenUseCase {
     private final VentaService ventaService;
 
     @Transactional
-    public void execute(PagarVentaDto pagarVentaDto) {
+    public OrdenDto execute(PagarVentaDto pagarVentaDto) {
 
         // 1. Obtener orden
         Orden orden = ordenService.findById(
@@ -105,6 +107,8 @@ public class CobrarOrdenUseCase {
         // 9. Guardar cambios
         corteCajaService.save(corteCaja);
         ordenService.save(orden);
+
+        return PosMapper.mapToOrdenDto(orden);
     }
 
 }

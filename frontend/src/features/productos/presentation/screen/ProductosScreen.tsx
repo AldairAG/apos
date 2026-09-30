@@ -1,7 +1,8 @@
+import { RecetaDto } from "@/features/receta/domain/types/receta.types";
 import { Ionicons } from "@expo/vector-icons";
 import { Formik, FormikHelpers } from "formik";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import * as Yup from "yup";
 import { useCategoria } from "../../../categoria/presentation/hook/useCategoria";
 import { useModificador } from "../../../modificador/presentation/hook/useModificador";
@@ -9,7 +10,6 @@ import { useReceta } from "../../../receta/presentation/hook/useReceta";
 import { useSucursal } from "../../../sucursal/presentation/hook/useSucursal";
 import type { ProductoDto } from "../../domain/types/producto.types";
 import { useProducto } from "../hook/useProducto";
-import { RecetaDto } from "@/features/receta/domain/types/receta.types";
 
 const toNumber = (value: string) => Number(value.replace(",", "."));
 
@@ -80,6 +80,7 @@ const ProductosScreen = () => {
     const { modificadores, findModificadoresByEmpresa } = useModificador();
     const [formularioVisible, setFormularioVisible] = useState(false);
     const [errorFormulario, setErrorFormulario] = useState<string | null>(null);
+    const [selectorAbierto, setSelectorAbierto] = useState<"receta" | "categoria" | "modificador" | null>(null);
 
     useEffect(() => {
         if (!sucursalActual?.id) return;
@@ -176,14 +177,18 @@ const ProductosScreen = () => {
                             }
 
                             const recetaSeleccionada = recetas.find((r) => r.id === id);
+                            if (!values.nombre.trim() && recetaSeleccionada) {
+                                setFieldValue("nombre", recetaSeleccionada.nombre);
+                            }
+
                             // TODO: ajustar `costo` al campo real donde RecetaDto expone
                             // el costo total calculado de la receta.
                             const costoReceta = (recetaSeleccionada as RecetaDto)?.costoTotal ?? 0;
                             setFieldValue("costo", String(costoReceta));
 
                             const margenNum = toNumber(values.margenGanancia);
-                            if (values.margenGanancia && Number.isFinite(margenNum)) {
-                                setFieldValue("precio", ((toNumber(values.precio) - costoReceta) / toNumber(values.precio) * 100).toFixed(2));
+                            if (values.margenGanancia && Number.isFinite(margenNum) && margenNum < 100) {
+                                setFieldValue("precio", (costoReceta / (1 - margenNum / 100)).toFixed(2));
                             }
                         };
 
@@ -194,8 +199,8 @@ const ProductosScreen = () => {
                             if (!values.margenGanancia) return; 
                             const costoNum = toNumber(texto);
                             const margenNum = toNumber(values.margenGanancia);
-                            if (Number.isFinite(costoNum) && Number.isFinite(margenNum)) {
-                                setFieldValue("precio", ((toNumber(values.precio) - costoNum) / toNumber(values.precio) * 100).toFixed(2));
+                            if (Number.isFinite(costoNum) && Number.isFinite(margenNum) && margenNum < 100) {
+                                setFieldValue("precio", (costoNum / (1 - margenNum / 100)).toFixed(2));
                             }
                         };
 
@@ -257,12 +262,10 @@ const ProductosScreen = () => {
                                         <Text className="text-sm text-red-700 -mt-3">{errors.nombre}</Text>
                                     ) : null}
 
-                                    <Selector
+                                    <SelectorBoton
                                         etiqueta="Receta"
-                                        opciones={recetas}
-                                        seleccionado={values.recetaId}
-                                        onSeleccionar={handleSeleccionarReceta}
-                                        permitirVacio
+                                        valor={values.recetaId ? recetas.find((r) => r.id === values.recetaId)?.nombre ?? "Sin receta" : "Sin receta"}
+                                        onPress={() => setSelectorAbierto("receta")}
                                     />
 
                                     <Campo
@@ -299,32 +302,20 @@ const ProductosScreen = () => {
                                         <Text className="text-sm text-red-700 -mt-3">{errors.margenGanancia}</Text>
                                     ) : null}
 
-                                    <Selector
-                                        etiqueta="Categoría"
-                                        opciones={categorias}
-                                        seleccionado={values.categoriaId}
-                                        onSeleccionar={(id) => setFieldValue("categoriaId", id)}
-                                        requerido
+                                    <SelectorBoton
+                                        etiqueta="Categoría *"
+                                        valor={values.categoriaId ? categorias.find((c) => c.id === values.categoriaId)?.nombre ?? "Selecciona una categoría" : "Selecciona una categoría"}
+                                        onPress={() => setSelectorAbierto("categoria")}
                                     />
                                     {touched.categoriaId && errors.categoriaId ? (
                                         <Text className="text-sm text-red-700 -mt-3">{errors.categoriaId}</Text>
                                     ) : null}
 
-                                    <Text className="text-sm font-medium text-[#1C1B1F]">Modificadores</Text>
-                                    {modificadores.map((modificador) => (
-                                        <Pressable
-                                            key={modificador.id}
-                                            className="flex-row items-center justify-between rounded-lg border border-[#E7E0EC] bg-white px-3 py-3"
-                                            onPress={() => modificador.id && alternarModificador(modificador.id)}
-                                        >
-                                            <Text className="text-sm text-[#1C1B1F]">{modificador.nombre}</Text>
-                                            <Ionicons
-                                                name={modificador.id && values.modificadorIds.includes(modificador.id) ? "checkbox" : "square-outline"}
-                                                size={22}
-                                                color="#1857B6"
-                                            />
-                                        </Pressable>
-                                    ))}
+                                    <SelectorBoton
+                                        etiqueta="Modificadores"
+                                        valor={values.modificadorIds.length ? `${values.modificadorIds.length} seleccionado(s)` : "Sin modificadores"}
+                                        onPress={() => setSelectorAbierto("modificador")}
+                                    />
 
                                     {errorFormulario ? <Text className="text-sm text-red-700">{errorFormulario}</Text> : null}
 
@@ -338,6 +329,43 @@ const ProductosScreen = () => {
                                         </Text>
                                     </Pressable>
                                 </ScrollView>
+
+                                <Modal visible={selectorAbierto === "receta"} transparent animationType="fade" onRequestClose={() => setSelectorAbierto(null)}>
+                                    <ListaSeleccionModal
+                                        titulo="Receta"
+                                        opciones={recetas}
+                                        seleccionado={values.recetaId}
+                                        permitirVacio
+                                        onSeleccionar={(id) => {
+                                            handleSeleccionarReceta(id);
+                                            setSelectorAbierto(null);
+                                        }}
+                                        onCerrar={() => setSelectorAbierto(null)}
+                                    />
+                                </Modal>
+
+                                <Modal visible={selectorAbierto === "categoria"} transparent animationType="fade" onRequestClose={() => setSelectorAbierto(null)}>
+                                    <ListaSeleccionModal
+                                        titulo="Categoría"
+                                        opciones={categorias}
+                                        seleccionado={values.categoriaId}
+                                        onSeleccionar={(id) => {
+                                            setFieldValue("categoriaId", id);
+                                            setSelectorAbierto(null);
+                                        }}
+                                        onCerrar={() => setSelectorAbierto(null)}
+                                    />
+                                </Modal>
+
+                                <Modal visible={selectorAbierto === "modificador"} transparent animationType="fade" onRequestClose={() => setSelectorAbierto(null)}>
+                                    <ListaSeleccionMultipleModal
+                                        titulo="Modificadores"
+                                        opciones={modificadores}
+                                        seleccionados={values.modificadorIds}
+                                        onAlternar={alternarModificador}
+                                        onCerrar={() => setSelectorAbierto(null)}
+                                    />
+                                </Modal>
                             </View>
                         );
                     }}
@@ -354,24 +382,98 @@ const Campo = ({ etiqueta, ...props }: { etiqueta: string } & React.ComponentPro
     </View>
 );
 
-const Selector = ({ etiqueta, opciones, seleccionado, onSeleccionar, permitirVacio, requerido }: {
-    etiqueta: string;
+const SelectorBoton = ({ etiqueta, valor, onPress }: { etiqueta: string; valor: string; onPress: () => void }) => (
+    <View className="gap-1">
+        <Text className="text-sm font-medium text-[#1C1B1F]">{etiqueta}</Text>
+        <Pressable
+            className="flex-row items-center justify-between rounded-lg border border-[#E7E0EC] bg-white px-3 py-3"
+            onPress={onPress}
+        >
+            <Text className="text-sm text-[#1C1B1F]">{valor}</Text>
+            <Ionicons name="chevron-down" size={18} color="#79747E" />
+        </Pressable>
+    </View>
+);
+
+const ListaSeleccionModal = ({ titulo, opciones, seleccionado, onSeleccionar, onCerrar, permitirVacio }: {
+    titulo: string;
     opciones: Array<{ id?: number; nombre: string }>;
     seleccionado: number | null;
     onSeleccionar: (id: number | null) => void;
+    onCerrar: () => void;
     permitirVacio?: boolean;
-    requerido?: boolean;
+}) => {
+    const datos = permitirVacio ? [{ id: undefined, nombre: "Sin receta" }, ...opciones] : opciones;
+    return (
+    <Pressable className="flex-1 justify-end bg-black/40" onPress={onCerrar}>
+        <Pressable className="max-h-[70%] rounded-t-2xl bg-white" onPress={(e) => e.stopPropagation()}>
+            <View className="flex-row items-center justify-between border-b border-[#E7E0EC] px-4 py-3">
+                <Text className="text-base font-semibold text-[#1C1B1F]">{titulo}</Text>
+                <Pressable accessibilityLabel="Cerrar" onPress={onCerrar}>
+                    <Ionicons name="close" size={22} color="#1C1B1F" />
+                </Pressable>
+            </View>
+            <FlatList
+                data={datos}
+                keyExtractor={(item, index) => (item.id ? String(item.id) : `vacio-${index}`)}
+                contentContainerStyle={{ padding: 12, gap: 8 }}
+                renderItem={({ item }) => (
+                    <Pressable
+                        className="flex-row items-center justify-between rounded-lg border border-[#E7E0EC] bg-white px-3 py-3"
+                        onPress={() => onSeleccionar(item.id ?? null)}
+                    >
+                        <Text className="text-sm text-[#1C1B1F]">{item.nombre}</Text>
+                        <Ionicons
+                            name={seleccionado === (item.id ?? null) ? "radio-button-on" : "radio-button-off"}
+                            size={20}
+                            color="#1857B6"
+                        />
+                    </Pressable>
+                )}
+            />
+        </Pressable>
+    </Pressable>
+    );
+};
+
+const ListaSeleccionMultipleModal = ({ titulo, opciones, seleccionados, onAlternar, onCerrar }: {
+    titulo: string;
+    opciones: Array<{ id?: number; nombre: string }>;
+    seleccionados: number[];
+    onAlternar: (id: number) => void;
+    onCerrar: () => void;
 }) => (
-    <View className="gap-1">
-        <Text className="text-sm font-medium text-[#1C1B1F]">{etiqueta}{requerido ? " *" : ""}</Text>
-        {permitirVacio ? <Pressable className="rounded-lg border border-[#E7E0EC] bg-white px-3 py-3" onPress={() => onSeleccionar(null)}><Text className="text-sm text-[#79747E]">Sin receta</Text></Pressable> : null}
-        {opciones.map((opcion) => opcion.id ? (
-            <Pressable key={opcion.id} className="flex-row items-center justify-between rounded-lg border border-[#E7E0EC] bg-white px-3 py-3" onPress={() => onSeleccionar(opcion.id!)}>
-                <Text className="text-sm text-[#1C1B1F]">{opcion.nombre}</Text>
-                <Ionicons name={seleccionado === opcion.id ? "radio-button-on" : "radio-button-off"} size={20} color="#1857B6" />
+    <Pressable className="flex-1 justify-end bg-black/40" onPress={onCerrar}>
+        <Pressable className="max-h-[70%] rounded-t-2xl bg-white" onPress={(e) => e.stopPropagation()}>
+            <View className="flex-row items-center justify-between border-b border-[#E7E0EC] px-4 py-3">
+                <Text className="text-base font-semibold text-[#1C1B1F]">{titulo}</Text>
+                <Pressable accessibilityLabel="Cerrar" onPress={onCerrar}>
+                    <Ionicons name="close" size={22} color="#1C1B1F" />
+                </Pressable>
+            </View>
+            <FlatList
+                data={opciones}
+                keyExtractor={(item, index) => (item.id ? String(item.id) : `item-${index}`)}
+                contentContainerStyle={{ padding: 12, gap: 8 }}
+                renderItem={({ item }) => (
+                    <Pressable
+                        className="flex-row items-center justify-between rounded-lg border border-[#E7E0EC] bg-white px-3 py-3"
+                        onPress={() => item.id && onAlternar(item.id)}
+                    >
+                        <Text className="text-sm text-[#1C1B1F]">{item.nombre}</Text>
+                        <Ionicons
+                            name={item.id && seleccionados.includes(item.id) ? "checkbox" : "square-outline"}
+                            size={22}
+                            color="#1857B6"
+                        />
+                    </Pressable>
+                )}
+            />
+            <Pressable className="m-3 items-center rounded-lg bg-[#1857B6] py-3" onPress={onCerrar}>
+                <Text className="font-semibold text-white">Listo</Text>
             </Pressable>
-        ) : null)}
-    </View>
+        </Pressable>
+    </Pressable>
 );
 
 export default ProductosScreen;

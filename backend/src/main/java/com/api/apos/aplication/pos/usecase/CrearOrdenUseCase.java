@@ -18,6 +18,7 @@ import com.api.apos.aplication.inventario.existencia.dto.ProductoDescuentoDto;
 import com.api.apos.aplication.inventario.existencia.usecase.DescontarExistenciaByProductoIds;
 import com.api.apos.aplication.pos.dto.DetalleOrdenDto;
 import com.api.apos.aplication.pos.dto.OrdenDto;
+import com.api.apos.aplication.pos.mapper.PosMapper;
 import com.api.apos.domain.catalogo.complemento.Modificador;
 import com.api.apos.domain.catalogo.complemento.ModificadorService;
 import com.api.apos.domain.organizacion.sucursal.Sucursal;
@@ -49,7 +50,7 @@ public class CrearOrdenUseCase {
     private final DescontarExistenciaByProductoIds descontarExistenciaByProductoId;
 
 
-    public void execute(OrdenDto ordenDto) {
+    public OrdenDto execute(OrdenDto ordenDto) {
 
         // Obtener sucursal
         Sucursal sucursal = sucursalService.findById(ordenDto.getSucursalId());
@@ -166,7 +167,7 @@ public class CrearOrdenUseCase {
         productosDescuentoDto.forEach(descontarExistenciaByProductoId::execute);
 
         // Guardar la orden en la base de datos
-        ordenService.save(orden);
+        return PosMapper.mapToOrdenDto(ordenService.save(orden));
 
     }
 

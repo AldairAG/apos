@@ -9,10 +9,12 @@ import com.api.apos.enums.EstadoOrden;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor 
 public class OrdenDto {
 
     private Long id;
