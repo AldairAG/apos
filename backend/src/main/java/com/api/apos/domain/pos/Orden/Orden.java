@@ -9,6 +9,7 @@ import com.api.apos.domain.pos.detalle_orden.DetalleOrden;
 import com.api.apos.domain.pos.mesa.Mesa;
 import com.api.apos.domain.pos.venta.Venta;
 import com.api.apos.enums.EstadoOrden;
+import com.api.apos.enums.TipoOrden;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -56,6 +57,9 @@ public class Orden {
     private BigDecimal total;
 
     private LocalDateTime createdAt;
+
+    @Enumerated(EnumType.STRING)
+    private TipoOrden tipo;
 
     @OneToMany(mappedBy = "orden",cascade = CascadeType.ALL,orphanRemoval = true)
     private List<DetalleOrden> detalles;

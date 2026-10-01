@@ -1,12 +1,13 @@
+import { ApiResponse } from "@/api/apiTypes";
+import { findCorteCajaByCajaIdThunk } from "@/features/caja/aplication/query/FindCorteCajaByCajaId.thunk";
+import { CerrarCajaThunk } from "@/features/caja/aplication/usecase/CerrarCaja.thunk";
+import { CorteCajaDto } from "@/features/caja/domain/Caja.types";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { findByDateQueryThunk } from "../aplication/query/FindByDateQueryThunk";
+import { crearCompraThunk } from "../aplication/usecase/CrearCompraThunk";
 import { crearEgresoThunk } from "../aplication/usecase/CrearEgresoThunk";
 import { crearIngresoThunk } from "../aplication/usecase/CrearIngresoThunk";
-import { findByDateQueryThunk } from "../aplication/query/FindByDateQueryThunk";
 import { MovimientoDto } from "../domain/types/Movimiento.types";
-import { findCorteCajaByCajaIdThunk } from "@/features/caja/aplication/query/FindCorteCajaByCajaId.thunk";
-import { ApiResponse } from "@/api/apiTypes";
-import { CajaDto, CorteCajaDto } from "@/features/caja/domain/Caja.types";
-import { CerrarCajaThunk } from "@/features/caja/aplication/usecase/CerrarCaja.thunk";
 
 
 interface MovimientoState {
@@ -42,6 +43,18 @@ const movimientoSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
+        builder.addCase(crearCompraThunk.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(crearCompraThunk.fulfilled, (state, action) => {
+            state.movimientos.push(action.payload.data);
+            state.loading = false;
+        });
+        builder.addCase(crearCompraThunk.rejected, (state, action) => {
+            state.error = action.payload ?? action.error.message ?? "Error al registrar la compra";
+            state.loading = false;
+        });
         builder.addCase(crearEgresoThunk.pending, (state) => {
             state.loading = true;
         });

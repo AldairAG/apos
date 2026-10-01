@@ -1,9 +1,11 @@
 import { AppDispatch, RootState } from "@/store";
+import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { seleccionarSucursal } from "../../store/sucursal.slice";
-import { crearSucursalThunk } from "../../aplication/usecase/CrearSucursalThunk";
-import { SucursalDto } from "../../domain/types/sucursal.types";
 import { findSucursalesByEmpresaThunk } from "../../aplication/query/FindSucursalesByEmpresaThunk";
+import { crearSucursalThunk } from "../../aplication/usecase/CrearSucursalThunk";
+import { desactivarSucursalThunk } from "../../aplication/usecase/DesactivarSucursalThunk";
+import { SucursalDto } from "../../domain/types/sucursal.types";
+import { seleccionarSucursal } from "../../store/sucursal.slice";
 
 export const useSucursal = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -21,8 +23,12 @@ export const useSucursal = () => {
         dispatch(crearSucursalThunk(sucursal));
     };
 
-    const findSucursalesByEmpresa = () => {
+    const findSucursalesByEmpresa = useCallback(() => {
         dispatch(findSucursalesByEmpresaThunk());
+    }, [dispatch]);
+
+    const desactivarSucursal = async (id: number) => {
+        await dispatch(desactivarSucursalThunk(id)).unwrap();
     };
 
     return {
@@ -34,5 +40,6 @@ export const useSucursal = () => {
         cambiarSucursal,
         crearSucursal,
         findSucursalesByEmpresa,
+        desactivarSucursal,
     };
 };

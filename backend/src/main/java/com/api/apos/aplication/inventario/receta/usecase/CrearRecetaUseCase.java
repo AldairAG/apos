@@ -13,6 +13,9 @@ import com.api.apos.domain.inventario.material.MaterialService;
 import com.api.apos.domain.inventario.receta.Receta;
 import com.api.apos.domain.inventario.receta.RecetaService;
 import com.api.apos.domain.inventario.receta_detalle.RecetaDetalle;
+import com.api.apos.enums.TipoResultadoReceta;
+import com.api.apos.exception.AppException;
+import com.api.apos.exception.ErrorCode;
 
 import lombok.AllArgsConstructor;
 
@@ -31,19 +34,38 @@ public class CrearRecetaUseCase {
 
         Usuario usuario = usuarioService.getUsuarioAutenticado();
 
-        List<RecetaDetalle> recetaDetalles = recetaDto.getRecetaDetalles().stream()
+        TipoResultadoReceta tipoResultado = recetaDto.getTipoResultado() == null
+                ? TipoResultadoReceta.PRODUCTO
+                : recetaDto.getTipoResultado();
+        var materialResultado = tipoResultado == TipoResultadoReceta.MATERIAL
+                ? materialService.findById(recetaDto.getMaterialResultadoId())
+                : null;
+        if ((tipoResultado == TipoResultadoReceta.MATERIAL && materialResultado == null)
+                || (tipoResultado == TipoResultadoReceta.PRODUCTO && recetaDto.getMaterialResultadoId() != null)) {
+            throw new AppException(ErrorCode.RECETA_RESULTADO_INVALIDO);
+        }
+
+        List<RecetaDetalle> recetaDetalles = (recetaDto.getRecetaDetalles() == null
+                ? List.<com.api.apos.aplication.inventario.receta.dto.RecetaDetallesDto>of()
+                : recetaDto.getRecetaDetalles()).stream()
                 .map(detalleDto -> RecetaDetalle.builder()
                         .cantidad(detalleDto.getCantidad())
                         .unidadMedida(detalleDto.getUnidadMedida())
                         .costo(detalleDto.getCosto())
-                        .cantidad(detalleDto.getCantidad())
                         .material(materialService.findById(detalleDto.getMaterialId()))
                         .build())
                 .toList();
+        if (tipoResultado == TipoResultadoReceta.MATERIAL
+                && (recetaDetalles.isEmpty() || recetaDetalles.stream().anyMatch(detalle -> detalle.getMaterial() == null
+                        || detalle.getMaterial().getId().equals(materialResultado.getId())))) {
+            throw new AppException(ErrorCode.RECETA_RESULTADO_INVALIDO);
+        }
 
         Receta receta = Receta.builder()
                 .nombre(recetaDto.getNombre())
                 .costoTotal(recetaDto.getCostoTotal())
+                .tipoResultado(tipoResultado)
+                .materialResultado(materialResultado)
                 .instrucciones(recetaDto.getInstrucciones())
                 .notas(recetaDto.getNotas())
                 .porcentajeSobreCostos(recetaDto.getPorcentajeSobreCostos())

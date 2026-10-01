@@ -28,15 +28,23 @@ public class CuentaService {
     }
 
     public Cuenta findById(Long id) {
-        return cuentaRepository.findById(id)
+        Cuenta cuenta = cuentaRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CUENTA_NO_ENCONTRADA));
+        if (Boolean.FALSE.equals(cuenta.getActiva())) {
+            throw new AppException(ErrorCode.CUENTA_NO_ENCONTRADA);
+        }
+        return cuenta;
     }
     
     public List<Cuenta> findByEmpresaId(Long empresaId) {
         return cuentaRepository.findByEmpresaId(empresaId);
     }
 
+    public List<Cuenta> findActivasByEmpresaId(Long empresaId) {
+        return cuentaRepository.findActivasByEmpresaId(empresaId);
+    }
+
     public Cuenta findByCuentaDestinoAndTipoAndEmpresaId( TipoCuenta tipo, Long empresaId) {
-        return cuentaRepository.findByCuentaDestinoTrueAndTipoAndEmpresaId(tipo, empresaId);
+        return cuentaRepository.findCuentaDestinoActiva(tipo, empresaId);
     }
 }

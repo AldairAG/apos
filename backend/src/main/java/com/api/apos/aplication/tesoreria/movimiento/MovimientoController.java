@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.api.apos.aplication.tesoreria.movimiento.dto.MovimientoDto;
 import com.api.apos.aplication.tesoreria.movimiento.query.FindByCorteCajaIdQuery;
 import com.api.apos.aplication.tesoreria.movimiento.query.FindByDateQuery;
+import com.api.apos.aplication.tesoreria.movimiento.usecase.RegistrarCompraUseCase;
 import com.api.apos.aplication.tesoreria.movimiento.usecase.RegistrarEgresoUseCase;
 import com.api.apos.aplication.tesoreria.movimiento.usecase.RegistrarIngresoUseCase;
 import com.api.apos.helpers.ApiResponseWrapper;
@@ -31,6 +32,8 @@ public class MovimientoController {
     private final RegistrarIngresoUseCase registrarIngresoUseCase;
 
     private final RegistrarEgresoUseCase registrarEgresoUseCase;
+
+    private final RegistrarCompraUseCase registrarCompraUseCase;
 
     private final FindByDateQuery findByDateQuery;
 
@@ -59,6 +62,13 @@ public class MovimientoController {
         List<MovimientoDto> movimientos = findByCorteCajaIdQuery.execute(Long.parseLong(corteCajaId));
         return ResponseEntity.ok(new ApiResponseWrapper<>(true, movimientos, "Movimientos encontrados exitosamente", null));
     }
+
+    @PostMapping("/compra")
+    public ResponseEntity<ApiResponseWrapper<MovimientoDto>> crearCompra(@RequestBody MovimientoDto movimientoDto) {
+        MovimientoDto createdMovimiento = registrarCompraUseCase.execute(movimientoDto);
+        return ResponseEntity.ok(new ApiResponseWrapper<>(true, createdMovimiento, "Compra creada exitosamente", null));
+    }
+    
     
     
 

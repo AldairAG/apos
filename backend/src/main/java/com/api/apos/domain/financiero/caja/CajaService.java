@@ -20,11 +20,19 @@ public class CajaService {
     }
 
     public Caja findById(Long id) {
-        return cajaRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.CAJA_NO_ENCONTRADA));
+        Caja caja = cajaRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.CAJA_NO_ENCONTRADA));
+        if (Boolean.FALSE.equals(caja.getActiva())) {
+            throw new AppException(ErrorCode.CAJA_NO_ENCONTRADA);
+        }
+        return caja;
     }
 
     public void delete(Long id) {
         Caja caja = findById(id);
+
+        if (caja.getEstado() == com.api.apos.enums.EstadoCaja.ABIERTA) {
+            throw new AppException(ErrorCode.CAJA_ABIERTA_NO_ELIMINABLE);
+        }
 
         caja.delete();
 
@@ -32,7 +40,7 @@ public class CajaService {
     }
 
     public List<Caja> findBySucursalId(Long sucursalId) {
-        return cajaRepository.findBySucursalId(sucursalId);
+        return cajaRepository.findActivasBySucursalId(sucursalId);
     }
 
 

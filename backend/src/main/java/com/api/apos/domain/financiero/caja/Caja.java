@@ -3,26 +3,25 @@ package com.api.apos.domain.financiero.caja;
 import java.math.BigDecimal;
 import java.util.List;
 
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToOne;
-import com.api.apos.enums.EstadoCaja;
-
 import com.api.apos.domain.financiero.auditable.AuditableEntity;
 import com.api.apos.domain.financiero.corte_caja.CorteCaja;
 import com.api.apos.domain.organizacion.sucursal.Sucursal;
+import com.api.apos.enums.EstadoCaja;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -57,7 +56,6 @@ public class Caja extends AuditableEntity {
 
     public void delete() {
         this.activa = false;
-        this.estado = EstadoCaja.CERRADA;
     }
 
     public void abrir(CorteCaja corteCaja){

@@ -4,6 +4,9 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.api.apos.exception.AppException;
+import com.api.apos.exception.ErrorCode;
+
 import lombok.AllArgsConstructor;
 
 @Service
@@ -26,14 +29,26 @@ public class SucursalService {
         sucursalRepository.save(sucursal);
     }
 
+    public List<Sucursal> findActivasByEmpresaId(Long empresaId){
+        return sucursalRepository.findActivasByEmpresaId(empresaId);
+    }
+
     public Sucursal findById(Long id){
-        return sucursalRepository.findById(id)
-        .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
+        Sucursal sucursal = sucursalRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.SUCURSAL_NO_ENCONTRADA));
+        if (Boolean.FALSE.equals(sucursal.getActiva())) {
+            throw new AppException(ErrorCode.SUCURSAL_NO_ENCONTRADA);
+        }
+        return sucursal;
     }
 
     public Sucursal findByCodigo(String codigo){
-        return sucursalRepository.findByCodigo(codigo)
-        .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
+        Sucursal sucursal = sucursalRepository.findByCodigo(codigo)
+                .orElseThrow(() -> new AppException(ErrorCode.SUCURSAL_NO_ENCONTRADA));
+        if (Boolean.FALSE.equals(sucursal.getActiva())) {
+            throw new AppException(ErrorCode.SUCURSAL_NO_ENCONTRADA);
+        }
+        return sucursal;
     }
 
     public List<Sucursal> findAllByEmpresaId(Long empresaId){

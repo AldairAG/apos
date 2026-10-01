@@ -1,5 +1,11 @@
 package com.api.apos.domain.inventario.movimiento_inventario;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import com.api.apos.enums.ConceptoMovimientoInventario;
+import com.api.apos.enums.TipoMovimientoInventario;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -7,12 +13,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
-import com.api.apos.enums.ConceptoMovimientoInventario;
-import com.api.apos.enums.TipoMovimientoInventario;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,7 +31,11 @@ public class MovimientoInventario {
 
     private Long materialId;
 
+    private String materialNombre;
+
     private Long sucursalId;
+
+    private String sucursalNombre;
 
     private BigDecimal cantidad;
 
@@ -44,4 +48,6 @@ public class MovimientoInventario {
     private LocalDateTime fecha;
 
     private Long usuarioId;
+
+    private String usuarioNombre;
 }

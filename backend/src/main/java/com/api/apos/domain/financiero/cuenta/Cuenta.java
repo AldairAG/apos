@@ -40,7 +40,8 @@ public class Cuenta extends AuditableEntity {
 
     private String nombre;
 
-    private Boolean activa;
+    @Builder.Default
+    private Boolean activa = true;
 
     private BigDecimal saldo;
 

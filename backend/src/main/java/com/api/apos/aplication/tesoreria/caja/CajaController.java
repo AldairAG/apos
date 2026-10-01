@@ -1,5 +1,13 @@
 package com.api.apos.aplication.tesoreria.caja;
 
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -10,17 +18,10 @@ import com.api.apos.aplication.tesoreria.caja.query.FindCorteCajaActualByCajaId;
 import com.api.apos.aplication.tesoreria.caja.usecase.AbrirCajaUseCase;
 import com.api.apos.aplication.tesoreria.caja.usecase.CerrarCajaUseCase;
 import com.api.apos.aplication.tesoreria.caja.usecase.CrearCajaUseCase;
+import com.api.apos.aplication.tesoreria.caja.usecase.DesactivarCajaUseCase;
 import com.api.apos.helpers.ApiResponseWrapper;
 
 import lombok.AllArgsConstructor;
-
-import java.util.List;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 
 
@@ -39,6 +40,8 @@ public class CajaController {
     private final CrearCajaUseCase crearCajaUseCase;
 
     private final FindCorteCajaActualByCajaId findCorteCajaActualByCajaId;
+
+    private final DesactivarCajaUseCase desactivarCajaUseCase;
     
 
     @PostMapping("/{cajaId}/abrir")
@@ -69,6 +72,12 @@ public class CajaController {
     public ResponseEntity<ApiResponseWrapper<CorteCajaDto>> getCorteCajaActualByCajaId(@PathVariable Long cajaId) {
         CorteCajaDto corteCajaDto= findCorteCajaActualByCajaId.execute(cajaId);
         return ResponseEntity.ok(ApiResponseWrapper.success(corteCajaDto));
+    }
+
+    @DeleteMapping("/{cajaId}")
+    public ResponseEntity<ApiResponseWrapper<Void>> desactivarCaja(@PathVariable Long cajaId) {
+        desactivarCajaUseCase.execute(cajaId);
+        return ResponseEntity.ok(ApiResponseWrapper.success(null));
     }
     
     

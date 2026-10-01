@@ -1,8 +1,10 @@
 import { AppDispatch, RootState } from "@/store";
 import { useDispatch, useSelector } from "react-redux";
+import { findByDateQueryThunk } from "../../aplication/query/FindByDateQueryThunk";
+import { crearCompraThunk } from "../../aplication/usecase/CrearCompraThunk";
 import { crearEgresoThunk } from "../../aplication/usecase/CrearEgresoThunk";
 import { crearIngresoThunk } from "../../aplication/usecase/CrearIngresoThunk";
-import { findByDateQueryThunk } from "../../aplication/query/FindByDateQueryThunk";
+import type { RegistrarCompraDto } from "../../domain/types/Movimiento.types";
 
 export const useMovimientos = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -19,6 +21,9 @@ export const useMovimientos = () => {
         dispatch(crearEgresoThunk(movimientoDto));
     };
 
+    const crearCompra = (movimientoDto: RegistrarCompraDto) =>
+        dispatch(crearCompraThunk(movimientoDto)).unwrap();
+
     const findByDate = (fecha: string) => {
         dispatch(findByDateQueryThunk({ fecha }));
     };
@@ -29,6 +34,7 @@ export const useMovimientos = () => {
         error,
         crearIngreso,
         crearEgreso,
+        crearCompra,
         findByDate,
         dispatch,
     };

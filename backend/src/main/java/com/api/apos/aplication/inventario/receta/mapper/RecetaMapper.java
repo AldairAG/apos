@@ -30,6 +30,13 @@ public class RecetaMapper {
                 .costoTotal(receta.getCostoTotal())
                 .instrucciones(receta.getInstrucciones())
                 .recetaDetalles(detalles)
+                .tipoResultado(receta.getTipoResultado())
+                .materialResultadoId(receta.getMaterialResultado() == null
+                        ? null
+                        : receta.getMaterialResultado().getId())
+                .materialResultadoNombre(receta.getMaterialResultado() == null
+                        ? null
+                        : receta.getMaterialResultado().getNombre())
                 .build();
 
 

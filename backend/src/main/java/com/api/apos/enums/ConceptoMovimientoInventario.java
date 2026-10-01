@@ -4,5 +4,7 @@ public enum ConceptoMovimientoInventario {
     COMPRA,
     VENTA,
     AJUSTE,
-    MERMA
+    MERMA,
+    CONSUMO_PERSONAL,
+    PRODUCCION
 }

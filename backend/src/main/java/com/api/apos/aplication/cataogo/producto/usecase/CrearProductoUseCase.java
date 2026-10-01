@@ -24,6 +24,9 @@ import com.api.apos.domain.inventario.receta.Receta;
 import com.api.apos.domain.inventario.receta.RecetaService;
 import com.api.apos.domain.organizacion.sucursal.Sucursal;
 import com.api.apos.domain.organizacion.sucursal.SucursalService;
+import com.api.apos.enums.TipoResultadoReceta;
+import com.api.apos.exception.AppException;
+import com.api.apos.exception.ErrorCode;
 
 import lombok.AllArgsConstructor;
 
@@ -63,6 +66,12 @@ public class CrearProductoUseCase {
                 Receta receta = productoDto.getRecetaId() != null
                                 ? recetaService.findById(productoDto.getRecetaId())
                                 : null;
+                if (productoDto.getRecetaId() != null && receta == null) {
+                        throw new AppException(ErrorCode.RECETA_NO_ENCONTRADA);
+                }
+                if (receta != null && receta.getTipoResultado() != TipoResultadoReceta.PRODUCTO) {
+                        throw new AppException(ErrorCode.RECETA_RESULTADO_INVALIDO);
+                }
 
                 // 5. Obtener modificadores
                 List<Long> modificadorIds = productoDto.getModificadorIds() != null

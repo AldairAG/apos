@@ -9,10 +9,12 @@ import { Formik, FormikHelpers } from "formik";
 import { useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import * as Yup from "yup";
-import { RecetaDetalleDto, RecetaDto } from "../../domain/types/receta.types";
+import { RecetaDetalleDto, RecetaDto, TipoResultadoReceta } from "../../domain/types/receta.types";
 import { useReceta } from "../hook/useReceta";
 
 interface RecetaForm {
+    tipoResultado: TipoResultadoReceta;
+    materialResultadoId: number | null;
     nombre: string;
     rendimiento: string;
     tiempoPreparacion: string;
@@ -23,6 +25,8 @@ interface RecetaForm {
 }
 
 const initialValues: RecetaForm = {
+    tipoResultado: "PRODUCTO",
+    materialResultadoId: null,
     nombre: "",
     rendimiento: "",
     tiempoPreparacion: "",
@@ -68,6 +72,11 @@ function calcularCostoMaterial(
 }
 
 const validationSchema = Yup.object({
+    tipoResultado: Yup.mixed<TipoResultadoReceta>().oneOf(["PRODUCTO", "MATERIAL"]).required(),
+    materialResultadoId: Yup.number().nullable().when("tipoResultado", {
+        is: "MATERIAL",
+        then: (schema) => schema.required("Selecciona el material que producirá la receta"),
+    }),
     nombre: Yup.string()
         .trim()
         .required("El nombre de la receta es obligatorio")
@@ -109,6 +118,7 @@ export default function CrearEditarRecetaScreen() {
 
     const [pasoTexto, setPasoTexto] = useState("");
     const [selectorMaterialVisible, setSelectorMaterialVisible] = useState(false);
+    const [selectorMaterialResultadoVisible, setSelectorMaterialResultadoVisible] = useState(false);
     const [selectorUnidadIndex, setSelectorUnidadIndex] = useState<number | null>(null);
 
     useEffect(() => {
@@ -120,6 +130,10 @@ export default function CrearEditarRecetaScreen() {
         const costoTotal = values.recetaDetalles.reduce((acc, d) => acc + d.costo, 0);
 
         const nuevaReceta: RecetaDto = {
+            tipoResultado: values.tipoResultado,
+            materialResultadoId: values.tipoResultado === "MATERIAL"
+                ? values.materialResultadoId ?? undefined
+                : undefined,
             nombre: values.nombre.trim(),
             rendimiento: parseNumero(values.rendimiento),
             tiempoPreparacion: values.tiempoPreparacion ? parseNumero(values.tiempoPreparacion) : undefined,
@@ -195,7 +209,8 @@ export default function CrearEditarRecetaScreen() {
                     };
 
                     const materialesNoAgregados = materialesDisponibles.filter(
-                        (material) => !values.recetaDetalles.some((detalle) => detalle.materialId === material.id)
+                        (material) => material.id !== values.materialResultadoId
+                            && !values.recetaDetalles.some((detalle) => detalle.materialId === material.id)
                     );
 
                     const actualizarDetalle = (index: number, cambios: Partial<RecetaDetalleDto>) => {
@@ -243,6 +258,42 @@ export default function CrearEditarRecetaScreen() {
                                 <Text className="text-[#B3261E] text-xs mb-2">{errors.nombre}</Text>
                             ) : (
                                 <View className="mb-2" />
+                            )}
+
+                            <Text className="text-sm font-medium text-[#1C1B1F] mb-2">Resultado de la receta</Text>
+                            <View className="flex-row border-b border-[#D8D4DC] mb-3">
+                                {(["PRODUCTO", "MATERIAL"] as const).map((tipo) => (
+                                    <Pressable
+                                        key={tipo}
+                                        onPress={() => {
+                                            setFieldValue("tipoResultado", tipo);
+                                            if (tipo === "PRODUCTO") setFieldValue("materialResultadoId", null);
+                                        }}
+                                        className={`mr-5 border-b-2 pb-2 ${values.tipoResultado === tipo ? "border-[#1857B6]" : "border-transparent"}`}
+                                    >
+                                        <Text className={`text-sm font-semibold ${values.tipoResultado === tipo ? "text-[#1857B6]" : "text-[#79747E]"}`}>
+                                            {tipo === "PRODUCTO" ? "Producto" : "Material elaborado"}
+                                        </Text>
+                                    </Pressable>
+                                ))}
+                            </View>
+                            {values.tipoResultado === "MATERIAL" && (
+                                <View className="mb-3">
+                                    <Text className="text-sm font-medium text-[#1C1B1F] mb-2">Material producido</Text>
+                                    <Pressable
+                                        onPress={() => setSelectorMaterialResultadoVisible(true)}
+                                        className="flex-row items-center justify-between border border-[#E7E0EC] bg-white px-3 py-3"
+                                    >
+                                        <Text className={`text-sm ${values.materialResultadoId ? "font-medium text-[#1C1B1F]" : "text-[#79747E]"}`}>
+                                            {materialesDisponibles.find((material) => material.id === values.materialResultadoId)?.nombre
+                                                ?? "Selecciona el material producido"}
+                                        </Text>
+                                        <Ionicons name="search" size={18} color="#79747E" />
+                                    </Pressable>
+                                    {touched.materialResultadoId && errors.materialResultadoId && (
+                                        <Text className="mt-1 text-xs text-[#B3261E]">{errors.materialResultadoId}</Text>
+                                    )}
+                                </View>
                             )}
 
                             <View className="flex-row gap-3">
@@ -458,6 +509,13 @@ export default function CrearEditarRecetaScreen() {
                                 materiales={materialesNoAgregados}
                                 onSelect={agregarMaterial}
                                 onClose={() => setSelectorMaterialVisible(false)}
+                            />
+
+                            <MaterialSelector
+                                visible={selectorMaterialResultadoVisible}
+                                materiales={materialesDisponibles}
+                                onSelect={(material) => setFieldValue("materialResultadoId", material.id ?? null)}
+                                onClose={() => setSelectorMaterialResultadoVisible(false)}
                             />
 
                             <UnidadMedidaSelector

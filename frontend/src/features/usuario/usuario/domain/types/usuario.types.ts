@@ -8,6 +8,7 @@ export interface UsuarioDto {
     telefono: string;
     lada: string;
     empresa: EmpresaDto;
+    rol?: string;
 }
 
 export enum Rol {

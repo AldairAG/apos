@@ -11,6 +11,7 @@ import com.api.apos.domain.inventario.compra.Compra;
 import com.api.apos.domain.inventario.existencia.Existencia;
 import com.api.apos.domain.organizacion.empresa.Empresa;
 import com.api.apos.domain.pos.mesa.Mesa;
+import com.api.apos.enums.EstadoMesa;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -107,6 +108,7 @@ public class Sucursal {
         }
         mesas.add(mesa);
         mesa.setSucursal(this);
+        mesa.setEstado(EstadoMesa.LIBRE);
     }
 
     public void addCompra(Compra compra){

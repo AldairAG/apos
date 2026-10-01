@@ -45,4 +45,9 @@ public class MovimientoDto {
 
     private MetodoPago metodoDePago;
 
+    private Long materialId;
+
+    private BigDecimal cantidadCompra;
+
+    private Long sucursalId;
 }

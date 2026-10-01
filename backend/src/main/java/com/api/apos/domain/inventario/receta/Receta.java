@@ -4,8 +4,10 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import com.api.apos.domain.catalogo.producto.Producto;
+import com.api.apos.domain.inventario.material.Material;
 import com.api.apos.domain.inventario.receta_detalle.RecetaDetalle;
 import com.api.apos.domain.organizacion.empresa.Empresa;
+import com.api.apos.enums.TipoResultadoReceta;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -49,6 +51,15 @@ public class Receta {
 
     private BigDecimal costoTotal;
 
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "tipo_resultado")
+    @Builder.Default
+    private TipoResultadoReceta tipoResultado = TipoResultadoReceta.PRODUCTO;
+
+    @ManyToOne
+    @JoinColumn(name = "material_resultado_id")
+    private Material materialResultado;
+
     @ElementCollection
     @CollectionTable(name = "receta_instrucciones", joinColumns = @JoinColumn(name = "receta_id"))
     @Column(name = "instruccion", nullable = false)
@@ -72,6 +83,10 @@ public class Receta {
 
         this.recetaDetalles.add(recetaDetalle);
         recetaDetalle.setReceta(this);
+    }
+
+    public TipoResultadoReceta getTipoResultado() {
+        return tipoResultado == null ? TipoResultadoReceta.PRODUCTO : tipoResultado;
     }
 
 

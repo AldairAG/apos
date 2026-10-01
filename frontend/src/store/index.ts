@@ -8,7 +8,9 @@ import { apiBase } from '../api/apiBase';
 //slices
 import cajaReducer from '../features/caja/store/CajaSlice';
 import categoriaReducer from '../features/categoria/store/categoria.slice';
+import inventarioReducer from '../features/inventario/store/inventario.slice';
 import materialReducer from '../features/material/store/material.slice';
+import mesaReducer from '../features/mesa/store/mesa.slice';
 import modificadorReducer from '../features/modificador/store/modificador.slice';
 import movimientoReducer from '../features/movimiento/store/MovimientoSlice';
 import posReducer from '../features/pos/store/pos.slice';
@@ -32,10 +34,12 @@ const rootReducer = combineReducers({
     caja: cajaReducer,
     categoria: categoriaReducer,
     material: materialReducer,
+    mesa: mesaReducer,
     modificador: modificadorReducer,
     producto: productoReducer,
     pos: posReducer,
     receta: recetaReducer,
+    inventario: inventarioReducer,
 });
 
 const persistedReducer = persistReducer(

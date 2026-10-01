@@ -1,7 +1,8 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { SucursalDto } from "../domain/types/sucursal.types";
-import { crearSucursalThunk } from "../aplication/usecase/CrearSucursalThunk";
 import { findSucursalesByEmpresaThunk } from "../aplication/query/FindSucursalesByEmpresaThunk";
+import { crearSucursalThunk } from "../aplication/usecase/CrearSucursalThunk";
+import { desactivarSucursalThunk } from "../aplication/usecase/DesactivarSucursalThunk";
+import { SucursalDto } from "../domain/types/sucursal.types";
 
 interface SucursalState {
     sucursales: SucursalDto[];
@@ -52,6 +53,20 @@ const sucursalSlice = createSlice({
         builder.addCase(findSucursalesByEmpresaThunk.rejected, (state, action: PayloadAction<string | undefined>) => {
             state.loading = false;
             state.error = action.payload ?? "Error al obtener las sucursales";
+        });
+        builder.addCase(desactivarSucursalThunk.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(desactivarSucursalThunk.fulfilled, (state, action) => {
+            state.loading = false;
+            const deletedId = action.meta.arg;
+            state.sucursales = state.sucursales.filter((sucursal) => sucursal.id !== deletedId);
+            if (state.sucursalSeleccionadaId === deletedId) state.sucursalSeleccionadaId = null;
+        });
+        builder.addCase(desactivarSucursalThunk.rejected, (state, action: PayloadAction<string | undefined>) => {
+            state.loading = false;
+            state.error = action.payload ?? "Error al desactivar la sucursal";
         });
     },
 });

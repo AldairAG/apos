@@ -62,6 +62,16 @@ public enum ErrorCode {
         "Empresa no encontrada",
         HttpStatus.NOT_FOUND
     ),
+    EMPRESA_DESACTIVADA(
+        "EMPRESA_DESACTIVADA",
+        "La empresa está desactivada",
+        HttpStatus.FORBIDDEN
+    ),
+    SUCURSAL_NO_ENCONTRADA(
+        "SUCURSAL_NO_ENCONTRADA",
+        "Sucursal no encontrada",
+        HttpStatus.NOT_FOUND
+    ),
     //CUENTA
     CUENTA_NO_ENCONTRADA(
         "CUENTA_NO_ENCONTRADA",
@@ -80,6 +90,11 @@ public enum ErrorCode {
         "El movimiento no está permitido",
         HttpStatus.FORBIDDEN
     ),
+    RECURSO_NO_AUTORIZADO(
+        "RECURSO_NO_AUTORIZADO",
+        "No tienes permiso para modificar este recurso",
+        HttpStatus.FORBIDDEN
+    ),
 
     MOVIMIENTOS_NO_ENCONTRADOS(
         "MOVIMIENTOS_NO_ENCONTRADOS",
@@ -92,6 +107,11 @@ public enum ErrorCode {
         "CAJA_NO_ENCONTRADA",
         "Caja no encontrada",
         HttpStatus.NOT_FOUND
+    ),
+    CAJA_ABIERTA_NO_ELIMINABLE(
+        "CAJA_ABIERTA_NO_ELIMINABLE",
+        "Cierra la caja antes de desactivarla",
+        HttpStatus.BAD_REQUEST
     ),
 
     ERROR_AL_GUARDAR_CAJA(
@@ -198,6 +218,26 @@ public enum ErrorCode {
     EXISTENCIA_INSUFICIENTE(
         "EXISTENCIA_INSUFICIENTE",
         "Existencia insuficiente",
+        HttpStatus.BAD_REQUEST
+    ),
+    CANTIDAD_INVALIDA(
+        "CANTIDAD_INVALIDA",
+        "La cantidad debe ser mayor que cero",
+        HttpStatus.BAD_REQUEST
+    ),
+    MATERIAL_NO_ENCONTRADO(
+        "MATERIAL_NO_ENCONTRADO",
+        "Material no encontrado",
+        HttpStatus.NOT_FOUND
+    ),
+    RECETA_NO_ENCONTRADA(
+        "RECETA_NO_ENCONTRADA",
+        "Receta no encontrada",
+        HttpStatus.NOT_FOUND
+    ),
+    RECETA_RESULTADO_INVALIDO(
+        "RECETA_RESULTADO_INVALIDO",
+        "El resultado de la receta no coincide con la operación solicitada",
         HttpStatus.BAD_REQUEST
     ),
     ERROR_AL_DESCONTAR_EXISTENCIA(

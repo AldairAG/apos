@@ -21,7 +21,7 @@ public class FindSucursalesByEmpresaId {
 
     public List<SucursalDto> execute() {
         Long empresaId = usuarioService.getEmpresaFromAuthenticatedUser().getId();
-        return sucursalService.findAllByEmpresaId(empresaId)
+        return sucursalService.findActivasByEmpresaId(empresaId)
             .stream()
             .map(SucursalMapper::toDto)
             .toList();

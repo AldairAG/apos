@@ -1,9 +1,9 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { UsuarioDto } from "../domain/types/usuario.types";
-import { obtenerUsuarioActual } from "../aplication/query/ObtenerUsuarioActual.thunk";
+import { ApiResponse } from "@/api/apiTypes";
 import { crearEmpresaThunk } from "@/features/empresa/aplication/usecase/crearEmpresa.thunk";
 import { EmpresaDto } from "@/features/empresa/domain/types/empresa.types";
-import { ApiResponse } from "@/api/apiTypes";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { obtenerUsuarioActual } from "../aplication/query/ObtenerUsuarioActual.thunk";
+import { UsuarioDto } from "../domain/types/usuario.types";
 
 
 interface UsuarioState {
@@ -29,6 +29,13 @@ const usuarioSlice = createSlice({
         clearUsuario(state) {
             state.usuario = null;
             state.error = null;
+        },
+        removerCuenta(state, action: PayloadAction<number>) {
+            if (state.usuario?.empresa?.cuentas) {
+                state.usuario.empresa.cuentas = state.usuario.empresa.cuentas.filter(
+                    (cuenta) => cuenta.id !== action.payload
+                );
+            }
         }
     },
     extraReducers: (builder) => {
@@ -64,5 +71,5 @@ const usuarioSlice = createSlice({
     }
 });
 
-export const { setUsuario, clearUsuario } = usuarioSlice.actions;
+export const { setUsuario, clearUsuario, removerCuenta } = usuarioSlice.actions;
 export default usuarioSlice.reducer;

@@ -8,6 +8,16 @@ export type EstadoOrden =
     | "CANCELADA"
     | "COBRADA";
 
+// Debe reflejar exactamente com.api.apos.enums.TipoOrden del backend.
+export type TipoOrden = "EN_MESA" | "PARA_LLEVAR" | "DELIVERY" | "RECOGER";
+
+export const TIPO_ORDEN_LABELS: Record<TipoOrden, string> = {
+    EN_MESA: "En mesa",
+    PARA_LLEVAR: "Para llevar",
+    DELIVERY: "A domicilio",
+    RECOGER: "Para recoger",
+};
+
 export type MetodoPago =
     | "EFECTIVO"
     | "DIGITAL"
@@ -46,6 +56,7 @@ export interface OrdenDto {
     mesaId?: number | null;
     mesaNombre?: string;
     ventaId?: number;
+    tipo: TipoOrden;
     detalles: DetalleOrdenDto[];
 }
 

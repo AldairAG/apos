@@ -5,6 +5,7 @@ import { Formik, FormikHelpers } from "formik";
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
+    Alert,
     FlatList,
     Modal,
     Pressable,
@@ -34,7 +35,7 @@ const crearSucursalValidationSchema = Yup.object({
 
 const SeleccionarSucursalScreen = () => {
     const router = useRouter();
-    const { sucursales,findSucursalesByEmpresa, cambiarSucursal, loading, crearSucursal } = useSucursal();
+    const { sucursales, findSucursalesByEmpresa, cambiarSucursal, loading, error, crearSucursal, desactivarSucursal } = useSucursal();
     const [modalCrearVisible, setModalCrearVisible] = useState(false);
 
     const seleccionar = (id: number) => {
@@ -45,6 +46,13 @@ const SeleccionarSucursalScreen = () => {
 
     const abrirModalCrear = () => setModalCrearVisible(true);
     const cerrarModalCrear = () => setModalCrearVisible(false);
+
+    const confirmarDesactivacion = (id: number, nombre: string) => {
+        Alert.alert("Desactivar sucursal", `¿Desactivar ${nombre}?`, [
+            { text: "Cancelar", style: "cancel" },
+            { text: "Desactivar", style: "destructive", onPress: () => { void desactivarSucursal(id); } },
+        ]);
+    };
 
     const handleCrearSucursal = (
         values: CrearSucursalForm,
@@ -102,26 +110,29 @@ const SeleccionarSucursalScreen = () => {
                         </Pressable>
                     }
                     renderItem={({ item }) => (
-                        <Pressable
-                            onPress={() => seleccionar(item.id ?? 0)}
-                            className="flex-row items-center justify-between bg-white rounded-2xl p-4 border border-[#E7E0EC] active:bg-[#F1EEF4]"
-                        >
-                            <View className="flex-1">
-                                <Text className="text-sm font-medium text-[#1C1B1F]">{item.nombre}</Text>
-                                {/* <Text className="text-xs text-[#79747E] mt-0.5">{item.direccion}</Text> */}
-                            </View>
-                            {/* <View
-                                className={`px-2 py-1 rounded-full mr-2 ${item.estado === "ACTIVA" ? "bg-[#D8E2FF]" : "bg-[#FDE2E1]"}`}
+                        <View className="flex-row items-center bg-white rounded-2xl p-4 border border-[#E7E0EC]">
+                            <Pressable
+                                onPress={() => seleccionar(item.id ?? 0)}
+                                className="flex-1 flex-row items-center justify-between active:opacity-70"
                             >
-                                <Text className={`text-xs ${item.estado === "ACTIVA" ? "text-[#1857B6]" : "text-[#B3261E]"}`}>
-                                    {item.estado === "ACTIVA" ? "Activa" : "Inactiva"}
-                                </Text>
-                            </View> */}
-                            <Ionicons name="chevron-forward" size={18} color="#79747E" />
-                        </Pressable>
+                                <Text className="text-sm font-medium text-[#1C1B1F]">{item.nombre}</Text>
+                                <Ionicons name="chevron-forward" size={18} color="#79747E" />
+                            </Pressable>
+                            <Pressable
+                                accessibilityRole="button"
+                                accessibilityLabel={`Desactivar ${item.nombre}`}
+                                onPress={() => item.id && confirmarDesactivacion(item.id, item.nombre)}
+                                className="ml-3 h-9 w-9 items-center justify-center"
+                                hitSlop={8}
+                            >
+                                <Ionicons name="trash-outline" size={18} color="#B3261E" />
+                            </Pressable>
+                        </View>
                     )}
                 />
             )}
+
+            {error && <Text className="px-4 pb-2 text-xs text-[#B3261E]">{error}</Text>}
 
             {/* FAB flotante para acceso rápido, además del botón dentro de la lista */}
             {sucursales.length > 0 && (

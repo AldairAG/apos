@@ -1,12 +1,13 @@
 import { AppDispatch, RootState } from "@/store";
 import { useDispatch, useSelector } from "react-redux";
-import { crearCajaThunk } from "../../aplication/usecase/CrearCaja.thunk";
-import { seleccionarCaja, limpiarCajaSeleccionada } from "../../store/CajaSlice";
 import { findCajasBySucursalIdThunk } from "../../aplication/query/FindCajasBySucursalId.thunk";
-import { CerrarCajaThunk } from "../../aplication/usecase/CerrarCaja.thunk";
-import { AbrirCajaThunk } from "../../aplication/usecase/AbrirCaja.thunk";
-import { CajaDto } from "../../domain/Caja.types";
 import { findCorteCajaByCajaIdThunk } from "../../aplication/query/FindCorteCajaByCajaId.thunk";
+import { AbrirCajaThunk } from "../../aplication/usecase/AbrirCaja.thunk";
+import { CerrarCajaThunk } from "../../aplication/usecase/CerrarCaja.thunk";
+import { crearCajaThunk } from "../../aplication/usecase/CrearCaja.thunk";
+import { DesactivarCajaThunk } from "../../aplication/usecase/DesactivarCaja.thunk";
+import { CajaDto } from "../../domain/Caja.types";
+import { limpiarCajaSeleccionada, seleccionarCaja } from "../../store/CajaSlice";
 
 const useCaja = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -48,6 +49,10 @@ const useCaja = () => {
         dispatch(findCorteCajaByCajaIdThunk(cajaId));
     }
 
+    const desactivarCaja = async (cajaId: number) => {
+        await dispatch(DesactivarCajaThunk(cajaId)).unwrap();
+    };
+
     return {
         cajas,
         cajaSeleccionadaId,
@@ -62,6 +67,7 @@ const useCaja = () => {
         abrirCaja,
         cerrarCaja,
         findCorteCajaActualByCajaId,
+        desactivarCaja,
         
     };
 

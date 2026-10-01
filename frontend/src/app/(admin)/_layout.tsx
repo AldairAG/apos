@@ -1,12 +1,12 @@
+import Sidebar from "@/components/siderbar/SiderBar";
+import { SidebarProvider, useSidebar } from "@/components/siderbar/SiderBarContext";
+import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import {
-  Pressable,
-  Text,
-  View,
+    Pressable,
+    Text,
+    View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { SidebarProvider, useSidebar } from "@/components/siderbar/SiderBarContext";
-import Sidebar from "@/components/siderbar/SiderBar";
 
 export default function AdminLayout() {
   return (
@@ -55,7 +55,12 @@ function AdminLayoutContent() {
           screenOptions={{
             headerShown: false,
           }}
-        />
+        >
+          <Stack.Screen
+            name="movimientos/admin_crear_compra"
+            options={{ presentation: "modal", gestureEnabled: true }}
+          />
+        </Stack>
       </View>
 
       {/* Sidebar */}

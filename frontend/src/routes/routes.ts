@@ -15,6 +15,7 @@ export const ROUTES = {
     MOVIMIENTOS: {
       CREAR_GASTO: '/movimientos/admin_crear_gasto',
       CREAR_INGRESO: '/movimientos/admin_crear_ingreso',
+      CREAR_COMPRA: '/movimientos/admin_crear_compra',
     },
     RECETAS: {
       PANEL: '/recetas/RecetasPanel',

@@ -1,6 +1,7 @@
 package com.api.apos.aplication.identidad.usuario.dto;
 
 import com.api.apos.aplication.identidad.empresa.dto.EmpresaDto;
+import com.api.apos.enums.Rol;
 
 import lombok.Builder;
 import lombok.Data;
@@ -16,4 +17,6 @@ public class UsuarioDto {
     private String lada;
 
     private EmpresaDto empresa;
+
+    private Rol rol;
 }

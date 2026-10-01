@@ -125,7 +125,7 @@ export default function RecetasPanelScreen() {
                                     <Text
                                         className="text-[10px] font-bold tracking-wide text-[#1857B6]"
                                     >
-                                        RECETA
+                                        {item.tipoResultado === "MATERIAL" ? "MATERIAL ELABORADO" : "RECETA DE PRODUCTO"}
                                     </Text>
                                 </View>
                             </View>

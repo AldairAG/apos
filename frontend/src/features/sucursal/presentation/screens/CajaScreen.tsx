@@ -1,31 +1,32 @@
+import PieCard from "@/components/graficas/PieCard";
 import { CajaDto } from "@/features/caja/domain/Caja.types";
 import { EstadoCaja } from "@/features/caja/enum/Caja.Enums";
+import ModalAbrirCaja from "@/features/caja/presentation/components/modal/ModalAbrirCaja";
+import ModalCorte from "@/features/caja/presentation/components/modal/ModalCorte";
+import ModalCrearCaja from "@/features/caja/presentation/components/modal/ModalCrearCaja";
 import useCaja from "@/features/caja/presentation/hook/useCaja";
 import { CategoriaMovimiento } from "@/features/movimiento/domain/enum/CategoriaMovimiento";
 import { TipoMovimiento } from "@/features/movimiento/domain/enum/TipoMovimiento";
 import { MovimientoDto } from "@/features/movimiento/domain/types/Movimiento.types";
 import { useMovimientos } from "@/features/movimiento/presentation/hook/useMovimientos";
 import { buildPieData, formatMoney } from "@/helpers/FormatHelpers";
+import { rutaCrearGasto, rutaCrearIngreso } from "@/helpers/RutaHelpers";
 import { formatFecha, formatHora } from "@/helpers/TimeHelpers";
+import { ROUTES } from "@/routes/routes";
+import { AMARILLO, AZUL } from "@/types/colors";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
+    Alert,
     FlatList,
     Modal,
     Pressable,
     ScrollView,
     Text,
-    View,
+    View
 } from "react-native";
 import { useSucursal } from "../hook/useSucursal";
-import ModalCrearCaja from "@/features/caja/presentation/components/modal/ModalCrearCaja";
-import ModalAbrirCaja from "@/features/caja/presentation/components/modal/ModalAbrirCaja";
-import PieCard from "@/components/graficas/PieCard";
-import { AMARILLO, AZUL } from "@/types/colors";
-import { router } from "expo-router";
-import { rutaCrearGasto, rutaCrearIngreso } from "@/helpers/RutaHelpers";
-import ModalCorte from "@/features/caja/presentation/components/modal/ModalCorte";
 
 const CATEGORIA_INGRESO_LABELS: Partial<Record<CategoriaMovimiento, string>> = {
     [CategoriaMovimiento.VENTA]: "Venta",
@@ -98,6 +99,7 @@ export default function CajaScreen() {
         crearCaja,
         cerrarCaja,
         abrirCaja,
+        desactivarCaja,
         loading,
         error
     } = useCaja();
@@ -191,6 +193,28 @@ export default function CajaScreen() {
     const handleCerrarCaja = () => {
         cerrarCaja();
         setCorteVisible(false);
+    };
+
+    const confirmarDesactivacion = (cajaSeleccionada: CajaDto) => {
+        if (cajaSeleccionada.estado === EstadoCaja.ABIERTA) {
+            Alert.alert("Caja abierta", "Cierra la caja antes de desactivarla.");
+            return;
+        }
+        Alert.alert("Desactivar caja", `¿Desactivar ${cajaSeleccionada.nombre}?`, [
+            { text: "Cancelar", style: "cancel" },
+            {
+                text: "Desactivar",
+                style: "destructive",
+                onPress: () => {
+                    void desactivarCaja(cajaSeleccionada.id)
+                        .then(() => setSelectorCajaVisible(false))
+                        .catch((cause: unknown) => Alert.alert(
+                            "No se pudo desactivar",
+                            typeof cause === "string" ? cause : "Intenta nuevamente más tarde."
+                        ));
+                },
+            },
+        ]);
     };
 
     const saldoEsperado =
@@ -323,6 +347,14 @@ export default function CajaScreen() {
                                 </Pressable>
                             </View>
 
+                            <Pressable
+                                onPress={() => router.push(`${ROUTES.ADMIN.MOVIMIENTOS.CREAR_COMPRA}?modulo=caja&sucursalId=${sucursalSeleccionadaId}&cajaId=${cajaSeleccionadaId}` as any)}
+                                className="h-12 flex-row items-center justify-center gap-2 rounded-full border-2 border-[#1857B6] bg-white"
+                            >
+                                <Ionicons name="cart-outline" size={18} color="#1857B6" />
+                                <Text className="text-sm font-semibold text-[#1857B6]">Comprar material</Text>
+                            </Pressable>
+
                             {/* 6. Gráfica por categoría */}
                             <View className="bg-white rounded-2xl border border-[#E7E0EC] p-4">
                                 <Text className="text-xs font-medium text-[#79747E] mb-3">
@@ -445,25 +477,33 @@ export default function CajaScreen() {
                             data={cajas}
                             keyExtractor={(item) => String(item.id)}
                             renderItem={({ item }) => (
-                                <Pressable
-                                    onPress={() => {
-                                        handleSeleccionarCaja(item.id);
-                                        setSelectorCajaVisible(false);
-                                    }}
-                                    className={`flex-row items-center justify-between py-3 px-2 rounded-xl ${item.id === cajaSeleccionadaId ? "bg-[#F1EEF4]" : ""
-                                        }`}
-                                >
-                                    <View>
-                                        <Text className="text-sm font-medium text-[#1C1B1F]">{item.nombre}</Text>
-                                        <Text className="text-xs text-[#79747E] mt-0.5">
-                                            {item.estado === EstadoCaja.ABIERTA ? "Abierta" : "Cerrada"} ·{" "}
-                                            {formatMoney(item.saldo)}
-                                        </Text>
-                                    </View>
-                                    {item.id === cajaSeleccionadaId && (
-                                        <Ionicons name="checkmark" size={18} color="#1857B6" />
-                                    )}
-                                </Pressable>
+                                <View className={`flex-row items-center py-1 px-2 rounded-xl ${item.id === cajaSeleccionadaId ? "bg-[#F1EEF4]" : ""}`}>
+                                    <Pressable
+                                        onPress={() => {
+                                            handleSeleccionarCaja(item.id);
+                                            setSelectorCajaVisible(false);
+                                        }}
+                                        className="flex-1 flex-row items-center justify-between py-2"
+                                    >
+                                        <View>
+                                            <Text className="text-sm font-medium text-[#1C1B1F]">{item.nombre}</Text>
+                                            <Text className="text-xs text-[#79747E] mt-0.5">
+                                                {item.estado === EstadoCaja.ABIERTA ? "Abierta" : "Cerrada"} · {formatMoney(item.saldo)}
+                                            </Text>
+                                        </View>
+                                        {item.id === cajaSeleccionadaId && <Ionicons name="checkmark" size={18} color="#1857B6" />}
+                                    </Pressable>
+                                    <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`Desactivar caja ${item.nombre}`}
+                                        onPress={() => confirmarDesactivacion(item)}
+                                        disabled={item.estado === EstadoCaja.ABIERTA}
+                                        className="ml-2 h-9 w-9 items-center justify-center disabled:opacity-30"
+                                        hitSlop={8}
+                                    >
+                                        <Ionicons name="trash-outline" size={17} color="#B3261E" />
+                                    </Pressable>
+                                </View>
                             )}
                         />
                         <Pressable

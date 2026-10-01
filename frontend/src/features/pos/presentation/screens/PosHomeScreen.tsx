@@ -1,14 +1,19 @@
 import { EstadoCaja } from "@/features/caja/enum/Caja.Enums";
+import type { MesaDto } from "@/features/mesa/domain/types/mesa.types";
+import MesaSelector from "@/features/mesa/presentation/components/MesaSelector";
+import { useMesa } from "@/features/mesa/presentation/hook/useMesa";
 import type { ProductoDto } from "@/features/productos/domain/types/producto.types";
 import { ROUTES } from "@/routes/routes";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import type { MetodoPago, OrdenDto } from "../../domain/types/pos.types";
+import { TIPO_ORDEN_LABELS, type MetodoPago, type OrdenDto, type TipoOrden } from "../../domain/types/pos.types";
 import { usePos } from "../hook/usePos";
 
 type VistaPos = "nueva" | "ordenes";
+
+const TIPOS_ORDEN: TipoOrden[] = ["EN_MESA", "PARA_LLEVAR", "RECOGER", "DELIVERY"];
 
 interface LineaCarrito {
     key: number;
@@ -58,11 +63,14 @@ const PosHomeScreen = () => {
         cobrarOrden,
         limpiarError,
     } = usePos();
+    const { mesasDisponibles, loading: mesasLoading, cargarMesas } = useMesa();
 
     const [vista, setVista] = useState<VistaPos>("nueva");
     const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
     const [carrito, setCarrito] = useState<LineaCarrito[]>([]);
-    const [mesaId, setMesaId] = useState("");
+    const [tipoOrden, setTipoOrden] = useState<TipoOrden | null>(null);
+    const [mesaSeleccionada, setMesaSeleccionada] = useState<MesaDto | null>(null);
+    const [mostrarSelectorMesa, setMostrarSelectorMesa] = useState(false);
     const [modalCobro, setModalCobro] = useState<OrdenDto | null>(null);
     const [metodoPago, setMetodoPago] = useState<MetodoPago>("EFECTIVO");
     const [contextoCajaSucursalId, setContextoCajaSucursalId] = useState<number | null>(null);
@@ -76,10 +84,16 @@ const PosHomeScreen = () => {
         setContextoCajaSucursalId(null);
         cargarProductos(sucursalId);
         cargarOrdenes(sucursalId);
+        cargarMesas(sucursalId);
         cargarContextoCaja(sucursalId).then((cargado) => {
             setContextoCajaSucursalId(cargado ? sucursalId : null);
         });
-    }, [sucursalId, cargarProductos, cargarOrdenes, cargarContextoCaja]);
+    }, [sucursalId, cargarProductos, cargarOrdenes, cargarMesas, cargarContextoCaja]);
+
+    const seleccionarTipoOrden = (tipo: TipoOrden) => {
+        setTipoOrden(tipo);
+        if (tipo !== "EN_MESA") setMesaSeleccionada(null);
+    };
 
     const productosFiltrados = categoriasProductos
         .filter((grupo) => !categoriaActiva || grupo.categoria === categoriaActiva)
@@ -131,15 +145,18 @@ const PosHomeScreen = () => {
         }));
     };
 
+    const ordenValida = tipoOrden !== null && (tipoOrden !== "EN_MESA" || mesaSeleccionada !== null);
+
     const guardarOrden = async () => {
-        if (!sucursalId || carrito.length === 0) return;
+        if (!sucursalId || carrito.length === 0 || !tipoOrden || !ordenValida) return;
         limpiarError();
         const orden = {
             subtotal,
             descuento: 0,
             total: subtotal,
             sucursalId,
-            mesaId: mesaId.trim() ? Number(mesaId) : null,
+            tipo: tipoOrden,
+            mesaId: tipoOrden === "EN_MESA" ? mesaSeleccionada!.id ?? null : null,
             detalles: carrito.map((linea) => ({
                 productoId: linea.producto.id,
                 cantidad: linea.cantidad,
@@ -158,7 +175,8 @@ const PosHomeScreen = () => {
         try {
             await crearOrden(orden).unwrap();
             setCarrito([]);
-            setMesaId("");
+            setTipoOrden(null);
+            setMesaSeleccionada(null);
             setVista("ordenes");
         } catch {
             // El error se presenta desde el estado del feature.
@@ -300,14 +318,32 @@ const PosHomeScreen = () => {
                                 <Text className="text-base font-semibold text-[#1C1B1F]">Orden</Text>
                                 <Text className="text-xs text-[#79747E]">{carrito.length} productos</Text>
                             </View>
-                            <Text className="mb-1 text-xs font-medium text-[#49454F]">Mesa (opcional)</Text>
-                            <TextInput
-                                value={mesaId}
-                                onChangeText={setMesaId}
-                                keyboardType="number-pad"
-                                placeholder="ID de mesa"
-                                className="mb-3 rounded-lg border border-[#D8D2DC] px-3 py-2 text-sm text-[#1C1B1F]"
-                            />
+                            <Text className="mb-1 text-xs font-medium text-[#49454F]">Tipo de orden</Text>
+                            <View className="mb-3 flex-row flex-wrap gap-2">
+                                {TIPOS_ORDEN.map((tipo) => (
+                                    <Pressable
+                                        key={tipo}
+                                        onPress={() => seleccionarTipoOrden(tipo)}
+                                        className={`rounded-full px-3 py-2 ${tipoOrden === tipo ? "bg-[#1857B6]" : "bg-[#F1EEF4]"}`}
+                                    >
+                                        <Text className={`text-xs font-medium ${tipoOrden === tipo ? "text-white" : "text-[#49454F]"}`}>
+                                            {TIPO_ORDEN_LABELS[tipo]}
+                                        </Text>
+                                    </Pressable>
+                                ))}
+                            </View>
+
+                            {tipoOrden === "EN_MESA" ? (
+                                <Pressable
+                                    onPress={() => setMostrarSelectorMesa(true)}
+                                    className="mb-3 flex-row items-center justify-between rounded-lg border border-[#D8D2DC] px-3 py-2"
+                                >
+                                    <Text className="text-sm text-[#1C1B1F]">
+                                        {mesaSeleccionada ? `Mesa: ${mesaSeleccionada.nombre}` : "Seleccionar mesa"}
+                                    </Text>
+                                    <Ionicons name="chevron-forward" size={16} color="#49454F" />
+                                </Pressable>
+                            ) : null}
 
                             {carrito.length === 0 ? (
                                 <Text className="py-3 text-sm text-[#79747E]">Agrega productos para iniciar una orden.</Text>
@@ -366,9 +402,9 @@ const PosHomeScreen = () => {
                                 <Text className="text-lg font-bold text-[#1C1B1F]">{moneda(subtotal)}</Text>
                             </View>
                             <Pressable
-                                disabled={carrito.length === 0 || saving || !sucursalId}
+                                disabled={carrito.length === 0 || saving || !sucursalId || !ordenValida}
                                 onPress={guardarOrden}
-                                className={`mt-4 items-center rounded-lg px-4 py-3 ${carrito.length === 0 || saving ? "bg-[#B8B3BC]" : "bg-[#1857B6]"}`}
+                                className={`mt-4 items-center rounded-lg px-4 py-3 ${carrito.length === 0 || saving || !ordenValida ? "bg-[#B8B3BC]" : "bg-[#1857B6]"}`}
                             >
                                 <Text className="font-semibold text-white">{saving ? "Guardando..." : "Crear orden"}</Text>
                             </Pressable>
@@ -478,6 +514,14 @@ const PosHomeScreen = () => {
                     </View>
                 </View>
             </Modal>
+
+            <MesaSelector
+                visible={mostrarSelectorMesa}
+                mesas={mesasDisponibles}
+                loading={mesasLoading}
+                onSelect={setMesaSeleccionada}
+                onClose={() => setMostrarSelectorMesa(false)}
+            />
         </View>
     );
 };

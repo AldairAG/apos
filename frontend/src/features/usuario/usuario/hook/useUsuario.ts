@@ -1,8 +1,9 @@
 import { AppDispatch, RootState } from "@/store";
-import { useDispatch, useSelector } from "react-redux";
 import { useCallback } from "react";
-import {setUsuario, clearUsuario} from "../store/usuario.slice";
+import { useDispatch, useSelector } from "react-redux";
 import { obtenerUsuarioActual } from "../aplication/query/ObtenerUsuarioActual.thunk";
+import { desactivarUsuarioActualThunk } from "../aplication/usecase/DesactivarUsuarioActualThunk";
+import { clearUsuario, setUsuario } from "../store/usuario.slice";
 
 export const useUsuario = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -25,6 +26,10 @@ export const useUsuario = () => {
         return result;
     }, [dispatch]);
 
+    const desactivarUsuarioActual = useCallback(async () => {
+        await dispatch(desactivarUsuarioActualThunk()).unwrap();
+    }, [dispatch]);
+
     return {
         usuario: usuarioData,
         loading,
@@ -32,5 +37,6 @@ export const useUsuario = () => {
         setUsuario: handleSetUsuario,
         clearUsuario: handleClearUsuario,
         obtenerUsuarioActual: handleObtenerUsuarioActual,
+        desactivarUsuarioActual,
     }
 }

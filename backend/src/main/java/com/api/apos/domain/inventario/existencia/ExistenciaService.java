@@ -3,6 +3,8 @@ package com.api.apos.domain.inventario.existencia;
 import java.util.Collections;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import lombok.AllArgsConstructor;
@@ -17,8 +19,22 @@ public class ExistenciaService {
         return existenciaRepository.save(existencia);
     }
 
+    public Page<Existencia> findBySucursalId(Long sucursalId, Pageable pageable) {
+        return existenciaRepository.findBySucursal_Id(sucursalId, pageable);
+    }
+
     public Existencia findById(Long id) {
         return existenciaRepository.findById(id).orElse(null);
+    }
+
+    public Existencia findByMaterialIdAndSucursalId(Long materialId, Long sucursalId) {
+        if (materialId == null || sucursalId == null) {
+            return null;
+        }
+        return existenciaRepository.findAllForUpdateBySucursalAndMaterialIds(sucursalId, List.of(materialId))
+                .stream()
+                .findFirst()
+                .orElse(null);
     }
 
     public List<Long> findMaterialIdsWithoutExistencia(
@@ -55,7 +71,7 @@ public class ExistenciaService {
             return Collections.emptyList();
         }
 
-        return existenciaRepository.findBySucursalIdAndMaterialIdIn(sucursalId, materialIds);
+        return existenciaRepository.findAllForUpdateBySucursalAndMaterialIds(sucursalId, materialIds);
     }
 
 }

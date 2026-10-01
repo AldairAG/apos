@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.api.apos.enums.EstadoOrden;
+import com.api.apos.enums.TipoOrden;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,6 +37,8 @@ public class OrdenDto {
     private String mesaNombre;
 
     private Long ventaId;
+
+    private TipoOrden tipo;
 
     private List<DetalleOrdenDto> detalles;
 

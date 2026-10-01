@@ -1,6 +1,8 @@
 package com.api.apos.aplication.identidad.usuario.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -8,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.api.apos.aplication.identidad.usuario.dto.UsuarioDto;
 import com.api.apos.aplication.identidad.usuario.usecase.CompletarPerfilUseCase;
+import com.api.apos.aplication.identidad.usuario.usecase.DesactivarUsuarioActualUseCase;
 import com.api.apos.aplication.identidad.usuario.usecase.LoginUseCase;
 import com.api.apos.aplication.identidad.usuario.usecase.ObtenerUsuarioActualUseCase;
 import com.api.apos.aplication.identidad.usuario.usecase.RegistrarUsuarioUseCase;
@@ -17,7 +20,6 @@ import com.api.apos.exception.SuccessCode;
 import com.api.apos.helpers.ApiResponseWrapper;
 
 import lombok.AllArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
 
 
 @RestController
@@ -32,6 +34,8 @@ public class UsuarioController {
     private final RegistrarUsuarioUseCase registrarUsuario;
 
     private final CompletarPerfilUseCase completarPerfilUseCase;
+
+    private final DesactivarUsuarioActualUseCase desactivarUsuarioActualUseCase;
 
     @PostMapping("/auth/registro")
     public ResponseEntity<ApiResponseWrapper<JwtResponse>> registrar(@RequestBody AuthRequest request) {
@@ -55,6 +59,12 @@ public class UsuarioController {
     public ResponseEntity<ApiResponseWrapper<UsuarioDto>> obtenerUsuarioActual() {
         UsuarioDto response = obtenerUsuarioActualUseCase.execute();
         return ResponseEntity.ok(new ApiResponseWrapper<>(true, response, SuccessCode.OPERACION_EXITOSA.name(), null));
+    }
+
+    @DeleteMapping("/actual")
+    public ResponseEntity<ApiResponseWrapper<Void>> desactivarUsuarioActual() {
+        desactivarUsuarioActualUseCase.execute();
+        return ResponseEntity.ok(ApiResponseWrapper.success(null));
     }
     
 

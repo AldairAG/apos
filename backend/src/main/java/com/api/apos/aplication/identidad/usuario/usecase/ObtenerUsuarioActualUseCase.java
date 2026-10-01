@@ -1,5 +1,7 @@
 package com.api.apos.aplication.identidad.usuario.usecase;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -8,8 +10,6 @@ import com.api.apos.aplication.identidad.empresa.mapper.EmpresaMapper;
 import com.api.apos.aplication.identidad.usuario.dto.UsuarioDto;
 import com.api.apos.aplication.tesoreria.cuenta.dto.CuentaDto;
 import com.api.apos.aplication.tesoreria.cuenta.mapper.CuentaMapper;
-
-import java.util.List;
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.auth.usuario.UsuarioService;
 
@@ -27,7 +27,7 @@ public class ObtenerUsuarioActualUseCase {
 
         EmpresaDto empresaDto = EmpresaMapper.toDto(usuario.getEmpresa());
 
-        List<CuentaDto> cuentaDto = usuario.getEmpresa().getCuentas()
+        List<CuentaDto> cuentaDto = usuarioService.findCuentasActivasByEmpresaId(usuario.getEmpresa().getId())
             .stream()
             .map(CuentaMapper::toDto).toList(); 
 
@@ -41,6 +41,7 @@ public class ObtenerUsuarioActualUseCase {
                 .telefono(usuario.getTelefono())
                 .lada(usuario.getLada())
                 .empresa(empresaDto)
+                .rol(usuario.getRol())
                 .build();
     }
 

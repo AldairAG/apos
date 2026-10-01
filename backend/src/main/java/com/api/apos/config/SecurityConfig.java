@@ -1,5 +1,8 @@
 package com.api.apos.config;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,9 +25,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.api.apos.domain.auth.usuario.UsuarioService;
 import com.api.apos.helpers.JwtHelper;
 import com.api.apos.security.JwtAuthenticationFilter;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -64,7 +64,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                     // Endpoints públicos de autenticación
-                    .requestMatchers("/api/usuarios/**").permitAll()
+                    .requestMatchers("/api/usuarios/auth/registro", "/api/usuarios/auth/login").permitAll()
                     .requestMatchers("/ws/**").permitAll()
 
                         // Swagger y documentación

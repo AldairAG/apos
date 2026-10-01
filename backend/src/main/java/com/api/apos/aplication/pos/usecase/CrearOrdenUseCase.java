@@ -138,6 +138,7 @@ public class CrearOrdenUseCase {
         Orden orden = Orden.builder()
                 .descuento(ordenDto.getDescuento())
                 .estado(EstadoOrden.PENDIENTE)
+                .tipo(ordenDto.getTipo())
                 .detalles(detallesOrden)
                 .total(detallesOrden.stream()
                         .map(detalle -> detalle.getSubtotal()

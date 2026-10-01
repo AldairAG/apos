@@ -1,12 +1,12 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { CajaDto, CorteCajaDto } from "../domain/Caja.types";
-import {findCajasBySucursalIdThunk} from "../aplication/query/FindCajasBySucursalId.thunk";
-import {crearCajaThunk} from "../aplication/usecase/CrearCaja.thunk";
 import { ApiResponse } from "@/api/apiTypes";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { findCajasBySucursalIdThunk } from "../aplication/query/FindCajasBySucursalId.thunk";
+import { findCorteCajaByCajaIdThunk } from "../aplication/query/FindCorteCajaByCajaId.thunk";
 import { AbrirCajaThunk } from "../aplication/usecase/AbrirCaja.thunk";
 import { CerrarCajaThunk } from "../aplication/usecase/CerrarCaja.thunk";
-import { findCorteCajaByCajaIdThunk } from "../aplication/query/FindCorteCajaByCajaId.thunk";
-import { MovimientoDto } from "@/features/movimiento/domain/types/Movimiento.types";
+import { crearCajaThunk } from "../aplication/usecase/CrearCaja.thunk";
+import { DesactivarCajaThunk } from "../aplication/usecase/DesactivarCaja.thunk";
+import { CajaDto, CorteCajaDto } from "../domain/Caja.types";
 
 interface CajaState {
     cajas: CajaDto[];
@@ -104,6 +104,23 @@ const cajaSlice = createSlice({
         builder.addCase(findCorteCajaByCajaIdThunk.rejected, (state, action: PayloadAction<string | undefined>) => {
             state.loading = false;
             state.error = action.payload ?? "Error desconocido";
+        });
+        builder.addCase(DesactivarCajaThunk.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(DesactivarCajaThunk.fulfilled, (state, action) => {
+            state.loading = false;
+            const deletedId = action.meta.arg;
+            state.cajas = state.cajas.filter((caja) => caja.id !== deletedId);
+            if (state.cajaSeleccionadaId === deletedId) {
+                state.cajaSeleccionadaId = state.cajas[0]?.id ?? null;
+                state.corteCaja = null;
+            }
+        });
+        builder.addCase(DesactivarCajaThunk.rejected, (state, action: PayloadAction<string | undefined>) => {
+            state.loading = false;
+            state.error = action.payload ?? "Error al desactivar la caja";
         });
     },
 });

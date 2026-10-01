@@ -3,16 +3,17 @@ package com.api.apos.domain.auth.usuario;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import com.api.apos.domain.financiero.cuenta.Cuenta;
+import com.api.apos.domain.financiero.cuenta.CuentaService;
 import com.api.apos.domain.organizacion.empresa.Empresa;
 import com.api.apos.exception.AppException;
 import com.api.apos.exception.ErrorCode;
 
 import lombok.AllArgsConstructor;
-
-import org.springframework.security.core.userdetails.UserDetailsService;
 
 
 @Service
@@ -20,6 +21,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 public class UsuarioService implements UserDetailsService {
 
         private final UsuarioRepository usuarioRepository;
+
+        private final CuentaService cuentaService;
 
         public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
                 return usuarioRepository.findByEmail(username)
@@ -63,9 +66,17 @@ public class UsuarioService implements UserDetailsService {
                 return usuarioRepository.findByEmail(email).isPresent();
         }
 
+        public java.util.List<Cuenta> findCuentasActivasByEmpresaId(Long empresaId) {
+                return cuentaService.findActivasByEmpresaId(empresaId);
+        }
+
         public Empresa getEmpresaFromAuthenticatedUser() {
                 Usuario usuario = getUsuarioAutenticado();
-                return usuario.getEmpresa();
+                Empresa empresa = usuario.getEmpresa();
+                if (empresa != null && !empresa.isActiva()) {
+                        throw new AppException(ErrorCode.EMPRESA_DESACTIVADA);
+                }
+                return empresa;
         }
 
 }
