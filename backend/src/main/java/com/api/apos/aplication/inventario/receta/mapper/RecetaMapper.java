@@ -17,6 +17,7 @@ public class RecetaMapper {
                         .unidadMedida(detalle.getUnidadMedida())
                         .costo(detalle.getCosto())
                         .nombreMaterial(detalle.getMaterial().getNombre())
+                        .materialId(detalle.getMaterial().getId())
                         .build())
                 .toList();
 

@@ -3,6 +3,8 @@ import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { FindRecetasParams, findRecetasThunk } from "../../aplication/query/FindRecetasThunk";
 import { crearRecetaThunk } from "../../aplication/usecase/CrearRecetaThunk";
+import { deleteRecetaThunk } from "../../aplication/usecase/DeleteRecetaThunk";
+import { updateRecetaThunk } from "../../aplication/usecase/UpdateRecetaThunk";
 import { RecetaDto } from "../../domain/types/receta.types";
 
 export const useReceta = () => {
@@ -19,6 +21,14 @@ export const useReceta = () => {
         dispatch(crearRecetaThunk(receta));
     };
 
+    const deleteReceta = useCallback((recetaId: number) => {
+        dispatch(deleteRecetaThunk(recetaId));
+    }, [dispatch]);
+
+    const updateReceta = useCallback((recetaId: number, receta: RecetaDto) => {
+        dispatch(updateRecetaThunk({ id: recetaId, receta }));
+    }, [dispatch]);
+
     return {
         recetas,
         pageInfo,
@@ -26,5 +36,7 @@ export const useReceta = () => {
         error,
         findRecetas,
         crearReceta,
+        deleteReceta,
+        updateReceta,
     };
 };

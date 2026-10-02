@@ -21,7 +21,7 @@ export const findRecetasThunk = createAsyncThunk<
                 params: {
                     nombre: params?.nombre || undefined,
                     page: params?.page ?? 0,
-                    size: params?.size ?? 10,
+                    size: params?.size ?? 1000,
                 },
             });
             if (!response.success) {

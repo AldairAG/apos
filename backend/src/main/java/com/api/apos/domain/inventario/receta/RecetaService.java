@@ -32,4 +32,12 @@ public class RecetaService {
         return recetaRepository.findDetallesByProductoId(productoId);
     }
 
+    public void delete(Receta receta) {
+        recetaRepository.delete(receta);
+    }
+
+    public void deleteById(Long id) {
+        recetaRepository.deleteById(id);
+    }
+
 }

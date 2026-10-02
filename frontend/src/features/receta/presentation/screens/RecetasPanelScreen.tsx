@@ -2,8 +2,10 @@ import { ROUTES } from "@/routes/routes";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Pressable, Text, TextInput, View } from "react-native";
+import { useDispatch } from "react-redux";
 import { RecetaDto } from "../../domain/types/receta.types";
+import { setRecetaCopia } from "../../store/receta.slice";
 import { useReceta } from "../hook/useReceta";
 
 const RECETAS_POR_PAGINA = 10;
@@ -22,8 +24,9 @@ function formatMoney(value: number): string {
 
 export default function RecetasPanelScreen() {
     const router = useRouter();
+    const dispatch = useDispatch();
 
-    const { recetas, pageInfo, loading, error, findRecetas } = useReceta();
+    const { recetas, pageInfo, loading, error, findRecetas, deleteReceta } = useReceta();
 
     const [busqueda, setBusqueda] = useState("");
     const [pagina, setPagina] = useState(0);
@@ -46,8 +49,50 @@ export default function RecetasPanelScreen() {
     };
 
     const handleEditar = (receta: RecetaDto) => {
-        // TODO: ajustar a la ruta real de edición de recetas
-        router.push(`/recetas/${receta.id}/editar` as any);
+        // Navegar a la pantalla de creación/edición con el ID como parámetro
+        router.push(`${ROUTES.ADMIN.RECETAS.CREAR}?id=${receta.id}` as any);
+    };
+
+    const handleCopiarReceta = (receta: RecetaDto) => {
+        // Crear una copia de la receta sin ID para que sea una nueva
+        const recetaCopia: RecetaDto = {
+            ...receta,
+            id: undefined,
+            nombre: `${receta.nombre} (Copia)`,
+        };
+        dispatch(setRecetaCopia(recetaCopia));
+        router.push(ROUTES.ADMIN.RECETAS.CREAR as any);
+    };
+
+    const handleEliminarReceta = (receta: RecetaDto) => {
+        Alert.alert(
+            "Eliminar receta",
+            `¿Está seguro de que desea eliminar la receta "${receta.nombre}"? Esta acción no se puede deshacer.`,
+            [
+                {
+                    text: "Cancelar",
+                    onPress: () => {},
+                    style: "cancel",
+                },
+                {
+                    text: "Eliminar",
+                    onPress: () => {
+                        if (receta.id) {
+                            deleteReceta(receta.id);
+                            // Refrescar la lista después de un pequeño delay
+                            setTimeout(() => {
+                                findRecetas({
+                                    nombre: busqueda.trim() || undefined,
+                                    page: pagina,
+                                    size: RECETAS_POR_PAGINA,
+                                });
+                            }, 500);
+                        }
+                    },
+                    style: "destructive",
+                },
+            ]
+        );
     };
 
     const handleNuevaReceta = () => {
@@ -136,6 +181,18 @@ export default function RecetasPanelScreen() {
                                     className="w-9 h-9 rounded-full bg-[#F1EEF4] items-center justify-center active:opacity-70"
                                 >
                                     <Ionicons name="pencil" size={16} color="#1857B6" />
+                                </Pressable>
+                                <Pressable
+                                    onPress={() => handleCopiarReceta(item)}
+                                    className="w-9 h-9 rounded-full bg-[#F1EEF4] items-center justify-center active:opacity-70"
+                                >
+                                    <Ionicons name="copy" size={16} color="#1857B6" />
+                                </Pressable>
+                                <Pressable
+                                    onPress={() => handleEliminarReceta(item)}
+                                    className="w-9 h-9 rounded-full bg-[#FADBD8] items-center justify-center active:opacity-70"
+                                >
+                                    <Ionicons name="trash" size={16} color="#B3261E" />
                                 </Pressable>
                             </View>
                         </View>

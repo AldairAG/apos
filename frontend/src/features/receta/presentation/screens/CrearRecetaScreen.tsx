@@ -8,8 +8,10 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Formik, FormikHelpers } from "formik";
 import { useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import * as Yup from "yup";
 import { RecetaDetalleDto, RecetaDto, TipoResultadoReceta } from "../../domain/types/receta.types";
+import { clearRecetaCopia } from "../../store/receta.slice";
 import { useReceta } from "../hook/useReceta";
 
 interface RecetaForm {
@@ -24,7 +26,7 @@ interface RecetaForm {
     recetaDetalles: RecetaDetalleDto[];
 }
 
-const initialValues: RecetaForm = {
+const DEFAULT_INITIAL_VALUES: RecetaForm = {
     tipoResultado: "PRODUCTO",
     materialResultadoId: null,
     nombre: "",
@@ -109,10 +111,14 @@ const validationSchema = Yup.object({
  */
 export default function CrearEditarRecetaScreen() {
     const router = useRouter();
+    const dispatch = useDispatch();
     const { id } = useLocalSearchParams<{ id?: string }>();
     const esEdicion = !!id;
 
-    const { crearReceta } = useReceta();
+    const recetaCopia = useSelector((state: any) => state.receta.recetaCopia);
+    const { recetas } = useSelector((state: any) => state.receta);
+
+    const { crearReceta, updateReceta, findRecetas } = useReceta();
     const { materiales, findMateriales } = useMaterial();
     const materialesDisponibles = useMemo(() => materiales, [materiales]);
 
@@ -120,9 +126,47 @@ export default function CrearEditarRecetaScreen() {
     const [selectorMaterialVisible, setSelectorMaterialVisible] = useState(false);
     const [selectorMaterialResultadoVisible, setSelectorMaterialResultadoVisible] = useState(false);
     const [selectorUnidadIndex, setSelectorUnidadIndex] = useState<number | null>(null);
+    const [initialValues, setInitialValues] = useState<RecetaForm>(DEFAULT_INITIAL_VALUES);
 
     useEffect(() => {
         findMateriales();
+        
+        // Si estamos en modo edición, cargar la receta existente
+        if (esEdicion && id) {
+            const recetaExistente = recetas.find((r: RecetaDto) => String(r.id) === id);
+            if (recetaExistente) {
+                setInitialValues({
+                    tipoResultado: recetaExistente.tipoResultado ?? "PRODUCTO",
+                    materialResultadoId: recetaExistente.materialResultadoId ?? null,
+                    nombre: recetaExistente.nombre ?? "",
+                    rendimiento: String(recetaExistente.rendimiento ?? ""),
+                    tiempoPreparacion: String(recetaExistente.tiempoPreparacion ?? ""),
+                    porcentajeSobreCostos: String(recetaExistente.porcentajeSobreCostos ?? ""),
+                    notas: recetaExistente.notas ?? "",
+                    instrucciones: recetaExistente.instrucciones ?? [],
+                    recetaDetalles: recetaExistente.recetaDetalles ?? [],
+                });
+            } else {
+                // Si no encontramos la receta en el store, recargar la lista
+                findRecetas({ size: 1000 });
+            }
+        }
+        // Si existe una receta copiada, usarla como valores iniciales
+        else if (recetaCopia) {
+            setInitialValues({
+                tipoResultado: recetaCopia.tipoResultado ?? "PRODUCTO",
+                materialResultadoId: recetaCopia.materialResultadoId ?? null,
+                nombre: recetaCopia.nombre ?? "",
+                rendimiento: String(recetaCopia.rendimiento ?? ""),
+                tiempoPreparacion: String(recetaCopia.tiempoPreparacion ?? ""),
+                porcentajeSobreCostos: String(recetaCopia.porcentajeSobreCostos ?? ""),
+                notas: recetaCopia.notas ?? "",
+                instrucciones: recetaCopia.instrucciones ?? [],
+                recetaDetalles: recetaCopia.recetaDetalles ?? [],
+            });
+            // Limpiar la receta copiada del store
+            dispatch(clearRecetaCopia());
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -146,7 +190,12 @@ export default function CrearEditarRecetaScreen() {
             recetaDetalles: values.recetaDetalles,
         };
 
-        crearReceta(nuevaReceta);
+        if (esEdicion && id) {
+            updateReceta(Number(id), nuevaReceta);
+        } else {
+            crearReceta(nuevaReceta);
+        }
+        
         helpers.setSubmitting(false);
         router.back();
     };
@@ -165,6 +214,7 @@ export default function CrearEditarRecetaScreen() {
                 initialValues={initialValues}
                 validationSchema={validationSchema}
                 onSubmit={handleSubmit}
+                enableReinitialize={true}
             >
                 {({
                     values,

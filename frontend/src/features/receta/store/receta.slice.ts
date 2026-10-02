@@ -1,6 +1,8 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { findRecetasThunk } from "../aplication/query/FindRecetasThunk";
 import { crearRecetaThunk } from "../aplication/usecase/CrearRecetaThunk";
+import { deleteRecetaThunk } from "../aplication/usecase/DeleteRecetaThunk";
+import { updateRecetaThunk } from "../aplication/usecase/UpdateRecetaThunk";
 import { RecetaDto } from "../domain/types/receta.types";
 
 interface RecetaPageInfo {
@@ -15,6 +17,7 @@ interface RecetaState {
     pageInfo: RecetaPageInfo;
     loading: boolean;
     error: string | null;
+    recetaCopia?: RecetaDto;
 }
 
 const initialState: RecetaState = {
@@ -32,7 +35,14 @@ const initialState: RecetaState = {
 const recetaSlice = createSlice({
     name: "receta",
     initialState,
-    reducers: {},
+    reducers: {
+        setRecetaCopia: (state, action: PayloadAction<RecetaDto>) => {
+            state.recetaCopia = action.payload;
+        },
+        clearRecetaCopia: (state) => {
+            state.recetaCopia = undefined;
+        },
+    },
     extraReducers: (builder) => {
         builder.addCase(findRecetasThunk.pending, (state) => {
             state.loading = true;
@@ -59,7 +69,37 @@ const recetaSlice = createSlice({
             state.loading = false;
             state.error = action.payload ?? "Error al crear la receta";
         });
+        builder.addCase(deleteRecetaThunk.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(deleteRecetaThunk.fulfilled, (state, action) => {
+            state.loading = false;
+            // Actualizar la lista después de eliminar
+            // Esto lo manejará el componente refrescando la lista
+        });
+        builder.addCase(deleteRecetaThunk.rejected, (state, action: PayloadAction<string | undefined>) => {
+            state.loading = false;
+            state.error = action.payload ?? "Error al eliminar la receta";
+        });
+        builder.addCase(updateRecetaThunk.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(updateRecetaThunk.fulfilled, (state, action) => {
+            state.loading = false;
+            // Actualizar la receta en la lista
+            const index = state.recetas.findIndex((r) => r.id === action.payload.data.id);
+            if (index !== -1) {
+                state.recetas[index] = action.payload.data;
+            }
+        });
+        builder.addCase(updateRecetaThunk.rejected, (state, action: PayloadAction<string | undefined>) => {
+            state.loading = false;
+            state.error = action.payload ?? "Error al actualizar la receta";
+        });
     },
 });
 
+export const { setRecetaCopia, clearRecetaCopia } = recetaSlice.actions;
 export default recetaSlice.reducer;
