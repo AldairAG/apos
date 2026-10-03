@@ -28,6 +28,9 @@ export const ROUTES = {
     MODIFICADORES: {
       PANEL: '/modificadores/ModificadoresPanel',
       CREAR: '/modificadores/CrearModificador',
+    },
+    PRODUCTOS: {
+      PANEL: '/productos/ProductosPanel',
     }
   },
 

@@ -1,21 +1,25 @@
 import { api } from "@/api/apiBase";
 import type { ApiResponse } from "@/api/apiTypes";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { API_BASE_PATH, type ProductoDto } from "../../domain/types/producto.types";
+import { API_BASE_PATH, type CrearProductoPayload, type ProductoDto } from "../../domain/types/producto.types";
 
 export const crearProductoThunk = createAsyncThunk<
-    ApiResponse<ProductoDto>,
-    ProductoDto,
+    ApiResponse<ProductoDto>[],
+    CrearProductoPayload,
     { rejectValue: string }
 >(
     "producto/crear",
-    async (producto, { rejectWithValue }) => {
+    async ({ producto, sucursalIds }, { rejectWithValue }) => {
         try {
-            const response = await api.post<ProductoDto>(API_BASE_PATH, producto);
-            if (!response.success) {
-                return rejectWithValue(response.message);
+            const responses: ApiResponse<ProductoDto>[] = [];
+            for (const sucursalId of sucursalIds) {
+                const response = await api.post<ProductoDto>(API_BASE_PATH, { ...producto, sucursalId });
+                if (!response.success) {
+                    return rejectWithValue(response.message);
+                }
+                responses.push(response);
             }
-            return response;
+            return responses;
         } catch (error: unknown) {
             return rejectWithValue(
                 error instanceof Error ? error.message : "Error al crear el producto"

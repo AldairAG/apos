@@ -11,6 +11,7 @@ import com.api.apos.aplication.cataogo.producto.mapper.ProductoMapper;
 import com.api.apos.aplication.inventario.existencia.dto.ExistenciaDto;
 import com.api.apos.aplication.inventario.existencia.mapper.ExistenciaMapper;
 import com.api.apos.aplication.inventario.existencia.usecase.CrearExistenciaUseCase;
+import com.api.apos.aplication.inventario.receta.dto.RecetaDetallesDto;
 import com.api.apos.domain.catalogo.categoria.Categoria;
 import com.api.apos.domain.catalogo.categoria.CategoriaService;
 import com.api.apos.domain.catalogo.complemento.Modificador;
@@ -20,13 +21,10 @@ import com.api.apos.domain.catalogo.producto.Producto;
 import com.api.apos.domain.catalogo.producto.ProductoService;
 import com.api.apos.domain.inventario.existencia.Existencia;
 import com.api.apos.domain.inventario.existencia.ExistenciaService;
-import com.api.apos.domain.inventario.receta.Receta;
-import com.api.apos.domain.inventario.receta.RecetaService;
+import com.api.apos.domain.inventario.material.MaterialService;
+import com.api.apos.domain.inventario.receta_detalle.RecetaDetalle;
 import com.api.apos.domain.organizacion.sucursal.Sucursal;
 import com.api.apos.domain.organizacion.sucursal.SucursalService;
-import com.api.apos.enums.TipoResultadoReceta;
-import com.api.apos.exception.AppException;
-import com.api.apos.exception.ErrorCode;
 
 import lombok.AllArgsConstructor;
 
@@ -38,13 +36,13 @@ public class CrearProductoUseCase {
 
         private final SucursalService sucursalService;
 
-        private final RecetaService recetaService;
-
         private final ModificadorService modificadorService;
 
         private final ExistenciaService existenciaService;
 
         private final CategoriaService categoriaService;
+
+        private final MaterialService materialService;
 
         private final CrearExistenciaUseCase crearExistenciaUseCase;
 
@@ -62,17 +60,6 @@ public class CrearProductoUseCase {
                 Categoria categoria = categoriaService.findById(
                                 productoDto.getCategoriaId());
 
-                // 4. Obtener receta
-                Receta receta = productoDto.getRecetaId() != null
-                                ? recetaService.findById(productoDto.getRecetaId())
-                                : null;
-                if (productoDto.getRecetaId() != null && receta == null) {
-                        throw new AppException(ErrorCode.RECETA_NO_ENCONTRADA);
-                }
-                if (receta != null && receta.getTipoResultado() != TipoResultadoReceta.PRODUCTO) {
-                        throw new AppException(ErrorCode.RECETA_RESULTADO_INVALIDO);
-                }
-
                 // 5. Obtener modificadores
                 List<Long> modificadorIds = productoDto.getModificadorIds() != null
                                 ? productoDto.getModificadorIds()
@@ -83,11 +70,11 @@ public class CrearProductoUseCase {
                                 : modificadorService.findByIds(modificadorIds);
 
                 // 6. Crear existencias faltantes
-                if (receta != null) {
+                if (productoDto.getRecetaDetalles() != null && !productoDto.getRecetaDetalles().isEmpty()) {
 
-                        List<Long> materialIds = receta.getRecetaDetalles()
+                        List<Long> materialIds = productoDto.getRecetaDetalles()
                                         .stream()
-                                        .map(detalle -> detalle.getMaterial().getId())
+                                        .map(detalle -> detalle.getMaterialId())
                                         .distinct()
                                         .toList();
 
@@ -111,12 +98,24 @@ public class CrearProductoUseCase {
                 // 7. Crear producto
                 Producto producto = Producto.builder()
                                 .categoria(categoria)
-                                .receta(receta)
                                 .nombre(productoDto.getNombre())
                                 .precio(productoDto.getPrecio())
                                 .costo(productoDto.getCosto())
                                 .disponible(productoDto.getDisponible())
+                                .margenGanancia(productoDto.getMargenGanancia())
                                 .build();
+
+                // 7.1 Materiales del producto
+                if (productoDto.getRecetaDetalles() != null) {
+                        for (RecetaDetallesDto detalleDto : productoDto.getRecetaDetalles()) {
+                                producto.addRecetaDetalle(RecetaDetalle.builder()
+                                                .cantidad(detalleDto.getCantidad())
+                                                .unidadMedida(detalleDto.getUnidadMedida())
+                                                .costo(detalleDto.getCosto())
+                                                .material(materialService.findById(detalleDto.getMaterialId()))
+                                                .build());
+                        }
+                }
 
                 // 8. Crear relaciones Producto-Modificador
                 for (Modificador modificador : modificadores) {

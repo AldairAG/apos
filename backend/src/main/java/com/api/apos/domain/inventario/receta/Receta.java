@@ -3,7 +3,6 @@ package com.api.apos.domain.inventario.receta;
 import java.math.BigDecimal;
 import java.util.List;
 
-import com.api.apos.domain.catalogo.producto.Producto;
 import com.api.apos.domain.inventario.material.Material;
 import com.api.apos.domain.inventario.receta_detalle.RecetaDetalle;
 import com.api.apos.domain.organizacion.empresa.Empresa;
@@ -70,9 +69,6 @@ public class Receta {
 
     @OneToMany(mappedBy = "receta", orphanRemoval = true, cascade = CascadeType.ALL) 
     private List<RecetaDetalle> recetaDetalles;
-
-    @OneToMany(mappedBy = "receta", orphanRemoval = true, cascade = CascadeType.ALL)
-    private List<Producto> productos;
 
     @ManyToOne 
     @JoinColumn(name = "empresa_id")

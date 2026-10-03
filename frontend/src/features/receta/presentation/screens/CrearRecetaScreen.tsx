@@ -3,6 +3,7 @@ import ModalHeader from "@/components/modal/ModalHeader";
 import UnidadMedidaSelector from "@/components/UnidadMedidaSelector";
 import { MaterialDto, UNIDAD_MEDIDA_LABELS, UnidadMedida } from "@/features/material/domain/types/material.types";
 import { useMaterial } from "@/features/material/presentation/hook/useMaterial";
+import { calcularCostoMaterial } from "@/helpers/CostoMaterialHelpers";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Formik, FormikHelpers } from "formik";
@@ -10,13 +11,13 @@ import { useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import * as Yup from "yup";
-import { RecetaDetalleDto, RecetaDto, TipoResultadoReceta } from "../../domain/types/receta.types";
+import { RecetaDetalleDto, RecetaDto } from "../../domain/types/receta.types";
 import { clearRecetaCopia } from "../../store/receta.slice";
 import { useReceta } from "../hook/useReceta";
 
 interface RecetaForm {
-    tipoResultado: TipoResultadoReceta;
-    materialResultadoId: number | null;
+    materialResultadoNombre: string;
+    materialResultadoUnidad: UnidadMedida;
     nombre: string;
     rendimiento: string;
     tiempoPreparacion: string;
@@ -27,8 +28,8 @@ interface RecetaForm {
 }
 
 const DEFAULT_INITIAL_VALUES: RecetaForm = {
-    tipoResultado: "PRODUCTO",
-    materialResultadoId: null,
+    materialResultadoNombre: "",
+    materialResultadoUnidad: UnidadMedida.UNIDAD,
     nombre: "",
     rendimiento: "",
     tiempoPreparacion: "",
@@ -43,42 +44,12 @@ function parseNumero(texto: string): number {
     return isNaN(n) ? 0 : n;
 }
 
-const FACTORES_UNIDAD: Partial<Record<UnidadMedida, number>> = {
-    [UnidadMedida.MG]: 0.001,
-    [UnidadMedida.GR]: 1,
-    [UnidadMedida.KG]: 1000,
-    [UnidadMedida.LB]: 453.59237,
-    [UnidadMedida.ML]: 1,
-    [UnidadMedida.LT]: 1000,
-    [UnidadMedida.OZ]: 29.5735,
-    [UnidadMedida.GAL]: 3785.411784,
-};
-
-function calcularCostoMaterial(
-    cantidadUsada: number,
-    unidadUsada: UnidadMedida,
-    material: MaterialDto | undefined
-): number {
-    if (!material || cantidadUsada <= 0 || material.cantidad <= 0) return 0;
-
-    const factorUsado = FACTORES_UNIDAD[unidadUsada];
-    const factorMaterial = FACTORES_UNIDAD[material.unidad];
-    if (factorUsado === undefined || factorMaterial === undefined) {
-        return unidadUsada === material.unidad
-            ? (cantidadUsada / material.cantidad) * material.precio
-            : 0;
-    }
-
-    const cantidadEnUnidadDelMaterial = (cantidadUsada * factorUsado) / factorMaterial;
-    return (cantidadEnUnidadDelMaterial / material.cantidad) * material.precio;
-}
-
 const validationSchema = Yup.object({
-    tipoResultado: Yup.mixed<TipoResultadoReceta>().oneOf(["PRODUCTO", "MATERIAL"]).required(),
-    materialResultadoId: Yup.number().nullable().when("tipoResultado", {
-        is: "MATERIAL",
-        then: (schema) => schema.required("Selecciona el material que producirá la receta"),
-    }),
+    materialResultadoNombre: Yup.string()
+        .trim()
+        .required("El nombre del material resultado es obligatorio")
+        .max(100, "No puede superar los 100 caracteres"),
+    materialResultadoUnidad: Yup.string().required("Selecciona la unidad del material resultado"),
     nombre: Yup.string()
         .trim()
         .required("El nombre de la receta es obligatorio")
@@ -124,7 +95,7 @@ export default function CrearEditarRecetaScreen() {
 
     const [pasoTexto, setPasoTexto] = useState("");
     const [selectorMaterialVisible, setSelectorMaterialVisible] = useState(false);
-    const [selectorMaterialResultadoVisible, setSelectorMaterialResultadoVisible] = useState(false);
+    const [selectorUnidadResultadoVisible, setSelectorUnidadResultadoVisible] = useState(false);
     const [selectorUnidadIndex, setSelectorUnidadIndex] = useState<number | null>(null);
     const [initialValues, setInitialValues] = useState<RecetaForm>(DEFAULT_INITIAL_VALUES);
 
@@ -136,8 +107,8 @@ export default function CrearEditarRecetaScreen() {
             const recetaExistente = recetas.find((r: RecetaDto) => String(r.id) === id);
             if (recetaExistente) {
                 setInitialValues({
-                    tipoResultado: recetaExistente.tipoResultado ?? "PRODUCTO",
-                    materialResultadoId: recetaExistente.materialResultadoId ?? null,
+                    materialResultadoNombre: recetaExistente.materialResultado?.nombre ?? "",
+                    materialResultadoUnidad: recetaExistente.materialResultado?.unidad ?? UnidadMedida.UNIDAD,
                     nombre: recetaExistente.nombre ?? "",
                     rendimiento: String(recetaExistente.rendimiento ?? ""),
                     tiempoPreparacion: String(recetaExistente.tiempoPreparacion ?? ""),
@@ -154,8 +125,8 @@ export default function CrearEditarRecetaScreen() {
         // Si existe una receta copiada, usarla como valores iniciales
         else if (recetaCopia) {
             setInitialValues({
-                tipoResultado: recetaCopia.tipoResultado ?? "PRODUCTO",
-                materialResultadoId: recetaCopia.materialResultadoId ?? null,
+                materialResultadoNombre: recetaCopia.materialResultado?.nombre ?? "",
+                materialResultadoUnidad: recetaCopia.materialResultado?.unidad ?? UnidadMedida.UNIDAD,
                 nombre: recetaCopia.nombre ?? "",
                 rendimiento: String(recetaCopia.rendimiento ?? ""),
                 tiempoPreparacion: String(recetaCopia.tiempoPreparacion ?? ""),
@@ -172,12 +143,19 @@ export default function CrearEditarRecetaScreen() {
 
     const handleSubmit = (values: RecetaForm, helpers: FormikHelpers<RecetaForm>) => {
         const costoTotal = values.recetaDetalles.reduce((acc, d) => acc + d.costo, 0);
+        const recetaExistenteMaterialId = esEdicion
+            ? recetas.find((r: RecetaDto) => String(r.id) === id)?.materialResultado?.id
+            : undefined;
 
         const nuevaReceta: RecetaDto = {
-            tipoResultado: values.tipoResultado,
-            materialResultadoId: values.tipoResultado === "MATERIAL"
-                ? values.materialResultadoId ?? undefined
-                : undefined,
+            tipoResultado: "MATERIAL",
+            materialResultado: {
+                id: recetaExistenteMaterialId,
+                nombre: values.materialResultadoNombre.trim(),
+                unidad: values.materialResultadoUnidad,
+                cantidad: parseNumero(values.rendimiento),
+                precio: costoTotal,
+            },
             nombre: values.nombre.trim(),
             rendimiento: parseNumero(values.rendimiento),
             tiempoPreparacion: values.tiempoPreparacion ? parseNumero(values.tiempoPreparacion) : undefined,
@@ -259,8 +237,7 @@ export default function CrearEditarRecetaScreen() {
                     };
 
                     const materialesNoAgregados = materialesDisponibles.filter(
-                        (material) => material.id !== values.materialResultadoId
-                            && !values.recetaDetalles.some((detalle) => detalle.materialId === material.id)
+                        (material) => !values.recetaDetalles.some((detalle) => detalle.materialId === material.id)
                     );
 
                     const actualizarDetalle = (index: number, cambios: Partial<RecetaDetalleDto>) => {
@@ -310,41 +287,30 @@ export default function CrearEditarRecetaScreen() {
                                 <View className="mb-2" />
                             )}
 
-                            <Text className="text-sm font-medium text-[#1C1B1F] mb-2">Resultado de la receta</Text>
-                            <View className="flex-row border-b border-[#D8D4DC] mb-3">
-                                {(["PRODUCTO", "MATERIAL"] as const).map((tipo) => (
-                                    <Pressable
-                                        key={tipo}
-                                        onPress={() => {
-                                            setFieldValue("tipoResultado", tipo);
-                                            if (tipo === "PRODUCTO") setFieldValue("materialResultadoId", null);
-                                        }}
-                                        className={`mr-5 border-b-2 pb-2 ${values.tipoResultado === tipo ? "border-[#1857B6]" : "border-transparent"}`}
-                                    >
-                                        <Text className={`text-sm font-semibold ${values.tipoResultado === tipo ? "text-[#1857B6]" : "text-[#79747E]"}`}>
-                                            {tipo === "PRODUCTO" ? "Producto" : "Material elaborado"}
-                                        </Text>
-                                    </Pressable>
-                                ))}
-                            </View>
-                            {values.tipoResultado === "MATERIAL" && (
-                                <View className="mb-3">
-                                    <Text className="text-sm font-medium text-[#1C1B1F] mb-2">Material producido</Text>
-                                    <Pressable
-                                        onPress={() => setSelectorMaterialResultadoVisible(true)}
-                                        className="flex-row items-center justify-between border border-[#E7E0EC] bg-white px-3 py-3"
-                                    >
-                                        <Text className={`text-sm ${values.materialResultadoId ? "font-medium text-[#1C1B1F]" : "text-[#79747E]"}`}>
-                                            {materialesDisponibles.find((material) => material.id === values.materialResultadoId)?.nombre
-                                                ?? "Selecciona el material producido"}
-                                        </Text>
-                                        <Ionicons name="search" size={18} color="#79747E" />
-                                    </Pressable>
-                                    {touched.materialResultadoId && errors.materialResultadoId && (
-                                        <Text className="mt-1 text-xs text-[#B3261E]">{errors.materialResultadoId}</Text>
-                                    )}
-                                </View>
+                            <Text className="text-sm font-medium text-[#1C1B1F] mb-1">Material resultado</Text>
+                            <TextInput
+                                className={`border rounded-xl px-4 py-3 text-base text-[#1C1B1F] mb-1 ${touched.materialResultadoNombre && errors.materialResultadoNombre ? "border-[#B3261E]" : "border-[#E7E0EC]"
+                                    }`}
+                                placeholder="Ej. Jarabe de vainilla"
+                                placeholderTextColor="#79747E"
+                                value={values.materialResultadoNombre}
+                                onChangeText={handleChange("materialResultadoNombre")}
+                                onBlur={handleBlur("materialResultadoNombre")}
+                            />
+                            {touched.materialResultadoNombre && errors.materialResultadoNombre ? (
+                                <Text className="text-[#B3261E] text-xs mb-2">{errors.materialResultadoNombre}</Text>
+                            ) : (
+                                <View className="mb-2" />
                             )}
+                            <Pressable
+                                onPress={() => setSelectorUnidadResultadoVisible(true)}
+                                className="flex-row items-center justify-between border border-[#E7E0EC] rounded-xl px-4 py-3 mb-3"
+                            >
+                                <Text className="text-sm text-[#1C1B1F]">
+                                    Unidad: {UNIDAD_MEDIDA_LABELS[values.materialResultadoUnidad]}
+                                </Text>
+                                <Ionicons name="chevron-down" size={18} color="#79747E" />
+                            </Pressable>
 
                             <View className="flex-row gap-3">
                                 <View className="flex-1">
@@ -561,11 +527,11 @@ export default function CrearEditarRecetaScreen() {
                                 onClose={() => setSelectorMaterialVisible(false)}
                             />
 
-                            <MaterialSelector
-                                visible={selectorMaterialResultadoVisible}
-                                materiales={materialesDisponibles}
-                                onSelect={(material) => setFieldValue("materialResultadoId", material.id ?? null)}
-                                onClose={() => setSelectorMaterialResultadoVisible(false)}
+                            <UnidadMedidaSelector
+                                visible={selectorUnidadResultadoVisible}
+                                value={values.materialResultadoUnidad}
+                                onChange={(u: UnidadMedida) => setFieldValue("materialResultadoUnidad", u)}
+                                onClose={() => setSelectorUnidadResultadoVisible(false)}
                             />
 
                             <UnidadMedidaSelector

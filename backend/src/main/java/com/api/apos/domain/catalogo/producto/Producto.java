@@ -1,14 +1,14 @@
 package com.api.apos.domain.catalogo.producto;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 import com.api.apos.domain.catalogo.categoria.Categoria;
 import com.api.apos.domain.catalogo.grupo_producto.ModificadorProducto;
-import com.api.apos.domain.inventario.receta.Receta;
-import com.api.apos.domain.pos.detalle_orden.DetalleOrden;
+import com.api.apos.domain.inventario.receta_detalle.RecetaDetalle;
 import com.api.apos.domain.organizacion.sucursal.Sucursal;
+import com.api.apos.domain.pos.detalle_orden.DetalleOrden;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -32,7 +32,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Producto {
 
-    @Id 
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -46,10 +46,6 @@ public class Producto {
 
     private Boolean disponible;
 
-    @ManyToOne 
-    @JoinColumn (name = "receta_id")
-    private Receta receta;
-
     @OneToMany(mappedBy = "producto", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<ModificadorProducto> modificadorProductos;
 
@@ -57,14 +53,27 @@ public class Producto {
     @JoinColumn(name = "categoria_id")
     private Categoria categoria;
 
-    @ManyToOne 
+    @ManyToOne
     @JoinColumn(name = "sucursal_id")
     private Sucursal sucursal;
 
     @OneToMany(mappedBy = "producto", orphanRemoval = true, cascade = CascadeType.ALL)
-    private List<DetalleOrden> detallesOrden; 
+    private List<DetalleOrden> detallesOrden;
 
-    public void addModificador(ModificadorProducto modificador){
+    @OneToMany(mappedBy = "producto", orphanRemoval = true, cascade = CascadeType.ALL)
+    private List<RecetaDetalle> recetaDetalles;
+
+    public void addRecetaDetalle(RecetaDetalle detalle) {
+
+        if (recetaDetalles == null) {
+            recetaDetalles = new ArrayList<>();
+        }
+
+        detalle.setProducto(this);
+        recetaDetalles.add(detalle);
+    }
+
+    public void addModificador(ModificadorProducto modificador) {
 
         if (modificadorProductos == null) {
             modificadorProductos = new ArrayList<>();

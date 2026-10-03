@@ -46,9 +46,8 @@ const productoSlice = createSlice({
             state.loading = true;
             state.error = null;
         });
-        builder.addCase(crearProductoThunk.fulfilled, (state, action) => {
+        builder.addCase(crearProductoThunk.fulfilled, (state) => {
             state.loading = false;
-            state.productos.push(action.payload.data);
         });
         builder.addCase(
             crearProductoThunk.rejected,

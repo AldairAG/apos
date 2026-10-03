@@ -20,6 +20,11 @@ C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\identidad\empres
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\identidad\empresa\mapper\EmpresaMapper.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\identidad\empresa\usecase\CrearEmpresa.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\identidad\empresa\usecase\DesactivarEmpresaActualUseCase.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\identidad\mesa\dto\MesaDto.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\identidad\mesa\mapper\MesaMapper.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\identidad\mesa\MesaController.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\identidad\mesa\query\FindMesasBySucursalId.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\identidad\mesa\usecase\CrearMesaUseCase.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\identidad\sucursal\dto\SucursalDto.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\identidad\sucursal\mapper\SucursalMapper.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\identidad\sucursal\query\FindSucursalesByEmpresaId.java
@@ -60,6 +65,9 @@ C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\recet
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\receta\query\FindRecetasByEmpresaId.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\receta\RecetaController.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\receta\usecase\CrearRecetaUseCase.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\receta\usecase\DeleteRecetaUseCase.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\receta\usecase\ObtenerRecetaUseCase.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\receta\usecase\UpdateRecetaUseCase.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\pos\dto\CategoriaProductoDto.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\pos\dto\DetalleOrdenDto.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\pos\dto\OrdenDto.java
@@ -95,6 +103,7 @@ C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\tesoreria\movimi
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\tesoreria\movimiento\MovimientoController.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\tesoreria\movimiento\query\FindByCorteCajaIdQuery.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\tesoreria\movimiento\query\FindByDateQuery.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\tesoreria\movimiento\usecase\RegistrarCompraUseCase.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\tesoreria\movimiento\usecase\RegistrarEgresoUseCase.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\tesoreria\movimiento\usecase\RegistrarIngresoUseCase.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\AposApplication.java

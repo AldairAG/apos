@@ -2,6 +2,7 @@ package com.api.apos.aplication.inventario.receta.mapper;
 
 import java.util.List;
 
+import com.api.apos.aplication.inventario.material.dto.MaterialDto;
 import com.api.apos.aplication.inventario.receta.dto.RecetaDetallesDto;
 import com.api.apos.aplication.inventario.receta.dto.RecetaDto;
 import com.api.apos.domain.inventario.receta.Receta;
@@ -32,12 +33,16 @@ public class RecetaMapper {
                 .instrucciones(receta.getInstrucciones())
                 .recetaDetalles(detalles)
                 .tipoResultado(receta.getTipoResultado())
-                .materialResultadoId(receta.getMaterialResultado() == null
-                        ? null
-                        : receta.getMaterialResultado().getId())
-                .materialResultadoNombre(receta.getMaterialResultado() == null
-                        ? null
-                        : receta.getMaterialResultado().getNombre())
+                .materialResultado(receta.getMaterialResultado() == null ? null
+                        : MaterialDto.builder()
+                                .id(receta.getMaterialResultado().getId())
+                                .nombre(receta.getMaterialResultado().getNombre())
+                                .proveedor(receta.getMaterialResultado().getProveedor())
+                                .unidad(receta.getMaterialResultado().getUnidad())
+                                .cantidad(receta.getMaterialResultado().getCantidad())
+                                .precio(receta.getMaterialResultado().getPrecio())
+                                .descripcion(receta.getMaterialResultado().getDescripcion())
+                                .build())
                 .build();
 
 

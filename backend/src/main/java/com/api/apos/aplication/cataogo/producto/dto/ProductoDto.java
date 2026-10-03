@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.api.apos.aplication.cataogo.categoria.dto.CategoriaDto;
 import com.api.apos.aplication.cataogo.modificadores.dto.ModificadorDto;
-import com.api.apos.aplication.inventario.receta.dto.RecetaDto;
+import com.api.apos.aplication.inventario.receta.dto.RecetaDetallesDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,7 +27,7 @@ public class ProductoDto {
 
     private Boolean disponible;
 
-    private RecetaDto receta;
+    private List<RecetaDetallesDto> recetaDetalles;
 
     private List<ModificadorDto> modificadores;
 
@@ -36,8 +36,6 @@ public class ProductoDto {
     // Metodos para formularios
 
     private Long categoriaId;
-
-    private Long recetaId;
 
     private List<Long> modificadorIds;
 

@@ -3,6 +3,7 @@ package com.api.apos.aplication.inventario.receta.dto;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.api.apos.aplication.inventario.material.dto.MaterialDto;
 import com.api.apos.enums.TipoResultadoReceta;
 
 import lombok.AllArgsConstructor;
@@ -33,11 +34,8 @@ public class RecetaDto {
 
     private TipoResultadoReceta tipoResultado;
 
-    private Long materialResultadoId;
-
-    private String materialResultadoNombre;
-
     //Campos para formularios
 
+    private MaterialDto materialResultado;
 
 }

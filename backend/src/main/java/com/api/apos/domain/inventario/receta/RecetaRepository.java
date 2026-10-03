@@ -30,10 +30,8 @@ public interface RecetaRepository extends JpaRepository<Receta, Long> {
         @Query("""
                             SELECT rd
                             FROM RecetaDetalle rd
-                            JOIN FETCH rd.receta r
                             JOIN FETCH rd.material m
-                            JOIN r.productos p
-                            WHERE p.id = :productoId
+                            WHERE rd.producto.id = :productoId
                         """)
         List<RecetaDetalle> findDetallesByProductoId(
                         @Param("productoId") Long productoId);

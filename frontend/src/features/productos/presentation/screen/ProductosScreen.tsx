@@ -1,12 +1,16 @@
-import { RecetaDto } from "@/features/receta/domain/types/receta.types";
+import MaterialSelector from "@/components/MaterialSelector";
+import UnidadMedidaSelector from "@/components/UnidadMedidaSelector";
+import { MaterialDto, UNIDAD_MEDIDA_LABELS, UnidadMedida } from "@/features/material/domain/types/material.types";
+import { useMaterial } from "@/features/material/presentation/hook/useMaterial";
+import type { RecetaDetalleDto } from "@/features/receta/domain/types/receta.types";
+import { calcularCostoMaterial } from "@/helpers/CostoMaterialHelpers";
 import { Ionicons } from "@expo/vector-icons";
 import { Formik, FormikHelpers } from "formik";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import * as Yup from "yup";
 import { useCategoria } from "../../../categoria/presentation/hook/useCategoria";
 import { useModificador } from "../../../modificador/presentation/hook/useModificador";
-import { useReceta } from "../../../receta/presentation/hook/useReceta";
 import { useSucursal } from "../../../sucursal/presentation/hook/useSucursal";
 import type { ProductoDto } from "../../domain/types/producto.types";
 import { useProducto } from "../hook/useProducto";
@@ -20,8 +24,9 @@ interface ProductoForm {
     margenGanancia: string;
     disponible: boolean;
     categoriaId: number | null;
-    recetaId: number | null;
+    recetaDetalles: RecetaDetalleDto[];
     modificadorIds: number[];
+    sucursalIds: number[];
 }
 
 const initialValuesFormulario: ProductoForm = {
@@ -31,8 +36,9 @@ const initialValuesFormulario: ProductoForm = {
     margenGanancia: "",
     disponible: true,
     categoriaId: null,
-    recetaId: null,
+    recetaDetalles: [],
     modificadorIds: [],
+    sucursalIds: [],
 };
 
 const validationSchema = Yup.object({
@@ -69,49 +75,54 @@ const validationSchema = Yup.object({
         .typeError("Selecciona una categoría")
         .required("Selecciona una categoría"),
 
-    recetaId: Yup.number().nullable(),
+    sucursalIds: Yup.array().of(Yup.number().required()).min(1, "Selecciona al menos una sucursal"),
 });
 
 const ProductosScreen = () => {
-    const { sucursalActual } = useSucursal();
+    const { sucursalActual, sucursales, findSucursalesByEmpresa } = useSucursal();
     const { productos, loading, error, findProductosBySucursal, crearProducto } = useProducto();
     const { categorias, findCategoriasBySucursal } = useCategoria();
-    const { recetas, findRecetas } = useReceta();
+    const { materiales, findMateriales } = useMaterial();
     const { modificadores, findModificadoresByEmpresa } = useModificador();
     const [formularioVisible, setFormularioVisible] = useState(false);
     const [errorFormulario, setErrorFormulario] = useState<string | null>(null);
-    const [selectorAbierto, setSelectorAbierto] = useState<"receta" | "categoria" | "modificador" | null>(null);
+    const [selectorAbierto, setSelectorAbierto] = useState<"sucursal" | "categoria" | "modificador" | null>(null);
+    const [selectorMaterialVisible, setSelectorMaterialVisible] = useState(false);
+    const [selectorUnidadIndex, setSelectorUnidadIndex] = useState<number | null>(null);
+
+    const valoresIniciales = useMemo<ProductoForm>(
+        () => ({ ...initialValuesFormulario, sucursalIds: sucursalActual?.id ? [sucursalActual.id] : [] }),
+        [sucursalActual?.id]
+    );
+
+    useEffect(() => {
+        findSucursalesByEmpresa();
+        findMateriales();
+        findModificadoresByEmpresa();
+    }, []);
 
     useEffect(() => {
         if (!sucursalActual?.id) return;
         findProductosBySucursal(sucursalActual.id);
         findCategoriasBySucursal(sucursalActual.id);
-        findRecetas({ size: 100 });
-        findModificadoresByEmpresa();
     }, [sucursalActual?.id]);
 
     const guardarProducto = async (values: ProductoForm, helpers: FormikHelpers<ProductoForm>) => {
-        if (!sucursalActual?.id) {
-            setErrorFormulario("No hay una sucursal seleccionada.");
-            helpers.setSubmitting(false);
-            return;
-        }
-
-        const producto: ProductoDto = {
+        const producto: Omit<ProductoDto, "sucursalId"> = {
             nombre: values.nombre.trim(),
             precio: toNumber(values.precio),
             costo: toNumber(values.costo),
             margenGanancia: values.margenGanancia ? toNumber(values.margenGanancia) : undefined,
             disponible: values.disponible,
             categoriaId: values.categoriaId as number,
-            recetaId: values.recetaId ?? undefined,
+            recetaDetalles: values.recetaDetalles,
             modificadorIds: values.modificadorIds,
-            sucursalId: sucursalActual.id,
         };
 
         try {
             setErrorFormulario(null);
-            await crearProducto(producto).unwrap();
+            await crearProducto({ producto, sucursalIds: values.sucursalIds }).unwrap();
+            if (sucursalActual?.id) findProductosBySucursal(sucursalActual.id);
             setFormularioVisible(false);
             helpers.resetForm();
         } catch {
@@ -124,7 +135,7 @@ const ProductosScreen = () => {
     return (
         <View className="flex-1 bg-[#F1EEF4]">
             <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
-                <Text className="text-xs text-[#79747E]">Productos · {sucursalActual?.nombre}</Text>
+                <Text className="text-xs text-[#79747E]">Productos · {sucursalActual?.nombre ?? "Selecciona una sucursal"}</Text>
                 <Pressable
                     accessibilityLabel="Crear producto"
                     className="h-9 w-9 items-center justify-center rounded-lg bg-[#1857B6]"
@@ -159,40 +170,68 @@ const ProductosScreen = () => {
 
             <Modal visible={formularioVisible} animationType="slide" onRequestClose={() => setFormularioVisible(false)}>
                 <Formik
-                    initialValues={initialValuesFormulario}
+                    initialValues={valoresIniciales}
                     validationSchema={validationSchema}
                     onSubmit={guardarProducto}
                     enableReinitialize
                 >
                     {({ values, errors, touched, handleChange, handleBlur, setFieldValue, handleSubmit, isSubmitting, resetForm }) => {
-                        // Receta -> costo derivado. Si no hay receta, costo vuelve a "0"
-                        // y queda editable manualmente. Si ya había un margen capturado,
-                        // recalculamos el precio con el nuevo costo.
-                        const handleSeleccionarReceta = (id: number | null) => {
-                            setFieldValue("recetaId", id);
+                        // Los materiales del producto determinan el costo. Sin materiales el costo
+                        // queda en "0" y es editable manualmente. Si ya había margen, se recalcula el precio.
+                        const aplicarDetalles = (detalles: RecetaDetalleDto[]) => {
+                            setFieldValue("recetaDetalles", detalles);
 
-                            if (id === null) {
-                                setFieldValue("costo", "0");
-                                return;
-                            }
-
-                            const recetaSeleccionada = recetas.find((r) => r.id === id);
-                            if (!values.nombre.trim() && recetaSeleccionada) {
-                                setFieldValue("nombre", recetaSeleccionada.nombre);
-                            }
-
-                            // TODO: ajustar `costo` al campo real donde RecetaDto expone
-                            // el costo total calculado de la receta.
-                            const costoReceta = (recetaSeleccionada as RecetaDto)?.costoTotal ?? 0;
-                            setFieldValue("costo", String(costoReceta));
+                            const costoTotal = detalles.reduce((acc, d) => acc + d.costo, 0);
+                            setFieldValue("costo", detalles.length ? costoTotal.toFixed(2) : "0");
 
                             const margenNum = toNumber(values.margenGanancia);
                             if (values.margenGanancia && Number.isFinite(margenNum) && margenNum < 100) {
-                                setFieldValue("precio", (costoReceta / (1 - margenNum / 100)).toFixed(2));
+                                setFieldValue("precio", (costoTotal / (1 - margenNum / 100)).toFixed(2));
                             }
                         };
 
-                        // Costo editable a mano (solo posible sin receta seleccionada).
+                        const agregarMaterial = (material: MaterialDto) => {
+                            aplicarDetalles([
+                                ...values.recetaDetalles,
+                                {
+                                    materialId: material.id!,
+                                    nombreMaterial: material.nombre,
+                                    cantidad: 0,
+                                    unidadMedida: material.unidad,
+                                    costo: 0,
+                                },
+                            ]);
+                        };
+
+                        const actualizarDetalle = (index: number, cambios: Partial<RecetaDetalleDto>) => {
+                            const detalleActualizado = { ...values.recetaDetalles[index], ...cambios };
+                            const material = materiales.find((m) => m.id === detalleActualizado.materialId);
+                            detalleActualizado.costo = calcularCostoMaterial(
+                                detalleActualizado.cantidad,
+                                detalleActualizado.unidadMedida,
+                                material
+                            );
+                            aplicarDetalles(values.recetaDetalles.map((d, i) => (i === index ? detalleActualizado : d)));
+                        };
+
+                        const quitarDetalle = (index: number) => {
+                            aplicarDetalles(values.recetaDetalles.filter((_, i) => i !== index));
+                        };
+
+                        const materialesNoAgregados = materiales.filter(
+                            (m) => !values.recetaDetalles.some((d) => d.materialId === m.id)
+                        );
+
+                        const alternarSucursal = (id: number) => {
+                            setFieldValue(
+                                "sucursalIds",
+                                values.sucursalIds.includes(id)
+                                    ? values.sucursalIds.filter((itemId) => itemId !== id)
+                                    : [...values.sucursalIds, id]
+                            );
+                        };
+
+                        // Costo editable a mano (solo posible sin materiales).
                         // Si ya había margen, recalcula el precio con el nuevo costo.
                         const handleCambiarCosto = (texto: string) => {
                             setFieldValue("costo", texto);
@@ -262,11 +301,45 @@ const ProductosScreen = () => {
                                         <Text className="text-sm text-red-700 -mt-3">{errors.nombre}</Text>
                                     ) : null}
 
-                                    <SelectorBoton
-                                        etiqueta="Receta"
-                                        valor={values.recetaId ? recetas.find((r) => r.id === values.recetaId)?.nombre ?? "Sin receta" : "Sin receta"}
-                                        onPress={() => setSelectorAbierto("receta")}
-                                    />
+                                    <Text className="text-sm font-medium text-[#1C1B1F]">Materiales</Text>
+                                    {values.recetaDetalles.map((detalle, index) => (
+                                        <View key={detalle.materialId} className="rounded-lg border border-[#E7E0EC] bg-white p-3">
+                                            <View className="mb-2 flex-row items-center justify-between">
+                                                <Text className="text-sm font-semibold text-[#1C1B1F]">{detalle.nombreMaterial}</Text>
+                                                <Pressable accessibilityLabel="Quitar material" onPress={() => quitarDetalle(index)} hitSlop={8}>
+                                                    <Ionicons name="trash" size={16} color="#B3261E" />
+                                                </Pressable>
+                                            </View>
+                                            <View className="flex-row gap-2">
+                                                <TextInput
+                                                    className="flex-1 rounded-lg border border-[#E7E0EC] px-3 py-2 text-sm text-[#1C1B1F]"
+                                                    placeholder="Cantidad"
+                                                    placeholderTextColor="#79747E"
+                                                    keyboardType="decimal-pad"
+                                                    value={detalle.cantidad ? String(detalle.cantidad) : ""}
+                                                    onChangeText={(t) => actualizarDetalle(index, { cantidad: toNumber(t) || 0 })}
+                                                />
+                                                <Pressable
+                                                    onPress={() => setSelectorUnidadIndex(index)}
+                                                    className="flex-1 justify-center rounded-lg border border-[#E7E0EC] px-3 py-2"
+                                                >
+                                                    <Text className="text-sm text-[#1C1B1F]" numberOfLines={1}>
+                                                        {UNIDAD_MEDIDA_LABELS[detalle.unidadMedida]}
+                                                    </Text>
+                                                </Pressable>
+                                                <View className="flex-1 justify-center rounded-lg border border-[#E7E0EC] px-3 py-2">
+                                                    <Text className="text-sm text-[#1C1B1F]">${detalle.costo.toFixed(2)}</Text>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    ))}
+                                    <Pressable
+                                        onPress={() => setSelectorMaterialVisible(true)}
+                                        className="flex-row items-center justify-center gap-1.5 rounded-lg border border-dashed border-[#1857B6] py-3"
+                                    >
+                                        <Ionicons name="add" size={18} color="#1857B6" />
+                                        <Text className="text-sm font-medium text-[#1857B6]">Agregar material</Text>
+                                    </Pressable>
 
                                     <Campo
                                         etiqueta="Costo"
@@ -274,7 +347,7 @@ const ProductosScreen = () => {
                                         onChangeText={handleCambiarCosto}
                                         onBlur={handleBlur("costo")}
                                         keyboardType="decimal-pad"
-                                        editable={values.recetaId === null}
+                                        editable={values.recetaDetalles.length === 0}
                                     />
                                     {touched.costo && errors.costo ? (
                                         <Text className="text-sm text-red-700 -mt-3">{errors.costo}</Text>
@@ -317,6 +390,15 @@ const ProductosScreen = () => {
                                         onPress={() => setSelectorAbierto("modificador")}
                                     />
 
+                                    <SelectorBoton
+                                        etiqueta="Sucursales *"
+                                        valor={values.sucursalIds.length ? `${values.sucursalIds.length} seleccionada(s)` : "Selecciona sucursales"}
+                                        onPress={() => setSelectorAbierto("sucursal")}
+                                    />
+                                    {touched.sucursalIds && typeof errors.sucursalIds === "string" ? (
+                                        <Text className="text-sm text-red-700 -mt-3">{errors.sucursalIds}</Text>
+                                    ) : null}
+
                                     {errorFormulario ? <Text className="text-sm text-red-700">{errorFormulario}</Text> : null}
 
                                     <Pressable
@@ -330,19 +412,31 @@ const ProductosScreen = () => {
                                     </Pressable>
                                 </ScrollView>
 
-                                <Modal visible={selectorAbierto === "receta"} transparent animationType="fade" onRequestClose={() => setSelectorAbierto(null)}>
-                                    <ListaSeleccionModal
-                                        titulo="Receta"
-                                        opciones={recetas}
-                                        seleccionado={values.recetaId}
-                                        permitirVacio
-                                        onSeleccionar={(id) => {
-                                            handleSeleccionarReceta(id);
-                                            setSelectorAbierto(null);
-                                        }}
+                                <Modal visible={selectorAbierto === "sucursal"} transparent animationType="fade" onRequestClose={() => setSelectorAbierto(null)}>
+                                    <ListaSeleccionMultipleModal
+                                        titulo="Sucursales"
+                                        opciones={sucursales}
+                                        seleccionados={values.sucursalIds}
+                                        onAlternar={alternarSucursal}
                                         onCerrar={() => setSelectorAbierto(null)}
                                     />
                                 </Modal>
+
+                                <MaterialSelector
+                                    visible={selectorMaterialVisible}
+                                    materiales={materialesNoAgregados}
+                                    onSelect={agregarMaterial}
+                                    onClose={() => setSelectorMaterialVisible(false)}
+                                />
+
+                                <UnidadMedidaSelector
+                                    visible={selectorUnidadIndex !== null}
+                                    value={selectorUnidadIndex !== null ? values.recetaDetalles[selectorUnidadIndex].unidadMedida : ""}
+                                    onChange={(u: UnidadMedida) => {
+                                        if (selectorUnidadIndex !== null) actualizarDetalle(selectorUnidadIndex, { unidadMedida: u });
+                                    }}
+                                    onClose={() => setSelectorUnidadIndex(null)}
+                                />
 
                                 <Modal visible={selectorAbierto === "categoria"} transparent animationType="fade" onRequestClose={() => setSelectorAbierto(null)}>
                                     <ListaSeleccionModal
@@ -395,15 +489,14 @@ const SelectorBoton = ({ etiqueta, valor, onPress }: { etiqueta: string; valor: 
     </View>
 );
 
-const ListaSeleccionModal = ({ titulo, opciones, seleccionado, onSeleccionar, onCerrar, permitirVacio }: {
+const ListaSeleccionModal = ({ titulo, opciones, seleccionado, onSeleccionar, onCerrar }: {
     titulo: string;
     opciones: Array<{ id?: number; nombre: string }>;
     seleccionado: number | null;
     onSeleccionar: (id: number | null) => void;
     onCerrar: () => void;
-    permitirVacio?: boolean;
 }) => {
-    const datos = permitirVacio ? [{ id: undefined, nombre: "Sin receta" }, ...opciones] : opciones;
+    const datos = opciones;
     return (
     <Pressable className="flex-1 justify-end bg-black/40" onPress={onCerrar}>
         <Pressable className="max-h-[70%] rounded-t-2xl bg-white" onPress={(e) => e.stopPropagation()}>

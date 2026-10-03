@@ -2,6 +2,7 @@ package com.api.apos.domain.inventario.receta_detalle;
 
 import java.math.BigDecimal;
 
+import com.api.apos.domain.catalogo.producto.Producto;
 import com.api.apos.domain.inventario.material.Material;
 import com.api.apos.domain.inventario.receta.Receta;
 
@@ -41,9 +42,13 @@ public class RecetaDetalle {
     private BigDecimal costo;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "receta_id", nullable = false)
+    @JoinColumn(name = "receta_id", nullable = true)
     private Receta receta;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "producto_id", nullable = true)
+    private Producto producto;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "material_id", nullable = false)
     private Material material;

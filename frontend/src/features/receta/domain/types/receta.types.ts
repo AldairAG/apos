@@ -1,4 +1,4 @@
-import { UnidadMedida } from "@/features/material/domain/types/material.types";
+import { MaterialDto, UnidadMedida } from "@/features/material/domain/types/material.types";
 
 export type TipoResultadoReceta = "PRODUCTO" | "MATERIAL";
 
@@ -22,8 +22,7 @@ export interface RecetaDto {
     instrucciones: string[];
     recetaDetalles: RecetaDetalleDto[];
     tipoResultado?: TipoResultadoReceta;
-    materialResultadoId?: number;
-    materialResultadoNombre?: string;
+    materialResultado?: MaterialDto;
 }
 
 export const API_BASE_PATH = "/recetas";

@@ -7,8 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.api.apos.aplication.inventario.receta.dto.RecetaDto;
 import com.api.apos.aplication.inventario.receta.mapper.RecetaMapper;
-import com.api.apos.domain.auth.usuario.Usuario;
-import com.api.apos.domain.auth.usuario.UsuarioService;
 import com.api.apos.domain.inventario.material.MaterialService;
 import com.api.apos.domain.inventario.receta.Receta;
 import com.api.apos.domain.inventario.receta.RecetaService;
@@ -27,7 +25,7 @@ public class UpdateRecetaUseCase {
 
     private final MaterialService materialService;
 
-    private final UsuarioService usuarioService;
+    //private final UsuarioService usuarioService;
 
     @Transactional 
     public RecetaDto execute(Long recetaId, RecetaDto recetaDto) {
@@ -41,18 +39,10 @@ public class UpdateRecetaUseCase {
             throw new AppException(ErrorCode.RECETA_NO_ENCONTRADA);
         }
 
-        Usuario usuario = usuarioService.getUsuarioAutenticado();
+        //Usuario usuario = usuarioService.getUsuarioAutenticado();
 
-        TipoResultadoReceta tipoResultado = recetaDto.getTipoResultado() == null
-                ? TipoResultadoReceta.PRODUCTO
-                : recetaDto.getTipoResultado();
-        var materialResultado = tipoResultado == TipoResultadoReceta.MATERIAL
-                ? materialService.findById(recetaDto.getMaterialResultadoId())
-                : null;
-        if ((tipoResultado == TipoResultadoReceta.MATERIAL && materialResultado == null)
-                || (tipoResultado == TipoResultadoReceta.PRODUCTO && recetaDto.getMaterialResultadoId() != null)) {
-            throw new AppException(ErrorCode.RECETA_RESULTADO_INVALIDO);
-        }
+        TipoResultadoReceta tipoResultado = TipoResultadoReceta.MATERIAL;
+  
 
         List<RecetaDetalle> recetaDetalles = (recetaDto.getRecetaDetalles() == null
                 ? List.<com.api.apos.aplication.inventario.receta.dto.RecetaDetallesDto>of()
@@ -64,21 +54,21 @@ public class UpdateRecetaUseCase {
                         .material(materialService.findById(detalleDto.getMaterialId()))
                         .build())
                 .toList();
-        if (tipoResultado == TipoResultadoReceta.MATERIAL
-                && (recetaDetalles.isEmpty() || recetaDetalles.stream().anyMatch(detalle -> detalle.getMaterial() == null
-                        || detalle.getMaterial().getId().equals(materialResultado.getId())))) {
-            throw new AppException(ErrorCode.RECETA_RESULTADO_INVALIDO);
-        }
+
 
         // Actualizar los campos de la receta existente
         recetaExistente.setNombre(recetaDto.getNombre());
         recetaExistente.setCostoTotal(recetaDto.getCostoTotal());
         recetaExistente.setTipoResultado(tipoResultado);
-        recetaExistente.setMaterialResultado(materialResultado);
         recetaExistente.setInstrucciones(recetaDto.getInstrucciones());
         recetaExistente.setNotas(recetaDto.getNotas());
         recetaExistente.setPorcentajeSobreCostos(recetaDto.getPorcentajeSobreCostos());
         recetaExistente.setRendimiento(recetaDto.getRendimiento());
+
+        if (recetaDto.getMaterialResultado() != null && recetaExistente.getMaterialResultado() != null) {
+            recetaExistente.getMaterialResultado().setNombre(recetaDto.getMaterialResultado().getNombre());
+            recetaExistente.getMaterialResultado().setUnidad(recetaDto.getMaterialResultado().getUnidad());
+        }
 
         // Limpiar los detalles anteriores y agregar los nuevos
         recetaExistente.getRecetaDetalles().clear();

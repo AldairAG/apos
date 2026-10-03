@@ -91,7 +91,7 @@ const InventarioScreen = () => {
             .filter((receta) => receta.recetaDetalles.length > 0 && receta.rendimiento > 0)
             .filter((receta) => receta.recetaDetalles.every((detalle) => {
                 const existencia = existenciasPorMaterial.get(detalle.materialId);
-                return detalle.materialId !== receta.materialResultadoId
+                return detalle.materialId !== receta.materialResultado?.id
                     && detalle.cantidad > 0
                     && existencia !== undefined
                     && existencia.cantidadActual > 0;
@@ -287,7 +287,7 @@ const InventarioScreen = () => {
                                 <View className="flex-1 pr-3">
                                     <Text className="text-sm font-semibold text-[#1C1B1F]">{receta.nombre}</Text>
                                     <Text className="mt-1 text-xs text-[#79747E]">
-                                        {receta.materialResultadoNombre ?? "Material elaborado"} · Rendimiento {receta.rendimiento}
+                                        {receta.materialResultado?.nombre ?? "Material elaborado"} · Rendimiento {receta.rendimiento}
                                     </Text>
                                 </View>
                                 <Pressable
