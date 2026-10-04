@@ -13,13 +13,13 @@ import lombok.AllArgsConstructor;
 
 @Service 
 @AllArgsConstructor 
-public class FindProductosBySucursaId {
+public class FindProductosByEmpresaId {
     
     private final CategoriaService categoriaService;
 
-    public List<CategoriaProductoDto> execute(Long sucursalId) {
+    public List<CategoriaProductoDto> execute(Long empresaId) {
 
-        return categoriaService.findBySucursalId(sucursalId)
+        return categoriaService.findByEmpresaId(empresaId)
                 .stream()
                 .map(PosMapper::mapToCategoriaProductoDtoList)
                 .collect(Collectors.toList());

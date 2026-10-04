@@ -16,12 +16,22 @@ type VistaPos = "nueva" | "ordenes";
 const TIPOS_ORDEN: TipoOrden[] = ["EN_MESA", "PARA_LLEVAR", "RECOGER", "DELIVERY"];
 
 interface LineaCarrito {
-    key: number;
+    key: string;
     producto: ProductoDto;
     cantidad: number;
     notas: string;
     opcionesCantidad: Record<number, number>;
 }
+
+const generarClaveLinea = (productoId: number, opcionesCantidad: Record<number, number>): string => {
+    const opcionesOrdenadas = Object.entries(opcionesCantidad)
+        .filter(([_, cantidad]) => cantidad > 0)
+        .sort(([idA], [idB]) => Number(idA) - Number(idB))
+        .map(([id, cantidad]) => `${id}:${cantidad}`)
+        .join("_");
+
+    return opcionesOrdenadas ? `${productoId}_${opcionesOrdenadas}` : String(productoId);
+};
 
 const METODOS_PAGO: { value: MetodoPago; label: string }[] = [
     { value: "EFECTIVO", label: "Efectivo" },
@@ -111,19 +121,20 @@ const PosHomeScreen = () => {
         const productoId = producto.id;
         if (!productoId) return;
         setCarrito((actual) => {
-            const existente = actual.find((linea) => linea.producto.id === productoId);
+            const claveNueva = generarClaveLinea(productoId, {});
+            const existente = actual.find((linea) => linea.key === claveNueva);
             if (existente) {
                 return actual.map((linea) =>
-                    linea.producto.id === productoId
+                    linea.key === claveNueva
                         ? { ...linea, cantidad: linea.cantidad + 1 }
                         : linea
                 );
             }
-            return [...actual, { key: productoId, producto, cantidad: 1, notas: "", opcionesCantidad: {} }];
+            return [...actual, { key: claveNueva, producto, cantidad: 1, notas: "", opcionesCantidad: {} }];
         });
     };
 
-    const cambiarCantidad = (key: number, delta: number) => {
+    const cambiarCantidad = (key: string, delta: number) => {
         setCarrito((actual) => actual
             .map((linea) => linea.key === key
                 ? { ...linea, cantidad: linea.cantidad + delta }
@@ -131,18 +142,32 @@ const PosHomeScreen = () => {
             .filter((linea) => linea.cantidad > 0));
     };
 
-    const cambiarCantidadOpcion = (key: number, opcionId: number, delta: number) => {
-        setCarrito((actual) => actual.map((linea) => {
-            if (linea.key !== key) return linea;
-            const cantidad = Math.max(0, (linea.opcionesCantidad[opcionId] ?? 0) + delta);
-            const opcionesCantidad = { ...linea.opcionesCantidad };
-            if (cantidad === 0) {
-                delete opcionesCantidad[opcionId];
-            } else {
-                opcionesCantidad[opcionId] = cantidad;
-            }
-            return { ...linea, opcionesCantidad };
-        }));
+    const cambiarCantidadOpcion = (key: string, opcionId: number, delta: number) => {
+        setCarrito((actual) => {
+            let actualizado = actual.map((linea) => {
+                if (linea.key !== key) return linea;
+                const cantidad = Math.max(0, (linea.opcionesCantidad[opcionId] ?? 0) + delta);
+                const opcionesCantidad = { ...linea.opcionesCantidad };
+                if (cantidad === 0) {
+                    delete opcionesCantidad[opcionId];
+                } else {
+                    opcionesCantidad[opcionId] = cantidad;
+                }
+                const nuevaClave = generarClaveLinea(linea.producto.id!, opcionesCantidad);
+                return { ...linea, key: nuevaClave, opcionesCantidad };
+            });
+
+            const consolidado = actualizado.reduce((resultado: LineaCarrito[], linea) => {
+                const existente = resultado.find((l) => l.key === linea.key && l.producto.id === linea.producto.id);
+                if (existente) {
+                    existente.cantidad += linea.cantidad;
+                    return resultado;
+                }
+                return [...resultado, linea];
+            }, []);
+
+            return consolidado;
+        });
     };
 
     const ordenValida = tipoOrden !== null && (tipoOrden !== "EN_MESA" || mesaSeleccionada !== null);

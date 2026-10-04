@@ -12,12 +12,12 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor 
 @Service 
-public class FindCategoriaBySucursalId {
+public class FindCategoriaByEmpresaId {
     
     private final CategoriaService categoriaService;
 
-    public List<CategoriaDto> execute(Long sucursalId) {
-        List<Categoria> categorias = categoriaService.findBySucursalId(sucursalId);
+    public List<CategoriaDto> execute(Long empresaId) {
+        List<Categoria> categorias = categoriaService.findByEmpresaId(empresaId);
 
         return categorias.stream().map(CategoriaMapper::toDto).toList();
     }

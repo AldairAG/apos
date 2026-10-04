@@ -5,6 +5,7 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/lib/integration/react';
 import "../global.css";
 import { ROUTES } from '@/routes/routes';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -15,21 +16,28 @@ export default function TabLayout() {
         loading={null}
         persistor={persistor}
       >
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name={ROUTES.LOGIN} />
-            <Stack.Screen name={ROUTES.REGISTER} />
-            <Stack.Screen name={ROUTES.ADMIN.HOME} />
-            <Stack.Screen name={ROUTES.ADMIN.MOVIMIENTOS.CREAR_INGRESO} />
-            <Stack.Screen name={ROUTES.ADMIN.MOVIMIENTOS.CREAR_GASTO} />
-            <Stack.Screen name={ROUTES.SUCURSAL.HOME} />
-            <Stack.Screen name={ROUTES.ADMIN.RECETAS.PANEL} />
-            <Stack.Screen name={ROUTES.ADMIN.MATERIALES.PANEL} />
-            <Stack.Screen name={ROUTES.ADMIN.MODIFICADORES.PANEL} />
-            <Stack.Screen name={ROUTES.ADMIN.MODIFICADORES.CREAR} />
-          </Stack>
-        </ThemeProvider>
+        <SafeAreaProvider >
+           <SafeAreaView
+        edges={['top', 'bottom']}
+        className="flex-1"
+      >
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name={ROUTES.LOGIN} />
+              <Stack.Screen name={ROUTES.REGISTER} />
+              <Stack.Screen name={ROUTES.ADMIN.HOME} />
+              <Stack.Screen name={ROUTES.ADMIN.MOVIMIENTOS.CREAR_INGRESO} />
+              <Stack.Screen name={ROUTES.ADMIN.MOVIMIENTOS.CREAR_GASTO} />
+              <Stack.Screen name={ROUTES.SUCURSAL.HOME} />
+              <Stack.Screen name={ROUTES.ADMIN.RECETAS.PANEL} />
+              <Stack.Screen name={ROUTES.ADMIN.MATERIALES.PANEL} />
+              <Stack.Screen name={ROUTES.ADMIN.MODIFICADORES.PANEL} />
+              <Stack.Screen name={ROUTES.ADMIN.MODIFICADORES.CREAR} />
+            </Stack>
+          </ThemeProvider>
+          </SafeAreaView> 
+        </SafeAreaProvider>
       </PersistGate>
     </Provider>
   );

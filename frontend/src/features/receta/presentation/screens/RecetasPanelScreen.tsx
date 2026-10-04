@@ -204,12 +204,6 @@ export default function RecetasPanelScreen() {
                                     {formatMoney(item.costoTotal)}
                                 </Text>
                             </View>
-                            <View>
-                                <Text className="text-xs text-[#79747E]">Sobre costo</Text>
-                                <Text className="text-sm font-semibold text-[#1C7C3F]">
-                                    {item.porcentajeSobreCostos ?? 0}%
-                                </Text>
-                            </View>
                         </View>
                     </View>
                 )}

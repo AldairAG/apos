@@ -48,8 +48,6 @@ public class Receta {
 
     private Integer tiempoPreparacion;
 
-    private Float porcentajeSobreCostos;
-
     private BigDecimal costoTotal;
 
     @Enumerated(EnumType.STRING)

@@ -27,6 +27,7 @@ interface ProductoForm {
     recetaDetalles: RecetaDetalleDto[];
     modificadorIds: number[];
     sucursalIds: number[];
+    porcentajeSobreCostos?: number;
 }
 
 const initialValuesFormulario: ProductoForm = {
@@ -39,6 +40,7 @@ const initialValuesFormulario: ProductoForm = {
     recetaDetalles: [],
     modificadorIds: [],
     sucursalIds: [],
+    porcentajeSobreCostos: 15,
 };
 
 const validationSchema = Yup.object({
@@ -117,6 +119,7 @@ const ProductosScreen = () => {
             categoriaId: values.categoriaId as number,
             recetaDetalles: values.recetaDetalles,
             modificadorIds: values.modificadorIds,
+            porcentajeSobreCostos: values.porcentajeSobreCostos,
         };
 
         try {
@@ -179,10 +182,12 @@ const ProductosScreen = () => {
                         // Los materiales del producto determinan el costo. Sin materiales el costo
                         // queda en "0" y es editable manualmente. Si ya había margen, se recalcula el precio.
                         const aplicarDetalles = (detalles: RecetaDetalleDto[]) => {
-                            setFieldValue("recetaDetalles", detalles);
+                            setFieldValue("recetaDetalles", detalles);  
 
                             const costoTotal = detalles.reduce((acc, d) => acc + d.costo, 0);
-                            setFieldValue("costo", detalles.length ? costoTotal.toFixed(2) : "0");
+                            const costoConServicios = costoTotal + costoTotal * (values?.porcentajeSobreCostos ?? 0) / 100;
+
+                            setFieldValue("costo", detalles.length ? costoConServicios.toFixed(2) : "0");
 
                             const margenNum = toNumber(values.margenGanancia);
                             if (values.margenGanancia && Number.isFinite(margenNum) && margenNum < 100) {
@@ -235,7 +240,7 @@ const ProductosScreen = () => {
                         // Si ya había margen, recalcula el precio con el nuevo costo.
                         const handleCambiarCosto = (texto: string) => {
                             setFieldValue("costo", texto);
-                            if (!values.margenGanancia) return; 
+                            if (!values.margenGanancia) return;
                             const costoNum = toNumber(texto);
                             const margenNum = toNumber(values.margenGanancia);
                             if (Number.isFinite(costoNum) && Number.isFinite(margenNum) && margenNum < 100) {
@@ -249,8 +254,8 @@ const ProductosScreen = () => {
                             const costoNum = toNumber(values.costo);
                             const precioNum = toNumber(texto);
                             if (Number.isFinite(costoNum) && costoNum > 0 && Number.isFinite(precioNum)) {
-                                const precioCosto=precioNum - costoNum
-                                const margenDecimal =precioCosto / precioNum;
+                                const precioCosto = precioNum - costoNum
+                                const margenDecimal = precioCosto / precioNum;
                                 const nuevoMargen = margenDecimal * 100;
                                 setFieldValue("margenGanancia", nuevoMargen.toFixed(2));
                             }
@@ -273,6 +278,15 @@ const ProductosScreen = () => {
                                     ? values.modificadorIds.filter((itemId) => itemId !== id)
                                     : [...values.modificadorIds, id]
                             );
+                        };
+
+                        const handleCambiarPorcentajeSobreCostos = (texto: string) => {
+                            setFieldValue("porcentajeSobreCostos", texto);
+                            const costoNum = toNumber(values.costo);
+                            const porcentajeNum = toNumber(texto);
+                            if (Number.isFinite(costoNum) && costoNum > 0 && Number.isFinite(porcentajeNum)) {
+                                setFieldValue("precio", (costoNum / (porcentajeNum / 100)).toFixed(2));
+                            }
                         };
 
                         return (
@@ -341,6 +355,19 @@ const ProductosScreen = () => {
                                         <Text className="text-sm font-medium text-[#1857B6]">Agregar material</Text>
                                     </Pressable>
 
+
+
+                                    <Campo
+                                        etiqueta="Porcentaje sobre costos (%)"
+                                        value={values.porcentajeSobreCostos?.toString() || "0"}
+                                        onChangeText={handleCambiarPorcentajeSobreCostos}
+                                        onBlur={handleBlur("porcentajeSobreCostos")}
+                                        keyboardType="decimal-pad"
+                                    />
+                                    {touched.porcentajeSobreCostos && errors.porcentajeSobreCostos ? (
+                                        <Text className="text-sm text-red-700 -mt-3">{errors.porcentajeSobreCostos}</Text>
+                                    ) : null}
+
                                     <Campo
                                         etiqueta="Costo"
                                         value={values.costo}
@@ -349,9 +376,11 @@ const ProductosScreen = () => {
                                         keyboardType="decimal-pad"
                                         editable={values.recetaDetalles.length === 0}
                                     />
+
                                     {touched.costo && errors.costo ? (
                                         <Text className="text-sm text-red-700 -mt-3">{errors.costo}</Text>
                                     ) : null}
+
 
                                     <Campo
                                         etiqueta="Precio"
@@ -498,34 +527,34 @@ const ListaSeleccionModal = ({ titulo, opciones, seleccionado, onSeleccionar, on
 }) => {
     const datos = opciones;
     return (
-    <Pressable className="flex-1 justify-end bg-black/40" onPress={onCerrar}>
-        <Pressable className="max-h-[70%] rounded-t-2xl bg-white" onPress={(e) => e.stopPropagation()}>
-            <View className="flex-row items-center justify-between border-b border-[#E7E0EC] px-4 py-3">
-                <Text className="text-base font-semibold text-[#1C1B1F]">{titulo}</Text>
-                <Pressable accessibilityLabel="Cerrar" onPress={onCerrar}>
-                    <Ionicons name="close" size={22} color="#1C1B1F" />
-                </Pressable>
-            </View>
-            <FlatList
-                data={datos}
-                keyExtractor={(item, index) => (item.id ? String(item.id) : `vacio-${index}`)}
-                contentContainerStyle={{ padding: 12, gap: 8 }}
-                renderItem={({ item }) => (
-                    <Pressable
-                        className="flex-row items-center justify-between rounded-lg border border-[#E7E0EC] bg-white px-3 py-3"
-                        onPress={() => onSeleccionar(item.id ?? null)}
-                    >
-                        <Text className="text-sm text-[#1C1B1F]">{item.nombre}</Text>
-                        <Ionicons
-                            name={seleccionado === (item.id ?? null) ? "radio-button-on" : "radio-button-off"}
-                            size={20}
-                            color="#1857B6"
-                        />
+        <Pressable className="flex-1 justify-end bg-black/40" onPress={onCerrar}>
+            <Pressable className="max-h-[70%] rounded-t-2xl bg-white" onPress={(e) => e.stopPropagation()}>
+                <View className="flex-row items-center justify-between border-b border-[#E7E0EC] px-4 py-3">
+                    <Text className="text-base font-semibold text-[#1C1B1F]">{titulo}</Text>
+                    <Pressable accessibilityLabel="Cerrar" onPress={onCerrar}>
+                        <Ionicons name="close" size={22} color="#1C1B1F" />
                     </Pressable>
-                )}
-            />
+                </View>
+                <FlatList
+                    data={datos}
+                    keyExtractor={(item, index) => (item.id ? String(item.id) : `vacio-${index}`)}
+                    contentContainerStyle={{ padding: 12, gap: 8 }}
+                    renderItem={({ item }) => (
+                        <Pressable
+                            className="flex-row items-center justify-between rounded-lg border border-[#E7E0EC] bg-white px-3 py-3"
+                            onPress={() => onSeleccionar(item.id ?? null)}
+                        >
+                            <Text className="text-sm text-[#1C1B1F]">{item.nombre}</Text>
+                            <Ionicons
+                                name={seleccionado === (item.id ?? null) ? "radio-button-on" : "radio-button-off"}
+                                size={20}
+                                color="#1857B6"
+                            />
+                        </Pressable>
+                    )}
+                />
+            </Pressable>
         </Pressable>
-    </Pressable>
     );
 };
 

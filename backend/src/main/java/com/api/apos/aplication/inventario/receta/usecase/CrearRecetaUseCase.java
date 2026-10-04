@@ -90,9 +90,6 @@ public class CrearRecetaUseCase {
                                 // Notas adicionales.
                                 .notas(recetaDto.getNotas())
 
-                                // Porcentaje adicional aplicado sobre los costos.
-                                .porcentajeSobreCostos(recetaDto.getPorcentajeSobreCostos())
-
                                 // Cantidad de producto/material que genera la receta.
                                 .rendimiento(recetaDto.getRendimiento())
 

@@ -15,6 +15,7 @@ export interface ProductoDto {
     categoriaId: number;
     modificadorIds: number[];
     sucursalId: number;
+    porcentajeSobreCostos?: number;
 }
 
 // El backend asigna un producto a una sola sucursal por petición; para varias se envía una por sucursal.

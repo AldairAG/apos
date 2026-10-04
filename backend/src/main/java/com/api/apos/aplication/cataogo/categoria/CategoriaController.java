@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.api.apos.aplication.cataogo.categoria.dto.CategoriaDto;
-import com.api.apos.aplication.cataogo.categoria.query.FindCategoriaBySucursalId;
+import com.api.apos.aplication.cataogo.categoria.query.FindCategoriaByEmpresaId;
 import com.api.apos.aplication.cataogo.categoria.usecase.CrearCategoriaUseCase;
 import com.api.apos.helpers.ApiResponseWrapper;
 
@@ -24,7 +24,7 @@ import lombok.AllArgsConstructor;
 public class CategoriaController {
 
     private final CrearCategoriaUseCase crearCategoriaUseCase;
-    private final FindCategoriaBySucursalId findCategoriaBySucursalId;
+    private final FindCategoriaByEmpresaId findCategoriaByEmpresaId;
 
     @PostMapping("/")
     public ResponseEntity<ApiResponseWrapper<CategoriaDto>> crearCategoria(@RequestBody CategoriaDto categoriaDto) {
@@ -33,9 +33,9 @@ public class CategoriaController {
         return ResponseEntity.ok(ApiResponseWrapper.success(response));
     }
 
-    @GetMapping("/sucursal/{sucursalId}")
-    public ResponseEntity<ApiResponseWrapper<List<CategoriaDto>>> getCategoriasBySucursalId(@PathVariable Long sucursalId) {
-        List<CategoriaDto> response = findCategoriaBySucursalId.execute(sucursalId);
+    @GetMapping("/empresa/{empresaId}")
+    public ResponseEntity<ApiResponseWrapper<List<CategoriaDto>>> getCategoriasByEmpresaId(@PathVariable Long empresaId) {
+        List<CategoriaDto> response = findCategoriaByEmpresaId.execute(empresaId);
 
         return ResponseEntity.ok(ApiResponseWrapper.success(response));
     }

@@ -28,7 +28,6 @@ public class RecetaMapper {
                 .rendimiento(receta.getRendimiento())
                 .notas(receta.getNotas())
                 .tiempoPreparacion(receta.getTiempoPreparacion())
-                .porcentajeSobreCostos(receta.getPorcentajeSobreCostos())
                 .costoTotal(receta.getCostoTotal())
                 .instrucciones(receta.getInstrucciones())
                 .recetaDetalles(detalles)

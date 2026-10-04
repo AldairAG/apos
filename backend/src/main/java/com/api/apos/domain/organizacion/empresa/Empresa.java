@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import com.api.apos.domain.auth.usuario.Usuario;
 import com.api.apos.domain.catalogo.complemento.Modificador;
+import com.api.apos.domain.catalogo.categoria.Categoria;
 import com.api.apos.domain.financiero.cuenta.Cuenta;
 import com.api.apos.domain.inventario.material.Material;
 import com.api.apos.domain.inventario.receta.Receta;
@@ -64,6 +65,9 @@ public class Empresa {
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Modificador> modificadores;
 
+    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Categoria> categorias;
+
     public void delete(){
         activa=false;
     }
@@ -99,6 +103,14 @@ public class Empresa {
         }
         modificadores.add(modificador);
         modificador.setEmpresa(this);
+    }
+
+    public void addCategoria(Categoria categoria) {
+        if (categorias == null) {
+            categorias = new ArrayList<>();
+        }
+        categorias.add(categoria);
+        categoria.setEmpresa(this);
     }
 
 

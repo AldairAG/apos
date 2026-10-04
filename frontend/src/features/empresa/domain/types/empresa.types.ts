@@ -1,6 +1,7 @@
 import { CuentaDto } from "../../../cuenta/domain/types/cuenta.types";
 
 export interface EmpresaDto {
+    id?: number;
     nombre: string;
     imgUrl: string;
     imgFile?: File | null;

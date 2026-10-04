@@ -3,7 +3,7 @@ package com.api.apos.domain.catalogo.categoria;
 import java.util.List;
 
 import com.api.apos.domain.catalogo.producto.Producto;
-import com.api.apos.domain.organizacion.sucursal.Sucursal;
+import com.api.apos.domain.organizacion.empresa.Empresa;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 
@@ -36,6 +36,6 @@ public class Categoria {
     private List<Producto> productos;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    private Sucursal sucursal;
+    private Empresa empresa;
     
 }

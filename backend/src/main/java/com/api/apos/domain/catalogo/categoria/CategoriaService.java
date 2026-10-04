@@ -19,8 +19,8 @@ public class CategoriaService {
         return categoriaRepository.findById(id).orElse(null);
     }
 
-    public List<Categoria> findBySucursalId(Long sucursalId) {
-        return categoriaRepository.findBySucursalId(sucursalId);
+    public List<Categoria> findByEmpresaId(Long empresaId) {
+        return categoriaRepository.findByEmpresaId(empresaId);
     }
 
 }

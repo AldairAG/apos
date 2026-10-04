@@ -31,6 +31,8 @@ public class ProductoDto {
 
     private List<ModificadorDto> modificadores;
 
+    private Float porcentajeSobreCostos;
+
     private CategoriaDto categoria;
 
     // Metodos para formularios

@@ -44,6 +44,8 @@ public class Producto {
 
     private Float margenGanancia;
 
+    private Float porcentajeSobreCostos;
+
     private Boolean disponible;
 
     @OneToMany(mappedBy = "producto", orphanRemoval = true, cascade = CascadeType.ALL)

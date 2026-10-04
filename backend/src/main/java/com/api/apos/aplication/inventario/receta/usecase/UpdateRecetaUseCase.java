@@ -62,7 +62,6 @@ public class UpdateRecetaUseCase {
         recetaExistente.setTipoResultado(tipoResultado);
         recetaExistente.setInstrucciones(recetaDto.getInstrucciones());
         recetaExistente.setNotas(recetaDto.getNotas());
-        recetaExistente.setPorcentajeSobreCostos(recetaDto.getPorcentajeSobreCostos());
         recetaExistente.setRendimiento(recetaDto.getRendimiento());
 
         if (recetaDto.getMaterialResultado() != null && recetaExistente.getMaterialResultado() != null) {

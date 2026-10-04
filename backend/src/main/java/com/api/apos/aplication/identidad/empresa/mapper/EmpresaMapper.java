@@ -6,6 +6,7 @@ import com.api.apos.domain.organizacion.empresa.Empresa;
 public class EmpresaMapper {
     public static EmpresaDto toDto(Empresa empresa) {
         EmpresaDto dto = new EmpresaDto();
+        dto.setId(empresa.getId());
         dto.setNombre(empresa.getNombre());
         dto.setImgUrl(empresa.getLogoUrl());
         return dto;

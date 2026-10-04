@@ -17,7 +17,6 @@ export interface RecetaDto {
     rendimiento: number;
     notas?: string;
     tiempoPreparacion?: number;
-    porcentajeSobreCostos?: number;
     costoTotal: number;
     instrucciones: string[];
     recetaDetalles: RecetaDetalleDto[];

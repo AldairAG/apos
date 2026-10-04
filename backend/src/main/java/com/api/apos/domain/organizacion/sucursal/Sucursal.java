@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.api.apos.domain.catalogo.producto.Producto;
-import com.api.apos.domain.catalogo.categoria.Categoria;
 import com.api.apos.domain.financiero.caja.Caja;
 import com.api.apos.domain.inventario.compra.Compra;
 import com.api.apos.domain.inventario.existencia.Existencia;
@@ -66,9 +65,6 @@ public class Sucursal {
     private List<Producto> productos;
 
     @OneToMany(mappedBy = "sucursal", fetch = FetchType.LAZY)
-    private List<Categoria> categorias;
-
-    @OneToMany(mappedBy = "sucursal", fetch = FetchType.LAZY)
     private List<Mesa> mesas;
 
     @OneToMany(mappedBy = "sucursal", fetch = FetchType.LAZY)
@@ -92,14 +88,6 @@ public class Sucursal {
         }
         existencias.add(existencia);
         existencia.setSucursal(this);
-    }
-
-    public void addCategoria(Categoria categoria){
-        if (categorias == null) {
-            categorias = new ArrayList<>();
-        }
-        categorias.add(categoria);
-        categoria.setSucursal(this);
     }
 
     public void addMesa(Mesa mesa){

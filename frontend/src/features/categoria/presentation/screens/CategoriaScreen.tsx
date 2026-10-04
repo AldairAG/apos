@@ -6,6 +6,7 @@ import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, View } 
 import * as Yup from "yup";
 import type { CategoriaDto } from "../../domain/types/categoria.types";
 import { useCategoria } from "../hook/useCategoria";
+import { useUsuario } from "@/features/usuario/usuario/hook/useUsuario";
 
 interface CategoriaForm {
     nombre: string;
@@ -22,10 +23,11 @@ const validationSchema = Yup.object({
 });
 
 export default function CategoriaScreen() {
+    const {usuario} =useUsuario();
     const { sucursalId } = useLocalSearchParams<{ sucursalId: string }>();
     const { categorias, loading, error, findCategoriasBySucursal, crearCategoria } = useCategoria();
     const [formularioVisible, setFormularioVisible] = useState(false);
-    const idSucursal = Number(sucursalId);
+    const idSucursal = Number(usuario?.empresa?.id);
 
     useEffect(() => {
         if (Number.isInteger(idSucursal) && idSucursal > 0) {
@@ -37,7 +39,7 @@ export default function CategoriaScreen() {
     const handleSubmit = async (values: CategoriaForm, helpers: FormikHelpers<CategoriaForm>) => {
         const categoria: CategoriaDto = {
             nombre: values.nombre.trim(),
-            sucursalId: idSucursal,
+            empresaId: idSucursal,
         };
         const result = await crearCategoria(categoria);
         helpers.setSubmitting(false);

@@ -10,6 +10,7 @@ import lombok.Data;
 
 @Data
 public class EmpresaDto {
+    private Long id;
     private String nombre;
     private String imgUrl;
     private MultipartFile imgFile;

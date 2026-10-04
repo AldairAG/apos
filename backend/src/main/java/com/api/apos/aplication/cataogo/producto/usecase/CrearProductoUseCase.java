@@ -101,6 +101,7 @@ public class CrearProductoUseCase {
                                 .nombre(productoDto.getNombre())
                                 .precio(productoDto.getPrecio())
                                 .costo(productoDto.getCosto())
+                                .porcentajeSobreCostos(productoDto.getPorcentajeSobreCostos())
                                 .disponible(productoDto.getDisponible())
                                 .margenGanancia(productoDto.getMargenGanancia())
                                 .build();

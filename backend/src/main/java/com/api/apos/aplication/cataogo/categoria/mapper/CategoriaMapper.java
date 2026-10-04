@@ -15,7 +15,7 @@ public class CategoriaMapper {
         return CategoriaDto.builder()
             .id(categoria.getId())
             .nombre(categoria.getNombre())
-            .sucursalId(categoria.getSucursal() == null ? null : categoria.getSucursal().getId())
+            .empresaId(categoria.getEmpresa() == null ? null : categoria.getEmpresa().getId())
             .build();
     }
 
