@@ -1,6 +1,7 @@
 package com.api.apos.aplication.pos;
 
 import java.util.List;
+import com.api.apos.aplication.pos.query.FindCategoriaProductoDtoByEmpresaId;           
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,7 +16,6 @@ import com.api.apos.aplication.pos.dto.CategoriaProductoDto;
 import com.api.apos.aplication.pos.dto.OrdenDto;
 import com.api.apos.aplication.pos.dto.PagarVentaDto;
 import com.api.apos.aplication.pos.query.FindOrdenesBySucursalId;
-import com.api.apos.aplication.pos.query.FindProductosByEmpresaId;
 import com.api.apos.aplication.pos.usecase.ActualizarEstadoOrdenUseCase;
 import com.api.apos.aplication.pos.usecase.CobrarOrdenUseCase;
 import com.api.apos.aplication.pos.usecase.CrearOrdenUseCase;
@@ -31,7 +31,7 @@ public class PosController {
     
     private final FindOrdenesBySucursalId findOrdenesBySucursalId;
 
-    private final FindProductosByEmpresaId findProductosByEmpresaId;
+    private final FindCategoriaProductoDtoByEmpresaId findCategoriaProductoDtoByEmpresaId;
 
     private final ActualizarEstadoOrdenUseCase actualizarEstadoOrdenUseCase;
 
@@ -51,7 +51,7 @@ public class PosController {
     @GetMapping("/productos/empresa/{empresaId}")
     public ResponseEntity<ApiResponseWrapper<List<CategoriaProductoDto>>> getProductosByEmpresaId(@PathVariable Long empresaId) {
 
-        List<CategoriaProductoDto> response = findProductosByEmpresaId.execute(empresaId);
+        List<CategoriaProductoDto> response = findCategoriaProductoDtoByEmpresaId.execute(empresaId);
 
         return ResponseEntity.ok(ApiResponseWrapper.success(response));
     }

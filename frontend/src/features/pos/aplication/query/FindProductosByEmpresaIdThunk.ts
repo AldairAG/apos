@@ -6,14 +6,14 @@ import {
     type CategoriaProductoDto,
 } from "../../domain/types/pos.types";
 
-export const findProductosPosBySucursalIdThunk = createAsyncThunk<
+export const findProductosPosByEmpresaIdThunk = createAsyncThunk<
     ApiResponse<CategoriaProductoDto[]>,
     number,
     { rejectValue: string }
->("pos/findProductosBySucursal", async (sucursalId, { rejectWithValue }) => {
+>("pos/findProductosByEmpresa", async (empresaId, { rejectWithValue }) => {
     try {
         const response = await api.get<CategoriaProductoDto[]>(
-            `${POS_API_BASE_PATH}/productos/sucursal/${sucursalId}`
+            `${POS_API_BASE_PATH}/productos/empresa/${empresaId}`
         );
         if (!response.success) return rejectWithValue(response.message);
         return response;

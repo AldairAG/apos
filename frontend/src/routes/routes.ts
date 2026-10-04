@@ -31,7 +31,11 @@ export const ROUTES = {
     },
     PRODUCTOS: {
       PANEL: '/productos/ProductosPanel',
-    }
+    },
+    CATEGORIAS: {
+      PANEL: '/categorias/categoria',
+    },
+
   },
 
   SUCURSAL: {

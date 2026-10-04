@@ -9,5 +9,6 @@ export const NAV_ITEMS: { label: string; icon: keyof typeof Ionicons.glyphMap; r
   { label: "Reportes", icon: "bar-chart-outline", route: "/reportes" },
   { label: "Materiales", icon: "cube-outline", route: ROUTES.ADMIN.MATERIALES.PANEL },
   { label: "Productos", icon: "pricetag-outline", route: ROUTES.ADMIN.PRODUCTOS.PANEL },
-  { label: "Modificadores", icon: "options-outline", route: ROUTES.ADMIN.MODIFICADORES.PANEL }
+  { label: "Modificadores", icon: "options-outline", route: ROUTES.ADMIN.MODIFICADORES.PANEL },
+  { label: "Categorias", icon: "list-outline", route: ROUTES.ADMIN.CATEGORIAS.PANEL }
 ];

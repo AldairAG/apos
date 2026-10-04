@@ -25,13 +25,13 @@ const validationSchema = Yup.object({
 export default function CategoriaScreen() {
     const {usuario} =useUsuario();
     const { sucursalId } = useLocalSearchParams<{ sucursalId: string }>();
-    const { categorias, loading, error, findCategoriasBySucursal, crearCategoria } = useCategoria();
+    const { categorias, loading, error, findCategoriasByEmpresa, crearCategoria } = useCategoria();
     const [formularioVisible, setFormularioVisible] = useState(false);
     const idSucursal = Number(usuario?.empresa?.id);
 
     useEffect(() => {
         if (Number.isInteger(idSucursal) && idSucursal > 0) {
-            findCategoriasBySucursal(idSucursal);
+            findCategoriasByEmpresa();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [idSucursal]);

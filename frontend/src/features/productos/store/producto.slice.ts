@@ -1,6 +1,8 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { findProductosBySucursalThunk } from "../aplication/query/FindProductosBySucursalThunk";
+import { findProductosByEmpresaThunk } from "../aplication/query/FindProductosByEmpresaThunk";
 import { crearProductoThunk } from "../aplication/usecase/CrearProductoThunk";
+import { actualizarProductoThunk } from "../aplication/usecase/ActualizarProductoThunk";
+import { eliminarProductoThunk } from "../aplication/usecase/EliminarProductoThunk";
 import type { ProductoDto } from "../domain/types/producto.types";
 
 interface ProductoState {
@@ -27,16 +29,16 @@ const productoSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        builder.addCase(findProductosBySucursalThunk.pending, (state) => {
+        builder.addCase(findProductosByEmpresaThunk.pending, (state) => {
             state.loading = true;
             state.error = null;
         });
-        builder.addCase(findProductosBySucursalThunk.fulfilled, (state, action) => {
+        builder.addCase(findProductosByEmpresaThunk.fulfilled, (state, action) => {
             state.loading = false;
             state.productos = action.payload.data;
         });
         builder.addCase(
-            findProductosBySucursalThunk.rejected,
+            findProductosByEmpresaThunk.rejected,
             (state, action: PayloadAction<string | undefined>) => {
                 state.loading = false;
                 state.error = action.payload ?? "Error al obtener los productos";
@@ -54,6 +56,34 @@ const productoSlice = createSlice({
             (state, action: PayloadAction<string | undefined>) => {
                 state.loading = false;
                 state.error = action.payload ?? "Error al crear el producto";
+            }
+        );
+        builder.addCase(actualizarProductoThunk.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(actualizarProductoThunk.fulfilled, (state) => {
+            state.loading = false;
+        });
+        builder.addCase(
+            actualizarProductoThunk.rejected,
+            (state, action: PayloadAction<string | undefined>) => {
+                state.loading = false;
+                state.error = action.payload ?? "Error al actualizar el producto";
+            }
+        );
+        builder.addCase(eliminarProductoThunk.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(eliminarProductoThunk.fulfilled, (state) => {
+            state.loading = false;
+        });
+        builder.addCase(
+            eliminarProductoThunk.rejected,
+            (state, action: PayloadAction<string | undefined>) => {
+                state.loading = false;
+                state.error = action.payload ?? "Error al eliminar el producto";
             }
         );
     },

@@ -82,8 +82,8 @@ const validationSchema = Yup.object({
 
 const ProductosScreen = () => {
     const { sucursalActual, sucursales, findSucursalesByEmpresa } = useSucursal();
-    const { productos, loading, error, findProductosBySucursal, crearProducto } = useProducto();
-    const { categorias, findCategoriasBySucursal } = useCategoria();
+    const { productos, loading, error, findProductosByEmpresa, crearProducto, actualizarProducto, eliminarProducto } = useProducto();
+    const { categorias, findCategoriasByEmpresa } = useCategoria();
     const { materiales, findMateriales } = useMaterial();
     const { modificadores, findModificadoresByEmpresa } = useModificador();
     const [formularioVisible, setFormularioVisible] = useState(false);
@@ -91,11 +91,28 @@ const ProductosScreen = () => {
     const [selectorAbierto, setSelectorAbierto] = useState<"sucursal" | "categoria" | "modificador" | null>(null);
     const [selectorMaterialVisible, setSelectorMaterialVisible] = useState(false);
     const [selectorUnidadIndex, setSelectorUnidadIndex] = useState<number | null>(null);
+    const [productoEditando, setProductoEditando] = useState<ProductoDto | null>(null);
+    const [esCopiando, setEsCopiando] = useState(false);
+    const [modalEliminarVisible, setModalEliminarVisible] = useState(false);
+    const [productoAEliminar, setProductoAEliminar] = useState<ProductoDto | null>(null);
 
-    const valoresIniciales = useMemo<ProductoForm>(
-        () => ({ ...initialValuesFormulario, sucursalIds: sucursalActual?.id ? [sucursalActual.id] : [] }),
-        [sucursalActual?.id]
-    );
+    const valoresIniciales = useMemo<ProductoForm>(() => {
+        if (productoEditando) {
+            return {
+                nombre: esCopiando ? `Copia - ${productoEditando.nombre}` : productoEditando.nombre,
+                precio: productoEditando.precio.toString(),
+                costo: productoEditando.costo.toString(),
+                margenGanancia: productoEditando.margenGanancia?.toString() || "",
+                disponible: productoEditando.disponible,
+                categoriaId: productoEditando.categoriaId,
+                recetaDetalles: productoEditando.recetaDetalles,
+                modificadorIds: productoEditando.modificadorIds,
+                sucursalIds: productoEditando.sucursalId ? [productoEditando.sucursalId] : [],
+                porcentajeSobreCostos: productoEditando.porcentajeSobreCostos,
+            };
+        }
+        return { ...initialValuesFormulario, sucursalIds: sucursalActual?.id ? [sucursalActual.id] : [] };
+    }, [productoEditando, esCopiando, sucursalActual?.id]);
 
     useEffect(() => {
         findSucursalesByEmpresa();
@@ -104,10 +121,9 @@ const ProductosScreen = () => {
     }, []);
 
     useEffect(() => {
-        if (!sucursalActual?.id) return;
-        findProductosBySucursal(sucursalActual.id);
-        findCategoriasBySucursal(sucursalActual.id);
-    }, [sucursalActual?.id]);
+        findProductosByEmpresa();
+        findCategoriasByEmpresa();
+    }, []);
 
     const guardarProducto = async (values: ProductoForm, helpers: FormikHelpers<ProductoForm>) => {
         const producto: Omit<ProductoDto, "sucursalId"> = {
@@ -124,12 +140,20 @@ const ProductosScreen = () => {
 
         try {
             setErrorFormulario(null);
-            await crearProducto({ producto, sucursalIds: values.sucursalIds }).unwrap();
-            if (sucursalActual?.id) findProductosBySucursal(sucursalActual.id);
+            if (productoEditando && !esCopiando) {
+                // Actualizar producto existente
+                await actualizarProducto({ ...producto, id: productoEditando.id, sucursalId: productoEditando.sucursalId }).unwrap();
+            } else {
+                // Crear nuevo producto (o copiar)
+                await crearProducto({ producto, sucursalIds: values.sucursalIds }).unwrap();
+            }
+            findProductosByEmpresa();
             setFormularioVisible(false);
+            setProductoEditando(null);
+            setEsCopiando(false);
             helpers.resetForm();
         } catch {
-            setErrorFormulario("No se pudo crear el producto.");
+            setErrorFormulario("No se pudo guardar el producto.");
         } finally {
             helpers.setSubmitting(false);
         }
@@ -152,20 +176,54 @@ const ProductosScreen = () => {
                 keyExtractor={(item) => String(item.id)}
                 contentContainerStyle={{ padding: 16, gap: 10, flexGrow: 1 }}
                 refreshing={loading}
-                onRefresh={() => sucursalActual?.id && findProductosBySucursal(sucursalActual.id)}
+                onRefresh={() => findProductosByEmpresa()}
                 ListEmptyComponent={
                     loading ? <ActivityIndicator color="#1857B6" /> : <Text className="text-center text-sm text-[#79747E]">No hay productos en esta sucursal.</Text>
                 }
                 renderItem={({ item }) => (
                     <View className="flex-row items-center justify-between bg-white rounded-lg p-4 border border-[#E7E0EC]">
-                        <View className="flex-row items-center gap-3">
+                        <View className="flex-row items-center gap-3 flex-1">
                             <Ionicons name="cube-outline" size={20} color="#1857B6" />
-                            <View>
+                            <View className="flex-1">
                                 <Text className="text-sm text-[#1C1B1F]">{item.nombre}</Text>
                                 <Text className="text-xs text-[#79747E]">{item.disponible ? "Disponible" : "No disponible"}</Text>
                             </View>
                         </View>
-                        <Text className="text-sm font-medium text-[#1C1B1F]">${item.precio.toFixed(2)}</Text>
+                        <View className="flex-row items-center gap-2">
+                            <Text className="text-sm font-medium text-[#1C1B1F] mr-2">${item.precio.toFixed(2)}</Text>
+                            <Pressable
+                                accessibilityLabel="Copiar producto"
+                                onPress={() => {
+                                    setProductoEditando(item);
+                                    setEsCopiando(true);
+                                    setFormularioVisible(true);
+                                }}
+                                hitSlop={8}
+                            >
+                                <Ionicons name="copy" size={18} color="#1857B6" />
+                            </Pressable>
+                            <Pressable
+                                accessibilityLabel="Editar producto"
+                                onPress={() => {
+                                    setProductoEditando(item);
+                                    setEsCopiando(false);
+                                    setFormularioVisible(true);
+                                }}
+                                hitSlop={8}
+                            >
+                                <Ionicons name="pencil" size={18} color="#1857B6" />
+                            </Pressable>
+                            <Pressable
+                                accessibilityLabel="Eliminar producto"
+                                onPress={() => {
+                                    setProductoAEliminar(item);
+                                    setModalEliminarVisible(true);
+                                }}
+                                hitSlop={8}
+                            >
+                                <Ionicons name="trash" size={18} color="#B3261E" />
+                            </Pressable>
+                        </View>
                     </View>
                 )}
             />
@@ -292,13 +350,17 @@ const ProductosScreen = () => {
                         return (
                             <View className="flex-1 bg-[#F1EEF4]">
                                 <View className="flex-row items-center justify-between border-b border-[#E7E0EC] bg-white px-4 py-3">
-                                    <Text className="text-base font-semibold text-[#1C1B1F]">Nuevo producto</Text>
+                                    <Text className="text-base font-semibold text-[#1C1B1F]">
+                                        {esCopiando ? "Copiar producto" : productoEditando ? `Editar ${productoEditando.nombre}` : "Nuevo producto"}
+                                    </Text>
                                     <Pressable
                                         accessibilityLabel="Cerrar formulario"
                                         onPress={() => {
                                             setFormularioVisible(false);
                                             resetForm();
                                             setErrorFormulario(null);
+                                            setProductoEditando(null);
+                                            setEsCopiando(false);
                                         }}
                                     >
                                         <Ionicons name="close" size={24} color="#1C1B1F" />
@@ -494,6 +556,45 @@ const ProductosScreen = () => {
                     }}
                 </Formik>
             </Modal>
+
+            {productoAEliminar && (
+                <Modal visible={modalEliminarVisible} animationType="fade" transparent={true} onRequestClose={() => setModalEliminarVisible(false)}>
+                    <View className="flex-1 justify-center items-center bg-black/40">
+                        <View className="bg-white rounded-2xl p-6 mx-6 max-w-xs">
+                            <Text className="text-base font-semibold text-[#1C1B1F] mb-2">Eliminar producto</Text>
+                            <Text className="text-sm text-[#79747E] mb-6">
+                                ¿Está seguro que desea eliminar "{productoAEliminar.nombre}"? Esta acción no se puede deshacer.
+                            </Text>
+                            <View className="flex-row gap-3">
+                                <Pressable
+                                    className="flex-1 items-center rounded-lg py-3 border border-[#1857B6]"
+                                    onPress={() => {
+                                        setModalEliminarVisible(false);
+                                        setProductoAEliminar(null);
+                                    }}
+                                >
+                                    <Text className="text-sm font-medium text-[#1857B6]">Cancelar</Text>
+                                </Pressable>
+                                <Pressable
+                                    className="flex-1 items-center rounded-lg py-3 bg-[#B3261E]"
+                                    onPress={async () => {
+                                        try {
+                                            await eliminarProducto(productoAEliminar.id!).unwrap();
+                                            findProductosByEmpresa();
+                                            setModalEliminarVisible(false);
+                                            setProductoAEliminar(null);
+                                        } catch (error) {
+                                            // El error se maneja en el slice y se muestra en el error del estado
+                                        }
+                                    }}
+                                >
+                                    <Text className="text-sm font-medium text-white">Eliminar</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+            )}
         </View>
     );
 };

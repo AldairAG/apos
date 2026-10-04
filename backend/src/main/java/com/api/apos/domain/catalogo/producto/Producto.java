@@ -7,6 +7,7 @@ import java.util.List;
 import com.api.apos.domain.catalogo.categoria.Categoria;
 import com.api.apos.domain.catalogo.grupo_producto.ModificadorProducto;
 import com.api.apos.domain.inventario.receta_detalle.RecetaDetalle;
+import com.api.apos.domain.organizacion.empresa.Empresa;
 import com.api.apos.domain.organizacion.sucursal.Sucursal;
 import com.api.apos.domain.pos.detalle_orden.DetalleOrden;
 
@@ -64,6 +65,10 @@ public class Producto {
 
     @OneToMany(mappedBy = "producto", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<RecetaDetalle> recetaDetalles;
+
+    @ManyToOne
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
 
     public void addRecetaDetalle(RecetaDetalle detalle) {
 

@@ -3,16 +3,16 @@ import type { ApiResponse } from "@/api/apiTypes";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { API_BASE_PATH, CategoriaDto } from "../../domain/types/categoria.types";
 
-export const findCategoriasBySucursalThunk = createAsyncThunk<
+export const findCategoriasByEmpresaThunk = createAsyncThunk<
     ApiResponse<CategoriaDto[]>,
     number,
     { rejectValue: string }
 >(
-    "categoria/findBySucursal",
-    async (sucursalId, { rejectWithValue }) => {
+    "categoria/findByEmpresa",
+    async (empresaId, { rejectWithValue }) => {
         try {
             const response = await api.get<CategoriaDto[]>(
-                `${API_BASE_PATH}/sucursal/${sucursalId}`
+                `${API_BASE_PATH}/empresa/${empresaId}`
             );
             if (!response.success) {
                 return rejectWithValue(response.message);

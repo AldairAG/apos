@@ -6,7 +6,7 @@ import { AppDispatch, RootState } from "@/store";
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { findOrdenesBySucursalIdThunk } from "../../aplication/query/FindOrdenesBySucursalIdThunk";
-import { findProductosPosBySucursalIdThunk } from "../../aplication/query/FindProductosBySucursalIdThunk";
+import { findProductosPosByEmpresaIdThunk } from "../../aplication/query/FindProductosByEmpresaIdThunk";
 import { actualizarEstadoOrdenThunk } from "../../aplication/usecase/ActualizarEstadoOrdenThunk";
 import { cobrarOrdenThunk } from "../../aplication/usecase/CobrarOrdenThunk";
 import { crearOrdenThunk } from "../../aplication/usecase/CrearOrdenThunk";
@@ -21,13 +21,18 @@ export const usePos = () => {
     );
     const { cajas, cajaSeleccionadaId, corteCaja, loading: cajaLoading, error: cajaError } =
         useSelector((state: RootState) => state.caja);
+
     const cajaAbierta = cajas.find(
         (caja) => caja.id === cajaSeleccionadaId && caja.estado === EstadoCaja.ABIERTA
     ) ?? null;
 
+    const empresaId = useSelector(
+        (state: RootState) => state.usuario.usuario?.empresa?.id
+    );
+
     const cargarProductos = useCallback(
-        (id: number) => dispatch(findProductosPosBySucursalIdThunk(id)),
-        [dispatch]
+        () => dispatch(findProductosPosByEmpresaIdThunk(empresaId || 0)),
+        [dispatch, empresaId]
     );
     const cargarOrdenes = useCallback(
         (id: number) => dispatch(findOrdenesBySucursalIdThunk(id)),

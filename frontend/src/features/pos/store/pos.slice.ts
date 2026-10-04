@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { findOrdenesBySucursalIdThunk } from "../aplication/query/FindOrdenesBySucursalIdThunk";
-import { findProductosPosBySucursalIdThunk } from "../aplication/query/FindProductosBySucursalIdThunk";
+import { findProductosPosByEmpresaIdThunk } from "../aplication/query/FindProductosByEmpresaIdThunk";
 import { actualizarEstadoOrdenThunk } from "../aplication/usecase/ActualizarEstadoOrdenThunk";
 import { cobrarOrdenThunk } from "../aplication/usecase/CobrarOrdenThunk";
 import { crearOrdenThunk } from "../aplication/usecase/CrearOrdenThunk";
@@ -42,16 +42,16 @@ const posSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        builder.addCase(findProductosPosBySucursalIdThunk.pending, (state) => {
+        builder.addCase(findProductosPosByEmpresaIdThunk.pending, (state) => {
             state.catalogoLoading = true;
             state.error = null;
         });
-        builder.addCase(findProductosPosBySucursalIdThunk.fulfilled, (state, action) => {
+        builder.addCase(findProductosPosByEmpresaIdThunk.fulfilled, (state, action) => {
             state.catalogoLoading = false;
             state.categoriasProductos = action.payload.data;
         });
         builder.addCase(
-            findProductosPosBySucursalIdThunk.rejected,
+            findProductosPosByEmpresaIdThunk.rejected,
             (state, action: PayloadAction<string | undefined>) => {
                 state.catalogoLoading = false;
                 state.error = action.payload ?? "Error al obtener los productos";

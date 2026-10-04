@@ -104,6 +104,7 @@ public class CrearProductoUseCase {
                                 .porcentajeSobreCostos(productoDto.getPorcentajeSobreCostos())
                                 .disponible(productoDto.getDisponible())
                                 .margenGanancia(productoDto.getMargenGanancia())
+                                .empresa(sucursal.getEmpresa())
                                 .build();
 
                 // 7.1 Materiales del producto

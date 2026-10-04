@@ -27,4 +27,8 @@ public class ProductoService {
         return productoRepository.findAllById(ids);
     }
 
+    public List<Producto> findByEmpresaId(Long empresaId) {
+        return productoRepository.findByEmpresaId(empresaId);
+    }
+
 }

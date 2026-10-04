@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { findCategoriasBySucursalThunk } from "../aplication/query/FindCategoriasBySucursalThunk";
+import { findCategoriasByEmpresaThunk } from "../aplication/query/FindCategoriasByEmpresaThunk";
 import { crearCategoriaThunk } from "../aplication/usecase/CrearCategoriaThunk";
 import type { CategoriaDto } from "../domain/types/categoria.types";
 
@@ -20,16 +20,16 @@ const categoriaSlice = createSlice({
     initialState,
     reducers: {},
     extraReducers: (builder) => {
-        builder.addCase(findCategoriasBySucursalThunk.pending, (state) => {
+        builder.addCase(findCategoriasByEmpresaThunk.pending, (state) => {
             state.loading = true;
             state.error = null;
         });
-        builder.addCase(findCategoriasBySucursalThunk.fulfilled, (state, action) => {
+        builder.addCase(findCategoriasByEmpresaThunk.fulfilled, (state, action) => {
             state.loading = false;
             state.categorias = action.payload.data;
         });
         builder.addCase(
-            findCategoriasBySucursalThunk.rejected,
+            findCategoriasByEmpresaThunk.rejected,
             (state, action: PayloadAction<string | undefined>) => {
                 state.loading = false;
                 state.error = action.payload ?? "Error al obtener las categorías";

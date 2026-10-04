@@ -1,6 +1,6 @@
 import { AppDispatch, RootState } from "@/store";
 import { useDispatch, useSelector } from "react-redux";
-import { findCategoriasBySucursalThunk } from "../../aplication/query/FindCategoriasBySucursalThunk";
+import { findCategoriasByEmpresaThunk } from "../../aplication/query/FindCategoriasByEmpresaThunk";
 import { crearCategoriaThunk } from "../../aplication/usecase/CrearCategoriaThunk";
 import type { CategoriaDto } from "../../domain/types/categoria.types";
 
@@ -10,8 +10,12 @@ export const useCategoria = () => {
         (state: RootState) => state.categoria
     );
 
-    const findCategoriasBySucursal = (sucursalId: number) => {
-        return dispatch(findCategoriasBySucursalThunk(sucursalId));
+    const { usuario } = useSelector(
+        (state: RootState) => state.usuario
+    );
+
+    const findCategoriasByEmpresa = () => {
+        return dispatch(findCategoriasByEmpresaThunk(usuario?.empresa?.id ||0));
     };
 
     const crearCategoria = (categoria: CategoriaDto) => {
@@ -22,7 +26,7 @@ export const useCategoria = () => {
         categorias,
         loading,
         error,
-        findCategoriasBySucursal,
+        findCategoriasByEmpresa,
         crearCategoria,
     };
 };

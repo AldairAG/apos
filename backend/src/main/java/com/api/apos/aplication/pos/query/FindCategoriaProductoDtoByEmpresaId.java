@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 
 @Service 
 @AllArgsConstructor 
-public class FindProductosByEmpresaId {
+public class FindCategoriaProductoDtoByEmpresaId {
     
     private final CategoriaService categoriaService;
 

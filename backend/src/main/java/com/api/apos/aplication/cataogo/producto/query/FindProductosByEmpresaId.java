@@ -12,12 +12,12 @@ import com.api.apos.domain.catalogo.producto.ProductoService;
 
 @AllArgsConstructor
 @Service
-public class FindProductosBySucursalId {
+public class FindProductosByEmpresaId {
 
     private final ProductoService productoService;
 
-    public List<ProductoDto> execute(Long sucursalId) {
-        return productoService.findBySucursalId(sucursalId)
+    public List<ProductoDto> execute(Long empresaId) {
+        return productoService.findByEmpresaId(empresaId)
                 .stream()
                 .map(ProductoMapper::toDto)
                 .toList();

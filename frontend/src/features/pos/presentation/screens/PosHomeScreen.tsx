@@ -17,6 +17,7 @@ const TIPOS_ORDEN: TipoOrden[] = ["EN_MESA", "PARA_LLEVAR", "RECOGER", "DELIVERY
 
 interface LineaCarrito {
     key: string;
+    lineId: string;
     producto: ProductoDto;
     cantidad: number;
     notas: string;
@@ -31,6 +32,10 @@ const generarClaveLinea = (productoId: number, opcionesCantidad: Record<number, 
         .join("_");
 
     return opcionesOrdenadas ? `${productoId}_${opcionesOrdenadas}` : String(productoId);
+};
+
+const generarLineId = (): string => {
+    return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
 const METODOS_PAGO: { value: MetodoPago; label: string }[] = [
@@ -92,7 +97,7 @@ const PosHomeScreen = () => {
         }
 
         setContextoCajaSucursalId(null);
-        cargarProductos(sucursalId);
+        cargarProductos();
         cargarOrdenes(sucursalId);
         cargarMesas(sucursalId);
         cargarContextoCaja(sucursalId).then((cargado) => {
@@ -121,31 +126,24 @@ const PosHomeScreen = () => {
         const productoId = producto.id;
         if (!productoId) return;
         setCarrito((actual) => {
-            const claveNueva = generarClaveLinea(productoId, {});
-            const existente = actual.find((linea) => linea.key === claveNueva);
-            if (existente) {
-                return actual.map((linea) =>
-                    linea.key === claveNueva
-                        ? { ...linea, cantidad: linea.cantidad + 1 }
-                        : linea
-                );
-            }
-            return [...actual, { key: claveNueva, producto, cantidad: 1, notas: "", opcionesCantidad: {} }];
+            const lineId = generarLineId();
+            const key = generarClaveLinea(productoId, {});
+            return [...actual, { key, lineId, producto, cantidad: 1, notas: "", opcionesCantidad: {} }];
         });
     };
 
-    const cambiarCantidad = (key: string, delta: number) => {
+    const cambiarCantidad = (lineId: string, delta: number) => {
         setCarrito((actual) => actual
-            .map((linea) => linea.key === key
+            .map((linea) => linea.lineId === lineId
                 ? { ...linea, cantidad: linea.cantidad + delta }
                 : linea)
             .filter((linea) => linea.cantidad > 0));
     };
 
-    const cambiarCantidadOpcion = (key: string, opcionId: number, delta: number) => {
+    const cambiarCantidadOpcion = (lineId: string, opcionId: number, delta: number) => {
         setCarrito((actual) => {
             let actualizado = actual.map((linea) => {
-                if (linea.key !== key) return linea;
+                if (linea.lineId !== lineId) return linea;
                 const cantidad = Math.max(0, (linea.opcionesCantidad[opcionId] ?? 0) + delta);
                 const opcionesCantidad = { ...linea.opcionesCantidad };
                 if (cantidad === 0) {
@@ -373,18 +371,18 @@ const PosHomeScreen = () => {
                             {carrito.length === 0 ? (
                                 <Text className="py-3 text-sm text-[#79747E]">Agrega productos para iniciar una orden.</Text>
                             ) : carrito.map((linea) => (
-                                <View key={linea.key} className="border-t border-[#EEEAF0] py-3">
+                                <View key={linea.lineId} className="border-t border-[#EEEAF0] py-3">
                                     <View className="flex-row items-center justify-between">
                                         <View className="mr-3 flex-1">
                                             <Text className="text-sm font-medium text-[#1C1B1F]">{linea.producto.nombre}</Text>
                                             <Text className="mt-1 text-xs text-[#79747E]">{moneda(linea.producto.precio)} c/u</Text>
                                         </View>
                                         <View className="flex-row items-center gap-3">
-                                            <Pressable onPress={() => cambiarCantidad(linea.key, -1)} accessibilityLabel="Quitar una unidad">
+                                            <Pressable onPress={() => cambiarCantidad(linea.lineId, -1)} accessibilityLabel="Quitar una unidad">
                                                 <Ionicons name="remove-circle-outline" size={23} color="#49454F" />
                                             </Pressable>
                                             <Text className="min-w-[18px] text-center text-sm font-semibold text-[#1C1B1F]">{linea.cantidad}</Text>
-                                            <Pressable onPress={() => cambiarCantidad(linea.key, 1)} accessibilityLabel="Agregar una unidad">
+                                            <Pressable onPress={() => cambiarCantidad(linea.lineId, 1)} accessibilityLabel="Agregar una unidad">
                                                 <Ionicons name="add-circle-outline" size={23} color="#1857B6" />
                                             </Pressable>
                                         </View>
@@ -400,11 +398,11 @@ const PosHomeScreen = () => {
                                                             <Text className={`mr-2 text-xs ${cantidad > 0 ? "text-[#1857B6]" : "text-[#49454F]"}`}>
                                                                 {opcion.nombre} +{moneda(opcion.precio)}
                                                             </Text>
-                                                            <Pressable onPress={() => cambiarCantidadOpcion(linea.key, opcion.id!, -1)} accessibilityLabel={`Quitar una unidad de ${opcion.nombre}`}>
+                                                            <Pressable onPress={() => cambiarCantidadOpcion(linea.lineId, opcion.id!, -1)} accessibilityLabel={`Quitar una unidad de ${opcion.nombre}`}>
                                                                 <Ionicons name="remove-circle-outline" size={18} color={cantidad > 0 ? "#1857B6" : "#B8B3BC"} />
                                                             </Pressable>
                                                             <Text className="mx-1 min-w-[14px] text-center text-xs font-semibold text-[#1C1B1F]">{cantidad}</Text>
-                                                            <Pressable onPress={() => cambiarCantidadOpcion(linea.key, opcion.id!, 1)} accessibilityLabel={`Agregar una unidad de ${opcion.nombre}`}>
+                                                            <Pressable onPress={() => cambiarCantidadOpcion(linea.lineId, opcion.id!, 1)} accessibilityLabel={`Agregar una unidad de ${opcion.nombre}`}>
                                                                 <Ionicons name="add-circle-outline" size={18} color="#1857B6" />
                                                             </Pressable>
                                                         </View>
@@ -415,7 +413,7 @@ const PosHomeScreen = () => {
                                     ))}
                                     <TextInput
                                         value={linea.notas}
-                                        onChangeText={(notas) => setCarrito((actual) => actual.map((item) => item.key === linea.key ? { ...item, notas } : item))}
+                                        onChangeText={(notas) => setCarrito((actual) => actual.map((item) => item.lineId === linea.lineId ? { ...item, notas } : item))}
                                         placeholder="Nota para cocina"
                                         className="mt-2 rounded-md border border-[#E7E0EC] px-2 py-2 text-xs text-[#1C1B1F]"
                                     />

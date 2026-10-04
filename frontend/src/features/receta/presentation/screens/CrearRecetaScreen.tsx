@@ -159,9 +159,6 @@ export default function CrearEditarRecetaScreen() {
             nombre: values.nombre.trim(),
             rendimiento: parseNumero(values.rendimiento),
             tiempoPreparacion: values.tiempoPreparacion ? parseNumero(values.tiempoPreparacion) : undefined,
-            porcentajeSobreCostos: values.porcentajeSobreCostos
-                ? parseNumero(values.porcentajeSobreCostos)
-                : undefined,
             notas: values.notas.trim() || undefined,
             costoTotal,
             instrucciones: values.instrucciones,

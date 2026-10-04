@@ -4,7 +4,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.api.apos.aplication.cataogo.producto.dto.ProductoDto;
-import com.api.apos.aplication.cataogo.producto.query.FindProductosBySucursalId;
+import com.api.apos.aplication.cataogo.producto.query.FindProductosByEmpresaId;
 import com.api.apos.aplication.cataogo.producto.usecase.CrearProductoUseCase;
 import com.api.apos.helpers.ApiResponseWrapper;
 
@@ -25,13 +25,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 @AllArgsConstructor 
 public class ProductoController {
     
-    private final FindProductosBySucursalId findProductosBySucursalId;
+    private final FindProductosByEmpresaId findProductosByEmpresaId;
 
     private final CrearProductoUseCase crearProductoUseCase;
 
-    @GetMapping("/sucursal/{sucursalId}")
-    public ResponseEntity<ApiResponseWrapper<List<ProductoDto>>> getProductosBySucursalId(@PathVariable Long sucursalId) {
-        return ResponseEntity.ok(ApiResponseWrapper.success(findProductosBySucursalId.execute(sucursalId)));
+    @GetMapping("/empresa/{empresaId}")
+    public ResponseEntity<ApiResponseWrapper<List<ProductoDto>>> getProductosByEmpresaId(@PathVariable Long empresaId) {
+        List<ProductoDto> productos = findProductosByEmpresaId.execute(empresaId);
+        return ResponseEntity.ok(ApiResponseWrapper.success(productos));
     }
 
     @PostMapping
