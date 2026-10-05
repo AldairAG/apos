@@ -74,6 +74,10 @@ public class CorteCaja extends AuditableEntity {
     }
 
     public void addIngreso(Movimiento movimiento) {
+        if (this.movimientos == null) {
+            this.movimientos = new java.util.ArrayList<>();
+        }
+
         this.movimientos.add(movimiento);
         movimiento.setCorteCaja(this);
         movimiento.setTipo(TipoMovimiento.INGRESO);
@@ -83,6 +87,9 @@ public class CorteCaja extends AuditableEntity {
     }
 
     public void addEgreso(Movimiento movimiento) {
+        if (this.movimientos == null) {
+            this.movimientos = new java.util.ArrayList<>();
+        }
         this.movimientos.add(movimiento);
         movimiento.setCorteCaja(this);
         movimiento.setTipo(TipoMovimiento.EGRESO);
@@ -92,6 +99,9 @@ public class CorteCaja extends AuditableEntity {
     }
 
     public void addVenta(Movimiento movimiento) {
+        if (this.movimientos == null) {
+            this.movimientos = new java.util.ArrayList<>();
+        }
         this.movimientos.add(movimiento);
         movimiento.setCorteCaja(this);
         movimiento.setTipo(TipoMovimiento.INGRESO);
@@ -102,6 +112,11 @@ public class CorteCaja extends AuditableEntity {
     }
 
     public void addVentaDigital(Movimiento movimiento) {
+        if (this.movimientos == null) {
+            this.movimientos = new java.util.ArrayList<>();
+        }
+
+        
         this.movimientos.add(movimiento);
         movimiento.setCorteCaja(this);
         movimiento.setTipo(TipoMovimiento.INGRESO);

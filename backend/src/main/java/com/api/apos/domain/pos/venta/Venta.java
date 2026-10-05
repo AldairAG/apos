@@ -51,6 +51,10 @@ public class Venta{
     private List<Movimiento> movimientos;
 
     public void addMovimiento(Movimiento movimiento) {
+        if (this.movimientos == null) {
+            this.movimientos = new java.util.ArrayList<>();
+        }
+
         this.movimientos.add(movimiento);
         movimiento.setVenta(this);
     }

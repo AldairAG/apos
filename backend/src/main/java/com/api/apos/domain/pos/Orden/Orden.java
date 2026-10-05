@@ -29,15 +29,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
-@Entity 
-@Table (name = "ordenes")
-@Data 
-@NoArgsConstructor 
-@AllArgsConstructor 
-@Builder 
+@Entity
+@Table(name = "ordenes")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Orden {
-    @Id 
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -61,19 +60,27 @@ public class Orden {
     @Enumerated(EnumType.STRING)
     private TipoOrden tipo;
 
-    @OneToMany(mappedBy = "orden",cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleOrden> detalles;
 
     @ManyToOne
     @JoinColumn(name = "mesa_id")
-    private Mesa mesa; 
-
+    private Mesa mesa;
 
     @OneToOne(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true)
     private Venta venta;
 
     public void avanzarEstadoOrden() {
-    this.estado = this.estado.siguiente();
-}
+        this.estado = this.estado.siguiente();
+    }
+
+    public void addDetalle(DetalleOrden detalle) {
+        if (detalles == null) {
+            detalles = new java.util.ArrayList<>();
+        }
+
+        detalles.add(detalle);
+        detalle.setOrden(this);
+    }
 
 }

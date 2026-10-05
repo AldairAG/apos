@@ -33,143 +33,266 @@ import com.api.apos.enums.EstadoOrden;
 import com.api.apos.exception.AppException;
 import com.api.apos.exception.ErrorCode;
 
+import jakarta.transaction.Transactional;
+
 @Service
 @AllArgsConstructor
 public class CrearOrdenUseCase {
 
-    private final OrdenService ordenService;
+        private final OrdenService ordenService;
 
-    private final SucursalService sucursalService;
-    
-    private final MesaService mesaService;
+        private final SucursalService sucursalService;
 
-    private final ModificadorService modificadorService;
+        private final MesaService mesaService;
 
-    private final ProductoService productoService;
+        private final ModificadorService modificadorService;
 
-    private final DescontarExistenciaByProductoIds descontarExistenciaByProductoId;
+        private final ProductoService productoService;
 
+        private final DescontarExistenciaByProductoIds descontarExistenciaByProductoId;
 
-    public OrdenDto execute(OrdenDto ordenDto) {
+        @Transactional
+        public OrdenDto execute(OrdenDto ordenDto) {
 
-        // Obtener sucursal
-        Sucursal sucursal = sucursalService.findById(ordenDto.getSucursalId());
+                // 1. Obtener la sucursal donde se registrará la orden.
+                Sucursal sucursal = sucursalService.findById(ordenDto.getSucursalId());
 
-        // OIbtener los productos que incluye la orden
+                // 2. Obtener los productos utilizados en la orden.
+                Map<Long, Producto> productos = obtenerProductos(ordenDto);
 
-        List<Long> productoIds = ordenDto.getDetalles().stream()
-                .map(DetalleOrdenDto::getProductoId)
-                .distinct()
-                .toList();
+                // 3. Obtener los modificadores asociados a las opciones recibidas.
+                // El mapa queda: opcionId -> modificador.
+                Map<Long, Modificador> modificadoresPorOpcion = obtenerModificadores(ordenDto);
 
-        Map<Long, Producto> productos = productoService
-                .findAllById(productoIds)
-                .stream()
-                .collect(Collectors.toMap(Producto::getId, Function.identity()));
+                // 4. Convertir los detalles del DTO en entidades DetalleOrden.
+                List<DetalleOrden> detalles = crearDetallesOrden(
+                                ordenDto,
+                                productos,
+                                modificadoresPorOpcion);
 
-        // Obtener los modificadores que incluyen las opciones de los detalles de la
-        // orden
+                // 5. Crear la entidad Orden.
+                Orden orden = crearOrden(ordenDto, sucursal, detalles);
 
-        List<Long> opcionIds = ordenDto.getDetalles().stream()
-                .flatMap(detalle -> detalle.getModificadores().stream())
-                .map(OpcionDto::getId)
-                .distinct()
-                .toList();
+                // 6. Si la orden corresponde a una mesa, actualizar su estado.
+                asignarMesaSiCorresponde(ordenDto);
 
-        Map<Long, Modificador> modificadores = modificadorService
-                .findByOpcionIds(opcionIds)
-                .stream()
-                .collect(Collectors.toMap(Modificador::getId, Function.identity()));
+                // 7. Descontar del inventario los productos vendidos.
+                descontarInventario(orden);
 
-        // Mapear los detalles de la orden con sus modificadores correspondientes
-        List<DetalleOrden> detallesOrden = ordenDto.getDetalles().stream()
-                .map(detalleDto -> {
+                // 8. Guardar la orden y devolver el DTO.
+                Orden ordenGuardada = ordenService.save(orden);
 
-                    Producto producto = productos.get(detalleDto.getProductoId());
-
-                    if (producto == null) {
-                        throw new AppException(ErrorCode.PRODUCTO_NO_ENCONTRADO);
-                    }
-
-                    BigDecimal precio = producto.getPrecio();
-
-                    DetalleOrden detalleOrden = DetalleOrden.builder()
-                            .producto(producto)
-                            .cantidad(detalleDto.getCantidad())
-                            .precioUnitario(precio)
-                            .subtotal(
-                                    precio.multiply(
-                                            BigDecimal.valueOf(detalleDto.getCantidad())))
-                            .notas(detalleDto.getNotas())
-                            .build();
-
-                    List<DetalleModificador> modificadoresDetalle = detalleDto.getModificadores().stream()
-                            .map(modificadorDto -> {
-
-                                Modificador modificador = modificadores.get(modificadorDto.getId());
-
-                                if (modificador == null) {
-                                    throw new AppException(
-                                            ErrorCode.MODIFICADOR_NO_ENCONTRADO);
-                                }
-
-                                BigDecimal precioModificador = modificadorDto.getPrecio();
-
-                                return DetalleModificador.builder()
-                                        //.modificador(modificador)
-                                        .cantidad(modificadorDto.getCantidad())
-                                        .precioUnitario(precioModificador)
-                                        .subtotal(
-                                                precioModificador.multiply(
-                                                        BigDecimal.valueOf(
-                                                                modificadorDto.getCantidad())))
-                                        .build();
-                            })
-                            .toList();
-
-                    detalleOrden.setModificadores(modificadoresDetalle);
-
-                    return detalleOrden;
-                })
-                .toList();
-
-        // Crear orden
-
-        Orden orden = Orden.builder()
-                .descuento(ordenDto.getDescuento())
-                .estado(EstadoOrden.PENDIENTE)
-                .tipo(ordenDto.getTipo())
-                .detalles(detallesOrden)
-                .total(detallesOrden.stream()
-                        .map(detalle -> detalle.getSubtotal()
-                                .add(detalle.getModificadores().stream()
-                                        .map(DetalleModificador::getSubtotal)
-                                        .reduce(BigDecimal.ZERO, BigDecimal::add)))
-                        .reduce(BigDecimal.ZERO, BigDecimal::add))
-                .createdAt(LocalDateTime.now())
-                .sucursal(sucursal)
-                .build();
-
-        // Determinar si es una orden en mesa y obtener
-        if (ordenDto.getMesaId() != null) {
-            Mesa mesa = mesaService.findById(ordenDto.getMesaId());
-            mesa.asignarOrdenActual(null);
+                return PosMapper.mapToOrdenDto(ordenGuardada);
         }
 
-        // Descontar de inventario
-        List<ProductoDescuentoDto> productosDescuentoDto = orden.getDetalles().stream()
-                .map(detalle -> ProductoDescuentoDto.builder()
-                        .productoId(detalle.getProducto().getId())
-                        .cantidad(detalle.getCantidad())
-                        .sucursalId(orden.getSucursal().getId())
-                        .build())
-                .toList();
+        /**
+         * Obtiene todos los productos utilizados en la orden y los organiza
+         * en un mapa para poder encontrarlos rápidamente por su ID.
+         */
+        private Map<Long, Producto> obtenerProductos(OrdenDto ordenDto) {
 
-        productosDescuentoDto.forEach(descontarExistenciaByProductoId::execute);
+                List<Long> productoIds = ordenDto.getDetalles().stream()
+                                .map(DetalleOrdenDto::getProductoId)
+                                .distinct()
+                                .toList();
 
-        // Guardar la orden en la base de datos
-        return PosMapper.mapToOrdenDto(ordenService.save(orden));
+                return productoService.findAllById(productoIds)
+                                .stream()
+                                .collect(Collectors.toMap(
+                                                Producto::getId,
+                                                Function.identity()));
+        }
 
-    }
+        /**
+         * Obtiene los modificadores relacionados con las opciones recibidas
+         * en los detalles de la orden.
+         *
+         * El mapa resultante utiliza el ID de la opción como clave:
+         *
+         * opcionId -> Modificador
+         */
+        private Map<Long, Modificador> obtenerModificadores(OrdenDto ordenDto) {
+
+                List<Long> opcionIds = ordenDto.getDetalles().stream()
+                                .flatMap(detalle -> detalle.getModificadores().stream())
+                                .map(OpcionDto::getId)
+                                .distinct()
+                                .toList();
+
+                return modificadorService.findByOpcionIds(opcionIds)
+                                .stream()
+                                .flatMap(modificador -> modificador.getOpciones().stream()
+                                                .map(opcion -> Map.entry(
+                                                                opcion.getId(),
+                                                                modificador)))
+                                .collect(Collectors.toMap(
+                                                Map.Entry::getKey,
+                                                Map.Entry::getValue));
+        }
+
+        /**
+         * Convierte los detalles recibidos desde el frontend en entidades
+         * DetalleOrden, incluyendo sus modificadores.
+         */
+        private List<DetalleOrden> crearDetallesOrden(
+                        OrdenDto ordenDto,
+                        Map<Long, Producto> productos,
+                        Map<Long, Modificador> modificadoresPorOpcion) {
+
+                return ordenDto.getDetalles().stream()
+                                .map(detalleDto -> crearDetalleOrden(
+                                                detalleDto,
+                                                productos,
+                                                modificadoresPorOpcion))
+                                .toList();
+        }
+
+        /**
+         * Crea un detalle individual de la orden.
+         */
+        private DetalleOrden crearDetalleOrden(
+                        DetalleOrdenDto detalleDto,
+                        Map<Long, Producto> productos,
+                        Map<Long, Modificador> modificadoresPorOpcion) {
+
+                // Buscar el producto correspondiente.
+                Producto producto = productos.get(detalleDto.getProductoId());
+
+                if (producto == null) {
+                        throw new AppException(ErrorCode.PRODUCTO_NO_ENCONTRADO);
+                }
+
+                // El precio se toma directamente del producto.
+                BigDecimal precio = producto.getPrecio();
+
+                // Crear el detalle principal.
+                DetalleOrden detalleOrden = DetalleOrden.builder()
+                                .producto(producto)
+                                .cantidad(detalleDto.getCantidad())
+                                .precioUnitario(precio)
+                                .subtotal(
+                                                precio.multiply(
+                                                                BigDecimal.valueOf(detalleDto.getCantidad())))
+                                .notas(detalleDto.getNotas())
+                                .build();
+
+                // Crear los modificadores del detalle.
+                List<DetalleModificador> detallesModificadores = crearDetallesModificadores(
+                                detalleDto,
+                                modificadoresPorOpcion);
+
+                detallesModificadores.forEach(detalleOrden::addModificador);
+
+                return detalleOrden;
+        }
+
+        /**
+         * Convierte las opciones recibidas del frontend en
+         * DetalleModificador.
+         */
+        private List<DetalleModificador> crearDetallesModificadores(
+                        DetalleOrdenDto detalleDto,
+                        Map<Long, Modificador> modificadoresPorOpcion) {
+
+                return detalleDto.getModificadores().stream()
+                                .map(modificadorDto -> {
+
+                                        // El ID recibido corresponde a una Opción,
+                                        // por eso buscamos utilizando el opcionId.
+                                        Modificador modificador = modificadoresPorOpcion.get(modificadorDto.getId());
+
+                                        if (modificador == null) {
+                                                throw new AppException(
+                                                                ErrorCode.MODIFICADOR_NO_ENCONTRADO);
+                                        }
+
+                                        BigDecimal precio = modificadorDto.getPrecio();
+                                        int cantidad = modificadorDto.getCantidad();
+
+                                        return DetalleModificador.builder()
+
+                                                        // Aquí puedes activar esta relación si
+                                                        // DetalleModificador debe guardar el modificador.
+                                                        // .modificador(modificador)
+
+                                                        .cantidad(cantidad)
+                                                        .precioUnitario(precio)
+                                                        .opcion(modificador.getOpciones().stream().filter(opcion -> opcion.getId().equals(modificadorDto.getId())).findFirst().orElse(null))
+                                                        .subtotal(
+                                                                        precio.multiply(
+                                                                                        BigDecimal.valueOf(cantidad)))
+                                                        .build();
+                                })
+                                .toList();
+        }
+
+        /**
+         * Construye la entidad Orden a partir de los datos recibidos
+         * y los detalles previamente procesados.
+         */
+        private Orden crearOrden(
+                        OrdenDto ordenDto,
+                        Sucursal sucursal,
+                        List<DetalleOrden> detalles) {
+
+                // Calcula el total sumando:
+                // subtotal del producto + subtotal de sus modificadores.
+                BigDecimal total = detalles.stream()
+                                .map(detalle -> detalle.getSubtotal()
+                                                .add(
+                                                                detalle.getModificadores().stream()
+                                                                                .map(DetalleModificador::getSubtotal)
+                                                                                .reduce(
+                                                                                                BigDecimal.ZERO,
+                                                                                                BigDecimal::add)))
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                Orden orden = Orden.builder()
+                                .descuento(ordenDto.getDescuento())
+                                .estado(EstadoOrden.PENDIENTE)
+                                .tipo(ordenDto.getTipo())
+                                .total(total)
+                                .createdAt(LocalDateTime.now())
+                                .sucursal(sucursal)
+                                .build();
+
+                detalles.forEach(orden::addDetalle);
+
+                return orden;
+        }
+
+        /**
+         * Si la orden corresponde a una mesa, actualiza la orden actual
+         * de dicha mesa.
+         */
+        private void asignarMesaSiCorresponde(OrdenDto ordenDto) {
+
+                if (ordenDto.getMesaId() == null) {
+                        return;
+                }
+
+                Mesa mesa = mesaService.findById(ordenDto.getMesaId());
+
+                mesa.asignarOrdenActual(null);
+        }
+
+        /**
+         * Descuenta del inventario las cantidades de productos
+         * utilizadas en la orden.
+         */
+        private void descontarInventario(Orden orden) {
+
+                List<ProductoDescuentoDto> productosDescuento = orden.getDetalles()
+                                .stream()
+                                .map(detalle -> ProductoDescuentoDto.builder()
+                                                .productoId(detalle.getProducto().getId())
+                                                .cantidad(detalle.getCantidad())
+                                                .sucursalId(orden.getSucursal().getId())
+                                                .build())
+                                .toList();
+
+                productosDescuento.forEach(
+                                descontarExistenciaByProductoId::execute);
+        }
 
 }

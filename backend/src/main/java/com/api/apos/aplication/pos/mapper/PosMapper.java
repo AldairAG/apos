@@ -64,6 +64,7 @@ public class PosMapper {
                                                                         .builder()
                                                                         .id(opcional.getId())
                                                                         .nombre(opcional.getNombre())
+                                                                        .precio(opcional.getPrecio())
                                                                         .build())
                                                         .collect(Collectors
                                                                         .toList());

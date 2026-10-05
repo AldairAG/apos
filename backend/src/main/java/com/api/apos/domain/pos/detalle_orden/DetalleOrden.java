@@ -51,4 +51,14 @@ public class DetalleOrden {
 
     @OneToMany(mappedBy = "detalleOrden",cascade = CascadeType.ALL,orphanRemoval = true)
     private List<DetalleModificador> modificadores ;
+
+
+    public void addModificador(DetalleModificador modificador) {
+        if (modificadores == null) {
+            modificadores = new java.util.ArrayList<>();
+        }
+
+        modificadores.add(modificador);
+        modificador.setDetalleOrden(this);
+    }
 }
