@@ -68,13 +68,10 @@ export const ROUTES = {
  */
 export const MODULOS_SUCURSAL = [
   { key: ROUTES.SUCURSAL.DASHBOARD, label: 'Panel' },
-  { key: ROUTES.SUCURSAL.PRODUCTOS, label: 'Productos' },
-  { key: ROUTES.SUCURSAL.CATEGORIA, label: 'Categorías' },
   { key: ROUTES.SUCURSAL.INVENTARIO, label: 'Inventario' },
   { key: ROUTES.SUCURSAL.CAJA, label: 'Caja' },
   { key: ROUTES.SUCURSAL.MESAS, label: 'Mesas' },
   { key: ROUTES.SUCURSAL.ORDENES, label: 'Órdenes' },
-  { key: ROUTES.SUCURSAL.CONFIGURACION, label: 'Configuración' },
 ] as const;
 
 export type ModuloSucursalKey = typeof MODULOS_SUCURSAL[number]['key'];

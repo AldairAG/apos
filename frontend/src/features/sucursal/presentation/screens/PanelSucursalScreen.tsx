@@ -20,12 +20,10 @@ const RESUMEN_MOCK = {
 };
 
 const ACCESOS_RAPIDOS: { key: ModuloSucursalKey; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-    { key: "productos", label: "Productos", icon: "cube-outline" },
     { key: "inventario", label: "Inventario", icon: "archive-outline" },
     { key: "caja", label: "Caja", icon: "cash-outline" },
     { key: "mesas", label: "Mesas", icon: "restaurant-outline" },
     { key: "ordenes", label: "Órdenes", icon: "receipt-outline" },
-    { key: "configuracion", label: "Configuración", icon: "settings-outline" },
 ];
 
 const formatCurrency = (n: number) =>

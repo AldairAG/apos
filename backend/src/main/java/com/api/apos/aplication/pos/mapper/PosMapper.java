@@ -1,6 +1,8 @@
 package com.api.apos.aplication.pos.mapper;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.api.apos.aplication.cataogo.modificadores.dto.ModificadorDto;
@@ -94,7 +96,9 @@ public class PosMapper {
 
         public static DetalleOrdenDto mapToDetalleOrdenDto(DetalleOrden detalleOrden) {
 
-                List<OpcionDto> modificadoresDto = detalleOrden.getModificadores()
+                List<OpcionDto> modificadoresDto = Optional
+                                .ofNullable(detalleOrden.getModificadores())
+                                .orElse(Collections.emptyList())
                                 .stream()
                                 .map(modificador -> OpcionDto.builder()
                                                 .id(modificador.getOpcion().getId())
@@ -105,13 +109,11 @@ public class PosMapper {
                                                 .build())
                                 .collect(Collectors.toList());
 
-                        return DetalleOrdenDto.builder()
-                                        .id(detalleOrden.getId())
+                return DetalleOrdenDto.builder()
+                                .id(detalleOrden.getId())
                                 .cantidad(detalleOrden.getCantidad())
-                                .modificadores(modificadoresDto)        
+                                .modificadores(modificadoresDto)
                                 .build();
         }
-
-
 
 }

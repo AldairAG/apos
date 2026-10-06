@@ -5,6 +5,8 @@ import com.api.apos.domain.pos.orden.Orden;
 import com.api.apos.enums.EstadoMesa;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -33,6 +35,7 @@ public class Mesa {
 
     private String nombre;
 
+    @Enumerated(EnumType.STRING)
     private EstadoMesa estado;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -44,7 +47,19 @@ public class Mesa {
     private Sucursal sucursal;
 
     public void asignarOrdenActual(Orden orden) {
-        //this.ordenActual = orden;
+        orden.setMesa(this);
+        this.ordenActual = orden;
         this.estado = EstadoMesa.OCUPADA;
     }
+
+    public Boolean estaLibre() {
+        return this.estado == EstadoMesa.LIBRE;
+    }
+    public void retirarOrdenActual() {
+        if (this.ordenActual != null) {
+            this.ordenActual = null;
+            this.estado = EstadoMesa.LIBRE;
+        }
+    }
+
 }

@@ -272,6 +272,33 @@ public enum ErrorCode {
         "Ocurrió un error al actualizar la orden",
         HttpStatus.INTERNAL_SERVER_ERROR
     ),
+
+    //MESA
+    MESA_NO_LIBRE(
+        "MESA_NO_LIBRE",
+        "La mesa no está libre",
+        HttpStatus.BAD_REQUEST
+    ),
+    MESA_NO_ENCONTRADA(
+        "MESA_NO_ENCONTRADA",
+        "La mesa no fue encontrada",
+        HttpStatus.NOT_FOUND
+    ),
+    MESA_ASIGNACION_ERROR(
+        "MESA_ASIGNACION_ERROR",
+        "Ocurrió un error al asignar la orden a la mesa",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    MESA_LIBERACION_ERROR(
+        "MESA_LIBERACION_ERROR",
+        "Ocurrió un error al liberar la mesa",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    MESA_ACTUALIZACION_ERROR(
+        "MESA_ACTUALIZACION_ERROR",
+        "Ocurrió un error al actualizar la mesa",
+        HttpStatus.INTERNAL_SERVER_ERROR
+    ),
     
     //VALIDACIONES
     

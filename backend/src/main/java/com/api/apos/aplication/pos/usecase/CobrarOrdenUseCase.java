@@ -101,6 +101,11 @@ public class CobrarOrdenUseCase {
         // 7. Marcar orden como pagada/cerrada
         orden.avanzarEstadoOrden();
 
+        // 7.1. Liberar mesa en caso de tenerla
+        if (orden.getMesa() != null) {
+            orden.retirarMesa();
+        }
+
         // 8. Guardar venta
         ventaService.save(venta);
 

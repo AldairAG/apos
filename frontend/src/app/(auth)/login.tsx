@@ -1,4 +1,5 @@
 import { useAuth } from '@/features/usuario/auth/presentation/hook/useAuth';
+import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useRef, useState } from 'react';
@@ -10,37 +11,29 @@ import {
     Pressable,
     SafeAreaView,
     ScrollView,
-    StyleSheet,
     Text,
     TextInput,
-    TouchableOpacity,
     View,
 } from 'react-native';
 
 /**
- * TODO[AUTH]: Rediseñar login
- * Cambios de diseño para la pantalla de login:
- * - Agrear opcion para redirigir a pantalla de entrar como empleado de sucursal
- * - Agregar opcion para redirigir a pantalla de recuperar contraseña
+ * TODO[AUTH]: Pendiente de implementar (no se tocó en este rediseño):
+ * - Agregar opción para redirigir a pantalla de entrar como empleado de sucursal
+ * - Agregar opción para redirigir a pantalla de recuperar contraseña
+ *
+ * Rediseño a Material Design 3 con NativeWind (sin react-native-paper):
+ * paleta MD3 (#1857B6 primario, #E7E0EC bordes, #B3261E error), inputs
+ * outlined con estado de foco, botón pill, mismos componentes nativos de
+ * React Native. La lógica de autenticación (useAuth, validaciones,
+ * navegación) es exactamente la misma que ya tenías.
  */
-
-// ─────────────────────────────────────────────────────────────────────────
-// Paleta de alto contraste (Neo-Brutalismo + MD3)
-// Colores sólidos, sin transparencias ni degradados.
-// ─────────────────────────────────────────────────────────────────────────
-const INK = '#111111';        // "tinta" casi negra para bordes y texto
-const SURFACE = '#FFFFFF';
-const BG = '#F2F1E8';         // fondo cálido neutro (evita el blanco puro plano)
-const DANGER_BG = '#FFD8D8';
-const SUCCESS = '#1B7A3D';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('pp1@gmail.com');
   const [password, setPassword] = useState('12345678');
   const [showPassword, setShowPassword] = useState(false);
-  const [userPressed, setUserPressed] = useState(false);
-  const [passPressed, setPassPressed] = useState(false);
-  const [btnPressed, setBtnPressed] = useState(false);
+  const [userFocused, setUserFocused] = useState(false);
+  const [passFocused, setPassFocused] = useState(false);
 
   const passwordRef = useRef<TextInput>(null);
 
@@ -60,146 +53,140 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.root}>
+    <SafeAreaView className="flex-1 bg-[#FAF9FC]">
       <StatusBar style="light" />
 
       <KeyboardAvoidingView
-        style={styles.flex}
+        className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Cabecera de marca: bloque sólido, sin decoración translúcida ── */}
-          <View style={styles.header}>
-            <View style={styles.brandContent}>
-              <View style={styles.logoContainer}>
-              </View>
+          {/* ── Cabecera ───────────────────────────────────────────────── */}
+          <View className="bg-[#1857B6] pt-14 pb-10 px-6 rounded-b-[28px]">
+            <Text className="text-3xl font-bold text-white">Inicia sesión</Text>
+            <Text className="text-sm text-white/90 mt-1.5">
+              Controla pedidos, cocina y caja desde un solo lugar.
+            </Text>
 
-
-              <Text style={styles.title}>Inicia sesión</Text>
-              <Text style={styles.subtitle}>
-                Controla pedidos, cocina y caja desde un solo lugar.
+            <View className="self-start mt-3 bg-white/15 rounded-full px-3 py-1.5 flex-row items-center gap-1.5">
+              <Ionicons name="shield-checkmark-outline" size={14} color="#FFFFFF" />
+              <Text className="text-xs font-semibold text-white">
+                Conexión segura y verificada
               </Text>
-
-              {/* Indicador de confianza — Trust Design */}
-              <View style={styles.trustRow}>
-                <Text style={styles.trustText}>Conexión segura y verificada</Text>
-              </View>
             </View>
           </View>
 
-          {/* ── Formulario ──────────────────────────────────────────────── */}
-          <View style={styles.formWrapper}>
-            {/* Bloque de sombra dura (neo-brutalismo): capa negra detrás de la card */}
-            <View style={styles.cardShadowLayer}>
-              <View style={styles.card}>
+          {/* ── Formulario ─────────────────────────────────────────────── */}
+          <View className="px-5 -mt-6 pb-10">
+            <View
+              className="bg-white rounded-[28px] p-6 gap-1 border border-[#E7E0EC]"
+              style={{
+                shadowColor: '#000',
+                shadowOpacity: 0.08,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 3,
+              }}
+            >
+              {/* Campo usuario */}
+              <Text className="text-xs font-medium text-[#79747E] mb-1">Usuario</Text>
+              <View
+                className={`flex-row items-center border rounded-xl px-3 mb-4 ${
+                  userFocused ? 'border-[#1857B6] border-2' : 'border-[#E7E0EC]'
+                }`}
+              >
+                <Ionicons name="mail-outline" size={18} color="#79747E" />
+                <TextInput
+                  value={username}
+                  onChangeText={setUsername}
+                  onFocus={() => setUserFocused(true)}
+                  onBlur={() => setUserFocused(false)}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
+                  placeholder="correo@ejemplo.com"
+                  placeholderTextColor="#9CA3AF"
+                  editable={!loading}
+                  className="flex-1 text-base text-[#1C1B1F] py-3.5 ml-2"
+                />
+              </View>
 
-                {/* Campo usuario */}
-                <View style={styles.fieldGroup}>
-                  <Text style={styles.label}>USUARIO</Text>
-                  <View style={[styles.inputWrapper, userPressed && styles.inputWrapperActive]}>
-                    <View style={styles.inputIcon}>
-                    </View>
-                    <TextInput
-                      value={username}
-                      onChangeText={setUsername}
-                      onFocus={() => setUserPressed(true)}
-                      onBlur={() => setUserPressed(false)}
-                      autoCapitalize="none"
-                      keyboardType="email-address"
-                      returnKeyType="next"
-                      onSubmitEditing={() => passwordRef.current?.focus()}
-                      placeholder="correo@ejemplo.com"
-                      placeholderTextColor="#6B6B6B"
-                      style={styles.input}
-                      editable={!loading}
-                    />
-                  </View>
-                </View>
-
-                {/* Campo contraseña */}
-                <View style={styles.fieldGroup}>
-                  <Text style={styles.label}>CONTRASEÑA</Text>
-                  <View style={[styles.inputWrapper, passPressed && styles.inputWrapperActive]}>
-                    <View style={styles.inputIcon}>
-                    </View>
-                    <TextInput
-                      ref={passwordRef}
-                      value={password}
-                      onChangeText={setPassword}
-                      onFocus={() => setPassPressed(true)}
-                      onBlur={() => setPassPressed(false)}
-                      secureTextEntry={!showPassword}
-                      returnKeyType="go"
-                      onSubmitEditing={handleLogin}
-                      placeholder="••••••••"
-                      placeholderTextColor="#6B6B6B"
-                      style={[styles.input, styles.inputPassword]}
-                      editable={!loading}
-                    />
-                    <TouchableOpacity
-                      style={styles.eyeButton}
-                      onPress={() => setShowPassword(!showPassword)}
-                      activeOpacity={0.6}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                {/* Error — feedback inmediato, alto contraste, sin ambigüedad */}
-                {error && (
-                  <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>{error}</Text>
-                  </View>
-                )}
-
-                {/* Botón principal — objetivo táctil grande, feedback de presión */}
+              {/* Campo contraseña */}
+              <Text className="text-xs font-medium text-[#79747E] mb-1">Contraseña</Text>
+              <View
+                className={`flex-row items-center border rounded-xl px-3 mb-1 ${
+                  passFocused ? 'border-[#1857B6] border-2' : 'border-[#E7E0EC]'
+                }`}
+              >
+                <Ionicons name="lock-closed-outline" size={18} color="#79747E" />
+                <TextInput
+                  ref={passwordRef}
+                  value={password}
+                  onChangeText={setPassword}
+                  onFocus={() => setPassFocused(true)}
+                  onBlur={() => setPassFocused(false)}
+                  secureTextEntry={!showPassword}
+                  returnKeyType="go"
+                  onSubmitEditing={handleLogin}
+                  placeholder="••••••••"
+                  placeholderTextColor="#9CA3AF"
+                  editable={!loading}
+                  className="flex-1 text-base text-[#1C1B1F] py-3.5 ml-2"
+                />
                 <Pressable
-                  onPressIn={() => setBtnPressed(true)}
-                  onPressOut={() => setBtnPressed(false)}
-                  onPress={handleLogin}
-                  disabled={loading}
-                  style={styles.buttonShadowLayer}
+                  onPress={() => setShowPassword((v) => !v)}
+                  hitSlop={8}
+                  className="p-1.5"
                 >
-                  <View
-                    style={[
-                      styles.primaryButton,
-                      btnPressed && styles.primaryButtonPressed,
-                      loading && styles.buttonDisabled,
-                    ]}
-                  >
-                    {loading ? (
-                      <View style={styles.buttonContent}>
-                        <ActivityIndicator color={SURFACE} />
-                        <Text style={styles.primaryButtonText}>ENTRANDO...</Text>
-                      </View>
-                    ) : (
-                      <View style={styles.buttonContent}>
-                        <Text style={styles.primaryButtonText}>ENTRAR</Text>
-                      </View>
-                    )}
-                  </View>
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={18}
+                    color="#79747E"
+                  />
                 </Pressable>
+              </View>
 
-                {/* Nota de seguridad psicológica: qué esperar, sin sorpresas */}
-                <Text style={styles.helperNote}>
-                  Tus datos se usan solo para identificarte en este local.
-                </Text>
-
-                {/* Registro */}
-                <View style={styles.switchRow}>
-                  <Text style={styles.switchText}>¿Aún no tienes cuenta?</Text>
-                  <Link href="/register" asChild>
-                    <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Text style={styles.switchLink}>REGÍSTRATE</Text>
-                    </Pressable>
-                  </Link>
+              {/* Error */}
+              {error ? (
+                <View className="flex-row items-start gap-2 bg-[#FDECEA] rounded-xl p-3 mt-3">
+                  <Ionicons name="alert-circle" size={16} color="#B3261E" />
+                  <Text className="flex-1 text-sm text-[#B3261E]">{error}</Text>
                 </View>
+              ) : (
+                <View className="mt-2" />
+              )}
+
+              {/* Botón principal */}
+              <Pressable
+                onPress={handleLogin}
+                disabled={loading}
+                className={`flex-row items-center justify-center gap-2 rounded-full py-4 mt-4 ${
+                  loading ? 'bg-[#8FA8D1]' : 'bg-[#1857B6] active:opacity-90'
+                }`}
+              >
+                {loading && <ActivityIndicator color="#FFFFFF" size="small" />}
+                <Text className="text-white text-base font-semibold tracking-wide">
+                  {loading ? 'Entrando...' : 'Entrar'}
+                </Text>
+              </Pressable>
+
+              <Text className="text-xs text-[#79747E] text-center mt-3">
+                Tus datos se usan solo para identificarte en este local.
+              </Text>
+
+              {/* Registro */}
+              <View className="flex-row justify-center items-center gap-1.5 mt-4">
+                <Text className="text-sm text-[#79747E]">¿Aún no tienes cuenta?</Text>
+                <Link href="/register" asChild>
+                  <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Text className="text-sm font-semibold text-[#1857B6]">Regístrate</Text>
+                  </Pressable>
+                </Link>
               </View>
             </View>
           </View>
@@ -208,212 +195,3 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: BG,
-  },
-  flex: {
-    flex: 1,
-  },
-  scroll: {
-    flexGrow: 1,
-  },
-
-  // ── Cabecera: color sólido plano, borde inferior marcado (sin gradientes) ──
-  header: {
-    paddingTop: 56,
-    paddingBottom: 32,
-    paddingHorizontal: 24,
-    borderBottomWidth: 4,
-    borderBottomColor: INK,
-  },
-  brandContent: {
-    gap: 10,
-  },
-  logoContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    backgroundColor: SURFACE,
-    borderWidth: 3,
-    borderColor: INK,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: '900',
-    color: SURFACE,
-    lineHeight: 34,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: SURFACE,
-    lineHeight: 20,
-  },
-  trustRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
-    backgroundColor: SURFACE,
-    alignSelf: 'flex-start',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: INK,
-  },
-  trustText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: INK,
-  },
-
-  // ── Formulario ──────────────────────────────────────────────────────────
-  formWrapper: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 40,
-  },
-  // Capa de sombra dura tipo neo-brutalista (offset sólido, sin blur)
-  cardShadowLayer: {
-    backgroundColor: INK,
-    borderRadius: 20,
-  },
-  card: {
-    backgroundColor: SURFACE,
-    borderRadius: 20,
-    borderWidth: 3,
-    borderColor: INK,
-    padding: 24,
-    gap: 18,
-    marginRight: 6,
-    marginBottom: 6,
-  },
-
-  // ── Campos ────────────────────────────────────────────────────────────────
-  fieldGroup: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-    color: INK,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 2.5,
-    borderColor: INK,
-    borderRadius: 12,
-    backgroundColor: BG,
-    paddingHorizontal: 14,
-    minHeight: 56, // objetivo táctil grande (MD3 + accesibilidad)
-  },
-  inputWrapperActive: {
-    backgroundColor: SURFACE,
-    borderWidth: 3,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: INK,
-    paddingVertical: 14,
-  },
-  inputPassword: {
-    paddingRight: 8,
-  },
-  eyeButton: {
-    padding: 6,
-  },
-
-  // ── Error: bloque sólido, sin ambigüedad ────────────────────────────────
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: DANGER_BG,
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 2.5,
-    borderColor: INK,
-  },
-  errorText: {
-    color: INK,
-    fontSize: 14,
-    fontWeight: '700',
-    flex: 1,
-  },
-
-  // ── Botón: objetivo grande + feedback de presión inmediato ──────────────
-  buttonShadowLayer: {
-    backgroundColor: INK,
-    borderRadius: 14,
-    marginTop: 6,
-  },
-  primaryButton: {
-    borderRadius: 14,
-    borderWidth: 3,
-    borderColor: INK,
-    paddingVertical: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 60,
-    marginRight: 6,
-    marginBottom: 6,
-  },
-  primaryButtonPressed: {
-    marginRight: 0,
-    marginBottom: 0,
-    opacity: 0.92,
-  },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  primaryButtonText: {
-    color: SURFACE,
-    fontSize: 17,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-
-  helperNote: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#4A4A4A',
-    textAlign: 'center',
-  },
-
-  // ── Registro ──────────────────────────────────────────────────────────────
-  switchRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
-  },
-  switchText: {
-    color: '#4A4A4A',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  switchLink: {
-    fontSize: 13,
-    fontWeight: '900',
-  },
-});

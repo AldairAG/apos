@@ -83,4 +83,11 @@ public class Orden {
         detalle.setOrden(this);
     }
 
+    public void retirarMesa() {
+        if (this.mesa != null) {
+            this.mesa.retirarOrdenActual();
+            this.mesa = null;
+        }
+    }
+
 }

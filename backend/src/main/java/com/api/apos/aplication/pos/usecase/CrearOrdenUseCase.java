@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 
@@ -73,15 +74,18 @@ public class CrearOrdenUseCase {
                 // 5. Crear la entidad Orden.
                 Orden orden = crearOrden(ordenDto, sucursal, detalles);
 
-                // 6. Si la orden corresponde a una mesa, actualizar su estado.
-                asignarMesaSiCorresponde(ordenDto);
-
-                // 7. Descontar del inventario los productos vendidos.
+                // 6. Descontar del inventario los productos vendidos.
                 descontarInventario(orden);
 
-                // 8. Guardar la orden y devolver el DTO.
+                
+
+                // 8. Si la orden corresponde a una mesa, asignarla como orden actual.
+                asignarMesaSiCorresponde(ordenDto.getMesaId(), orden);
+
+                // 7. Guardar primero la orden para que quede persistida.
                 Orden ordenGuardada = ordenService.save(orden);
 
+                // 9. Devolver la orden creada.
                 return PosMapper.mapToOrdenDto(ordenGuardada);
         }
 
@@ -217,7 +221,10 @@ public class CrearOrdenUseCase {
 
                                                         .cantidad(cantidad)
                                                         .precioUnitario(precio)
-                                                        .opcion(modificador.getOpciones().stream().filter(opcion -> opcion.getId().equals(modificadorDto.getId())).findFirst().orElse(null))
+                                                        .opcion(modificador.getOpciones().stream()
+                                                                        .filter(opcion -> opcion.getId()
+                                                                                        .equals(modificadorDto.getId()))
+                                                                        .findFirst().orElse(null))
                                                         .subtotal(
                                                                         precio.multiply(
                                                                                         BigDecimal.valueOf(cantidad)))
@@ -236,16 +243,21 @@ public class CrearOrdenUseCase {
                         List<DetalleOrden> detalles) {
 
                 // Calcula el total sumando:
-                // subtotal del producto + subtotal de sus modificadores.
-                BigDecimal total = detalles.stream()
-                                .map(detalle -> detalle.getSubtotal()
-                                                .add(
-                                                                detalle.getModificadores().stream()
-                                                                                .map(DetalleModificador::getSubtotal)
-                                                                                .reduce(
-                                                                                                BigDecimal.ZERO,
-                                                                                                BigDecimal::add)))
+                // 1. El subtotal de cada detalle de orden.
+                BigDecimal totalDetalles = detalles.stream()
+                                .map(DetalleOrden::getSubtotal)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                // 2. El subtotal de los modificadores de cada detalle.
+                BigDecimal totalModificadores = detalles.stream()
+                                .flatMap(detalle -> detalle.getModificadores() == null
+                                                || detalle.getModificadores().isEmpty() ? Stream.empty()
+                                                                : detalle.getModificadores().stream())
+                                .map(DetalleModificador::getSubtotal)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                // Suma del subtotal de los detalles y de los modificadores.
+                BigDecimal total = totalDetalles.add(totalModificadores);
 
                 Orden orden = Orden.builder()
                                 .descuento(ordenDto.getDescuento())
@@ -265,15 +277,19 @@ public class CrearOrdenUseCase {
          * Si la orden corresponde a una mesa, actualiza la orden actual
          * de dicha mesa.
          */
-        private void asignarMesaSiCorresponde(OrdenDto ordenDto) {
+        private void asignarMesaSiCorresponde(Long mesaId, Orden orden) {
 
-                if (ordenDto.getMesaId() == null) {
+                if (mesaId == null) {
                         return;
                 }
 
-                Mesa mesa = mesaService.findById(ordenDto.getMesaId());
+                Mesa mesa = mesaService.findById(mesaId);
 
-                mesa.asignarOrdenActual(null);
+                if (!mesa.estaLibre()) {
+                        throw new AppException(ErrorCode.MESA_NO_LIBRE);
+                }
+
+                mesa.asignarOrdenActual(orden);
         }
 
         /**
