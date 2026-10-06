@@ -59,6 +59,7 @@ const InventarioScreen = () => {
     const [recetaSeleccionada, setRecetaSeleccionada] = useState<RecetaDto | null>(null);
     const [cantidadProduccion, setCantidadProduccion] = useState("");
     const [errorProduccion, setErrorProduccion] = useState<string | null>(null);
+    const [operacionModalVisible, setOperacionModalVisible] = useState(false);
 
     useEffect(() => {
         cargarCatalogos();
@@ -99,6 +100,12 @@ const InventarioScreen = () => {
             .sort((a, b) => a.nombre.localeCompare(b.nombre)),
         [existenciasPorMaterial, recetasMaterial]
     );
+    const materialesStockBajo = useMemo(
+        () => existencias
+            .filter((existencia) => existencia.estado === "STOCK_BAJO" || existencia.estado === "SIN_STOCK")
+            .sort((a, b) => a.material.nombre.localeCompare(b.material.nombre)),
+        [existencias]
+    );
     const maximoElaborable = (receta: RecetaDto) => receta.recetaDetalles.reduce(
         (maximo, detalle) => {
             const existencia = existenciasPorMaterial.get(detalle.materialId);
@@ -118,11 +125,21 @@ const InventarioScreen = () => {
                 cantidad: cantidadNumerica,
             });
             setCantidad("");
+            setMaterialId(null);
+            setOperacion("entrada");
+            setOperacionModalVisible(false);
             setPaginaExistencias(0);
             setPaginaMovimientos(0);
         } catch {
             // El error de la operación queda expuesto por el slice.
         }
+    };
+
+    const abrirModalOperacion = () => {
+        setMaterialId(null);
+        setCantidad("");
+        setOperacion("entrada");
+        setOperacionModalVisible(true);
     };
 
     const elaborarReceta = async () => {
@@ -175,6 +192,42 @@ const InventarioScreen = () => {
             <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
                 {vista === "existencias" ? (
                     <View>
+                        {materialesStockBajo.length > 0 && (
+                            <View className="mb-6 rounded-lg border-2 border-[#B3261E] bg-[#FDD9D5] px-4 py-3">
+                                <View className="flex-row items-center gap-2 mb-3">
+                                    <Ionicons name="alert-circle" size={20} color="#B3261E" />
+                                    <Text className="text-sm font-bold text-[#B3261E]">Productos con Stock Bajo</Text>
+                                </View>
+                                {materialesStockBajo.map((item) => (
+                                    <Pressable
+                                        key={item.id}
+                                        onPress={() => {
+                                            setMaterialId(item.materialId);
+                                            setOperacion("entrada");
+                                            setOperacionModalVisible(true);
+                                        }}
+                                        className="mb-2 flex-row items-center justify-between rounded-md bg-white px-3 py-2.5 last:mb-0"
+                                    >
+                                        <View className="flex-1">
+                                            <Text className="text-xs font-semibold text-[#1C1B1F]">{item.material.nombre}</Text>
+                                            <View className="mt-1 flex-row gap-4">
+                                                <Text className="text-xs text-[#79747E]">Stock: {item.cantidadActual.toLocaleString("es-MX")} {item.unidadMedida}</Text>
+                                                <Text className="text-xs text-[#79747E]">Mín: {item.cantidadMinima.toLocaleString("es-MX")}</Text>
+                                            </View>
+                                        </View>
+                                        <View className="flex-row items-center gap-2">
+                                            <View className={`flex-row items-center gap-1 rounded px-2 py-1 ${item.estado === "SIN_STOCK" ? "bg-[#FFE0E0]" : "bg-[#FFF0E0]"}`}>
+                                                <Ionicons name="alert" size={14} color={item.estado === "SIN_STOCK" ? "#B3261E" : "#C2711B"} />
+                                                <Text className={`text-xs font-semibold ${item.estado === "SIN_STOCK" ? "text-[#B3261E]" : "text-[#C2711B]"}`}>
+                                                    {ESTADO_LABELS[item.estado]}
+                                                </Text>
+                                            </View>
+                                            <Ionicons name="chevron-forward" size={16} color="#B3261E" />
+                                        </View>
+                                    </Pressable>
+                                ))}
+                            </View>
+                        )}
                         <View className="mb-2 flex-row border-b border-[#D8D4DC] px-3 py-2">
                             <Text className="flex-1 text-xs font-semibold uppercase text-[#79747E]">Material</Text>
                             <Text className="w-24 text-right text-xs font-semibold uppercase text-[#79747E]">Existencia</Text>
@@ -354,6 +407,16 @@ const InventarioScreen = () => {
                 </View>}
             </ScrollView>
 
+            {/* Botón flotante para abrir modal de operación */}
+            {vista === "existencias" && (
+                <Pressable
+                    onPress={abrirModalOperacion}
+                    className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-[#1857B6] shadow-lg active:opacity-90"
+                >
+                    <Ionicons name="add" size={28} color="#FFFFFF" />
+                </Pressable>
+            )}
+
             <MaterialSelector
                 visible={selectorMaterialVisible}
                 materiales={materialesOrdenados}
@@ -399,6 +462,74 @@ const InventarioScreen = () => {
                         >
                             {saving ? <ActivityIndicator color="#FFFFFF" /> : <Ionicons name="construct-outline" size={18} color="#FFFFFF" />}
                             <Text className="text-sm font-semibold text-white">{saving ? "Elaborando..." : "Elaborar"}</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                visible={operacionModalVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setOperacionModalVisible(false)}
+            >
+                <View className="flex-1 justify-end bg-black/40">
+                    <View className="rounded-t-2xl bg-white p-4">
+                        <View className="mb-4 flex-row items-center justify-between">
+                            <View className="flex-1 pr-4">
+                                <Text className="text-base font-semibold text-[#1C1B1F]">Registrar operación de inventario</Text>
+                                <Text className="mt-1 text-xs text-[#79747E]">{sucursalActual?.nombre}</Text>
+                            </View>
+                            <Pressable onPress={() => setOperacionModalVisible(false)} accessibilityRole="button" accessibilityLabel="Cerrar">
+                                <Ionicons name="close" size={22} color="#49454F" />
+                            </Pressable>
+                        </View>
+
+                        <ScrollView className="mb-4" keyboardShouldPersistTaps="handled">
+                            <Text className="mb-2 text-sm font-medium text-[#1C1B1F]">Tipo de operación</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
+                                {OPERACIONES.map((item) => (
+                                    <Pressable
+                                        key={item.id}
+                                        onPress={() => setOperacion(item.id)}
+                                        className={`mr-2 border px-3 py-2 ${operacion === item.id ? "border-[#1857B6] bg-[#EAF1FC]" : "border-[#D8D4DC] bg-white"}`}
+                                    >
+                                        <Text className={`text-xs font-semibold ${operacion === item.id ? "text-[#1857B6]" : "text-[#55515A]"}`}>
+                                            {item.titulo}
+                                        </Text>
+                                    </Pressable>
+                                ))}
+                            </ScrollView>
+
+                            <Text className="mb-2 text-sm font-medium text-[#1C1B1F]">Material</Text>
+                            <Pressable
+                                onPress={() => setSelectorMaterialVisible(true)}
+                                className="mb-4 flex-row items-center justify-between border border-[#D8D4DC] bg-white px-3 py-3"
+                            >
+                                <Text className={`text-sm font-medium ${materialSeleccionado ? "text-[#1C1B1F]" : "text-[#79747E]"}`}>
+                                    {materialSeleccionado ? materialSeleccionado.nombre : "Buscar y seleccionar material"}
+                                </Text>
+                                <Ionicons name="search" size={18} color="#79747E" />
+                            </Pressable>
+
+                            <Text className="mb-2 text-sm font-medium text-[#1C1B1F]">Cantidad</Text>
+                            <TextInput
+                                className="mb-4 border border-[#D8D4DC] bg-white px-3 py-3 text-base text-[#1C1B1F]"
+                                placeholder="0.00"
+                                placeholderTextColor="#79747E"
+                                keyboardType="decimal-pad"
+                                value={cantidad}
+                                onChangeText={setCantidad}
+                            />
+                        </ScrollView>
+
+                        <Pressable
+                            onPress={enviarOperacion}
+                            disabled={saving || seleccionInvalida || !Number.isFinite(cantidadNumerica) || cantidadNumerica <= 0}
+                            className={`flex-row items-center justify-center gap-2 px-4 py-3 ${saving || seleccionInvalida || cantidadNumerica <= 0 ? "bg-[#9EB7DE]" : "bg-[#1857B6]"}`}
+                        >
+                            {saving ? <ActivityIndicator color="#FFFFFF" /> : <Ionicons name="checkmark" size={18} color="#FFFFFF" />}
+                            <Text className="text-sm font-semibold text-white">{saving ? "Guardando..." : "Confirmar"}</Text>
                         </Pressable>
                     </View>
                 </View>
