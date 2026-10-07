@@ -21,6 +21,10 @@ public class ProductoMapper {
                 .map(t -> ModificadorMapper.toDto(t.getModificador()))
                 .toList();
 
+        List<Long> modificadorIds = modificadorProductos.stream()
+                .map(ModificadorDto::getId)
+                .toList();
+
         List<RecetaDetallesDto> detalles = Optional.ofNullable(producto.getRecetaDetalles())
                 .orElse(List.of())
                 .stream()
@@ -42,8 +46,10 @@ public class ProductoMapper {
                 .id(producto.getId())
                 .margenGanancia(producto.getMargenGanancia())
                 .modificadores(modificadorProductos)
+                .modificadorIds(modificadorIds)
                 .nombre(producto.getNombre())
                 .precio(producto.getPrecio())
+                .porcentajeSobreCostos(producto.getPorcentajeSobreCostos())
                 .sucursalId(producto.getSucursal().getId())
                 .build();
     }

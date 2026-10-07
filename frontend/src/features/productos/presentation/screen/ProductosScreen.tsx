@@ -135,7 +135,7 @@ const ProductosScreen = () => {
             categoriaId: values.categoriaId as number,
             recetaDetalles: values.recetaDetalles,
             modificadorIds: values.modificadorIds,
-            porcentajeSobreCostos: values.porcentajeSobreCostos,
+            porcentajeSobreCostos: values.porcentajeSobreCostos||15,
         };
 
         try {
