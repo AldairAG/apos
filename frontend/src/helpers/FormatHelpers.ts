@@ -31,3 +31,6 @@ export const buildPieData = (items: MovimientoDto[], paleta: string[]) => {
       porcentaje: total > 0 ? Math.round((monto / total) * 100) : 0,
     }));
 };
+
+export const moneda = (monto: number) =>
+    `$${(monto || 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

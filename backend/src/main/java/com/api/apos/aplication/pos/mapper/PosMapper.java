@@ -47,6 +47,8 @@ public class PosMapper {
                                 .detalles(detalleOrdenDto)
                                 .total(orden.getTotal())
                                 .estado(orden.getEstado())
+                                .subtotal(orden.getSubtotal())
+                                .total(orden.getTotal())
                                 .build();
 
         }

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import type { ApiResponse, RequestData, UploadProgressEvent } from './apiTypes';
@@ -75,8 +74,8 @@ class WebSessionStorageWrapper {
 const storage = new WebSessionStorageWrapper();
 
 // Configuración base de la API
-//const API_BASE_URL = 'http://localhost:8080/api';
-const API_BASE_URL = 'http://192.168.1.4:8080/api';
+const API_BASE_URL = 'http://localhost:8080/api';
+//const API_BASE_URL = 'http://192.168.1.4:8080/api';
 //const API_BASE_URL = 'http://192.168.1.85:8080/api';
 //const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 

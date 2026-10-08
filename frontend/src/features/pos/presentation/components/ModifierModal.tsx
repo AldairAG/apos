@@ -1,28 +1,13 @@
 import ModalHeader from "@/components/modal/ModalHeader";
-import type { ProductoDto } from "@/features/productos/domain/types/producto.types";
 import { Ionicons } from "@expo/vector-icons";
 import { Modal as RNModal, Pressable, ScrollView, Text, View } from "react-native";
+import useCart from "../hook/useCart";
+import { moneda } from "@/helpers/FormatHelpers";
 
-interface ModifierModalProps {
-    visible: boolean;
-    producto: ProductoDto | null;
-    opcionesCantidad: Record<number, number>;
-    onChangeOpcion: (opcionId: number, delta: number) => void;
-    onConfirm: () => void;
-    onClose: () => void;
-}
+export default function ModifierModal() {
 
-const moneda = (monto: number) =>
-    `$${(monto || 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const { productoSeleccionado: producto, opcionesModificador: opcionesCantidad, onChangeOpcion, confirmarModificadores: onConfirm, clearProductoSeleccionado, } = useCart();
 
-export default function ModifierModal({
-    visible,
-    producto,
-    opcionesCantidad,
-    onChangeOpcion,
-    onConfirm,
-    onClose,
-}: ModifierModalProps) {
     const modificadoresConOpciones = (producto?.modificadores ?? []).filter(
         (mod) => mod.opciones && mod.opciones.length > 0
     );
@@ -35,12 +20,12 @@ export default function ModifierModal({
         : 0;
 
     return (
-        <RNModal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+        <RNModal visible={producto !== null} animationType="slide" transparent onRequestClose={clearProductoSeleccionado}>
             <View className="flex-1 justify-end bg-black/40">
                 <View className="max-h-[80%] rounded-t-3xl bg-white">
                     <ModalHeader
                         title={producto ? `Modificadores: ${producto.nombre}` : "Modificadores"}
-                        onClose={onClose}
+                        onClose={clearProductoSeleccionado}
                     />
 
                     <ScrollView className="px-4 py-4" contentContainerStyle={{ paddingBottom: 24 }}>

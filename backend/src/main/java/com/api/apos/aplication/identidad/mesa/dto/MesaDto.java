@@ -1,6 +1,6 @@
 package com.api.apos.aplication.identidad.mesa.dto;
 
-import com.api.apos.domain.pos.orden.Orden;
+import com.api.apos.aplication.pos.dto.OrdenDto;
 import com.api.apos.enums.EstadoMesa;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,7 +20,7 @@ public class MesaDto {
 
     private EstadoMesa estado;
 
-    private Orden ordenActual;
+    private OrdenDto ordenActual;
     
     //Atributo para formulario
     private Long sucursalId;

@@ -1,5 +1,6 @@
 package com.api.apos.aplication.identidad.mesa.mapper;
 import com.api.apos.aplication.identidad.mesa.dto.MesaDto;
+import com.api.apos.aplication.pos.mapper.PosMapper;
 import com.api.apos.domain.pos.mesa.Mesa;
 
 public class MesaMapper {
@@ -8,14 +9,21 @@ public class MesaMapper {
         if (mesa == null) {
             return null;
         }
-        return MesaDto.builder()
+
+        
+        MesaDto mesaDto = MesaDto.builder()
                 .id(mesa.getId())
                 .numero(mesa.getNumero())
                 .nombre(mesa.getNombre())
                 .estado(mesa.getEstado())
-                .ordenActual(mesa.getOrdenActual())
                 .sucursalId(mesa.getSucursal().getId())
                 .build();
+
+        if (mesa.getOrdenActual() != null) {
+            mesaDto.setOrdenActual(PosMapper.mapToOrdenDto(mesa.getOrdenActual()));
+        }
+
+        return mesaDto;
     }
 
     public static Mesa toEntity(MesaDto mesaDto) {
@@ -27,7 +35,6 @@ public class MesaMapper {
         mesa.setNumero(mesaDto.getNumero());
         mesa.setNombre(mesaDto.getNombre());
         mesa.setEstado(mesaDto.getEstado());
-        mesa.setOrdenActual(mesaDto.getOrdenActual());
         return mesa;
     }
 }
