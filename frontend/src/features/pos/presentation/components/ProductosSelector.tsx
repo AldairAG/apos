@@ -1,16 +1,25 @@
-import { useState } from "react";
-import { View, Text, ScrollView, Pressable, Modal } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Text, ScrollView, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { usePos } from "../hook/usePos";
 import useCart from "../hook/useCart";
 import { moneda } from "@/helpers/FormatHelpers";
+import { ROUTES } from "@/routes/routes";
+import { TIPO_ORDEN_LABELS } from "../../domain/types/pos.types";
+import CartSummary from "./CartSummary";
+import ModifierModal from "./ModifierModal";
 
 const ProductosSelector = () => {
 
     const { categoriasProductos, catalogoLoading } = usePos();
-    const { agregarProducto, mesaSeleccionada, tipoOrden } = useCart();
-    // const [visible, setVisible] = useState(false);
+    const { agregarProducto, mesaSeleccionada, tipoOrden, ordenValida } = useCart();
 
-    const visible = mesaSeleccionada !== null && tipoOrden !== null;
+    // Sin tipo de orden/mesa válidos (p. ej. recarga directa de la ruta) se regresa al paso 1.
+    useEffect(() => {
+        if (!ordenValida) router.replace(ROUTES.POS.HOME as any);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
 
@@ -20,8 +29,23 @@ const ProductosSelector = () => {
 
 
     return (
-        <Modal visible={visible} animationType="slide" transparent>
-            <View className="flex-1 bg-black/30 w-full h-full">
+        <View className="flex-1 bg-[#F1EEF4]">
+            <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
+                <View className="mb-4 flex-row items-center justify-between">
+                    <Pressable
+                        onPress={() => router.back()}
+                        className="flex-row items-center gap-2 rounded-lg border border-[#D8D2DC] bg-white px-3 py-2"
+                    >
+                        <Ionicons name="arrow-back" size={16} color="#49454F" />
+                        <Text className="text-sm text-[#49454F]">Cambiar tipo</Text>
+                    </Pressable>
+                    {tipoOrden ? (
+                        <Text className="text-sm font-semibold text-[#1C1B1F]">
+                            {TIPO_ORDEN_LABELS[tipoOrden]}
+                            {mesaSeleccionada ? ` · ${mesaSeleccionada.nombre}` : ""}
+                        </Text>
+                    ) : null}
+                </View>
                 <View className="rounded-lg border border-[#E7E0EC] bg-white p-4">
                     <Text className="mb-3 text-base font-semibold text-[#1C1B1F]">Productos</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
@@ -86,8 +110,11 @@ const ProductosSelector = () => {
                         ))}
                     </View>
                 </View>
-            </View>
-        </Modal>
+            </ScrollView>
+
+            <ModifierModal />
+            <CartSummary />
+        </View>
     );
 };
 

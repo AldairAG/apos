@@ -2,23 +2,19 @@ import { EstadoCaja } from "@/features/caja/enum/Caja.Enums";
 import { useMesa } from "@/features/mesa/presentation/hook/useMesa";
 import { ROUTES } from "@/routes/routes";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
-import { TipoOrden, type MetodoPago, type OrdenDto } from "../../domain/types/pos.types";
+import { type MetodoPago, type OrdenDto } from "../../domain/types/pos.types";
 import { usePos } from "../hook/usePos";
 import useCart from "../hook/useCart";
 import {
-    CartSummary,
-    ModifierModal,
     OrderTypeSelector,
     PaymentMethods,
     SplitPayment,
 } from "../components";
 import { useSucursal } from "@/features/sucursal/presentation/hook/useSucursal";
-import ProductosSelector from "../components/ProductosSelector";
 import { moneda } from "@/helpers/FormatHelpers";
-import ModalCart from "../components/ModalCart";
 
 type VistaPos = "nueva" | "ordenes";
 
@@ -40,9 +36,7 @@ const ESTADOS_ORDEN: Record<string, { label: string; color: string }> = {
 
 const PosHomeScreen = () => {
     const {
-        categoriasProductos,
         ordenes,
-        catalogoLoading,
         ordenesLoading,
         saving,
         error,
@@ -53,7 +47,6 @@ const PosHomeScreen = () => {
         cargarProductos,
         cargarOrdenes,
         cargarContextoCaja,
-        crearOrden,
         actualizarEstadoOrden,
         cobrarOrden,
         limpiarError,
@@ -62,19 +55,17 @@ const PosHomeScreen = () => {
     const { sucursalActual } = useSucursal();
 
     const {
-        carrito,
         tipoOrden,
         mesaSeleccionada,
         ordenValida,
-        subtotal,
-        clearCarrito,
+        seleccionarTipoOrden,
         seleccionarMesa,
     } = useCart();
 
-    const { mesasDisponibles, mesas, loading: mesasLoading, cargarMesas } = useMesa();
+    const { mesas, cargarMesas } = useMesa();
 
+    const { vista: vistaParam, t: vistaToken } = useLocalSearchParams<{ vista?: VistaPos; t?: string }>();
     const [vista, setVista] = useState<VistaPos>("nueva");
-    const [mostrarCarrito, setMostrarCarrito] = useState(false);
     const [modalCobro, setModalCobro] = useState<OrdenDto | null>(null);
     const [usarPagoDividido, setUsarPagoDividido] = useState(false);
     const [metodoPago, setMetodoPago] = useState<MetodoPago>("EFECTIVO");
@@ -95,43 +86,17 @@ const PosHomeScreen = () => {
         });
     }, [sucursalId, cargarProductos, cargarOrdenes, cargarMesas, cargarContextoCaja]);
 
-    const seleccionarTipoOrden = (tipo: TipoOrden) => {
-        seleccionarTipoOrden(tipo);
-        if (tipo !== "EN_MESA") seleccionarMesa(null);
-    };
+    // Tras crear una orden, ModalCart regresa aquí con vista=ordenes (t cambia en cada navegación).
+    const [vistaTokenPrevio, setVistaTokenPrevio] = useState(vistaToken);
+    if (vistaToken !== vistaTokenPrevio) {
+        setVistaTokenPrevio(vistaToken);
+        if (vistaParam === "ordenes" || vistaParam === "nueva") setVista(vistaParam);
+    }
 
-
-    const guardarOrden = async () => {
-        if (!sucursalId || carrito.length === 0 || !tipoOrden || !ordenValida) return;
+    const continuarAProductos = () => {
+        if (!ordenValida) return;
         limpiarError();
-        const orden = {
-            subtotal,
-            descuento: 0,
-            total: subtotal,
-            sucursalId,
-            tipo: tipoOrden,
-            mesaId: tipoOrden.toString() === "EN_MESA" ? mesaSeleccionada!.id ?? null : null,
-            detalles: carrito.map((linea) => ({
-                productoId: linea.producto.id,
-                cantidad: linea.cantidad,
-                notas: linea.notas.trim(),
-                modificadores: (linea.producto.modificadores ?? [])
-                    .flatMap((modificador) => modificador.opciones)
-                    .filter((opcion) => opcion.id !== undefined && (linea.opcionesCantidad[opcion.id] ?? 0) > 0)
-                    .map((opcion) => ({
-                        id: opcion.id,
-                        precio: opcion.precio,
-                        cantidad: linea.opcionesCantidad[opcion.id!],
-                    })),
-            })),
-        };
-        try {
-            await crearOrden(orden).unwrap();
-            clearCarrito();
-            setVista("ordenes");
-        } catch {
-            // El error se presenta desde el estado del feature.
-        }
+        router.push(ROUTES.POS.PRODUCTOS as any);
     };
 
     const avanzarOrden = async (ordenId: number) => {
@@ -249,10 +214,11 @@ const PosHomeScreen = () => {
                     <View className="gap-4">
                         {/* Selector de tipo de orden */}
                         <View className="rounded-lg border border-[#E7E0EC] bg-white p-4">
-                            <OrderTypeSelector selectedType={tipoOrden as Exclude<TipoOrden, "EN_MESA">} onSelectType={seleccionarTipoOrden} />
+                            <OrderTypeSelector selectedType={tipoOrden} onSelectType={seleccionarTipoOrden} />
                         </View>
 
                         {/* Area para seleccionar una mesa*/}
+                        {tipoOrden === "EN_MESA" ? (
                         <View className="rounded-lg border border-[#E7E0EC] bg-white p-4">
                             <Text className="mb-3 text-base font-semibold text-[#1C1B1F]">Seleccionar mesa</Text>
                             <View className="flex-row flex-wrap gap-2">
@@ -326,6 +292,22 @@ const PosHomeScreen = () => {
                                 }
                             </View>
                         </View>
+                        ) : null}
+
+                        {!ordenValida ? (
+                            <Text className="text-xs text-[#79747E]">
+                                {tipoOrden === "EN_MESA"
+                                    ? "Selecciona una mesa para continuar."
+                                    : "Selecciona el tipo de orden para continuar."}
+                            </Text>
+                        ) : null}
+                        <Pressable
+                            disabled={!ordenValida}
+                            onPress={continuarAProductos}
+                            className={`rounded-lg px-4 py-3 ${ordenValida ? "bg-[#1857B6]" : "bg-[#B8B3BC]"}`}
+                        >
+                            <Text className="text-center font-semibold text-white">Continuar a productos</Text>
+                        </Pressable>
 
                     </View>
                 ) : (
@@ -423,25 +405,6 @@ const PosHomeScreen = () => {
                     </View>
                 )}
             </ScrollView>
-
-
-            {/* Selección de productos */}
-            <ProductosSelector />
-
-            {/* Carrito flotante */}
-            <CartSummary
-                onViewCart={() => setMostrarCarrito(true)}
-            />
-
-            {/* Modal del carrito */}
-            <ModalCart
-                mostrarCarrito={mostrarCarrito}
-                setMostrarCarrito={setMostrarCarrito}
-            />
-
-
-            {/* Modal de modificadores */}
-            <ModifierModal />
 
             {/* Modal de pago */}
             <Modal

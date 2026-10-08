@@ -7,14 +7,15 @@ interface OrderTypeSelectorProps {
     onSelectType: (type: TipoOrden) => void;
 }
 
-const orderTypeIcons: Record<Exclude<TipoOrden, "EN_MESA">, keyof typeof Ionicons.glyphMap> = {
+const orderTypeIcons: Record<TipoOrden, keyof typeof Ionicons.glyphMap> = {
+    EN_MESA: "restaurant",
     PARA_LLEVAR: "bag-handle",
     RECOGER: "cube",
     DELIVERY: "location",
 };
 
 export default function OrderTypeSelector({ selectedType, onSelectType }: OrderTypeSelectorProps) {
-    const types: Exclude<TipoOrden, "EN_MESA">[] = ["PARA_LLEVAR", "RECOGER", "DELIVERY"];
+    const types: TipoOrden[] = ["EN_MESA", "PARA_LLEVAR", "RECOGER", "DELIVERY"];
 
     return (
         <View className="mb-4 gap-3">

@@ -57,6 +57,7 @@ export const ROUTES = {
 
   POS: {
     HOME: '/pos_home',
+    PRODUCTOS: '/pos_productos',
   },
 
 } as const;

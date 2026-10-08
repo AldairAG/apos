@@ -1,7 +1,10 @@
 import { Modal, View, Text, Pressable, ScrollView, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import useCart from "../hook/useCart";
+import { usePos } from "../hook/usePos";
 import { moneda } from "@/helpers/FormatHelpers";
+import { ROUTES } from "@/routes/routes";
 
 interface ModalCartProps {
     mostrarCarrito: boolean;
@@ -10,7 +13,32 @@ interface ModalCartProps {
 
 const ModalCart = ({ mostrarCarrito, setMostrarCarrito }: ModalCartProps) => {
 
-    const { carrito, cambiarCantidad, cambiarCantidadOpcion, subtotal, agregarNota } = useCart();
+    const { carrito, cambiarCantidad, cambiarCantidadOpcion, subtotal, agregarNota, clearCarrito, construirOrden } = useCart();
+    const { sucursalId, crearOrden, saving, error, limpiarError } = usePos();
+
+    const volverAlInicio = (vista: "nueva" | "ordenes") => {
+        setMostrarCarrito(false);
+        clearCarrito();
+        router.dismissTo({ pathname: ROUTES.POS.HOME as any, params: { vista, t: String(Date.now()) } });
+    };
+
+    const cancelar = () => {
+        limpiarError();
+        volverAlInicio("nueva");
+    };
+
+    const guardarOrden = async () => {
+        if (!sucursalId) return;
+        const orden = construirOrden(sucursalId);
+        if (!orden) return;
+        limpiarError();
+        try {
+            await crearOrden(orden).unwrap();
+            volverAlInicio("ordenes");
+        } catch {
+            // El error se presenta desde el estado del feature.
+        }
+    };
 
     return (
         <Modal
@@ -144,14 +172,27 @@ const ModalCart = ({ mostrarCarrito, setMostrarCarrito }: ModalCartProps) => {
                             <Text className="text-sm font-semibold text-[#1C1B1F]">Total</Text>
                             <Text className="text-lg font-bold text-[#1857B6]">{moneda(subtotal)}</Text>
                         </View>
-                        <Pressable
-                            onPress={() => setMostrarCarrito(false)}
-                            className="rounded-lg bg-[#1857B6] px-4 py-3"
-                        >
-                            <Text className="text-center font-semibold text-white">
-                                Continuar comprando
-                            </Text>
-                        </Pressable>
+                        {error ? (
+                            <Text className="mb-3 text-sm text-[#8C1D18]">{error}</Text>
+                        ) : null}
+                        <View className="flex-row gap-3">
+                            <Pressable
+                                disabled={saving}
+                                onPress={cancelar}
+                                className="flex-1 rounded-lg border border-[#D8D2DC] bg-white px-4 py-3"
+                            >
+                                <Text className="text-center font-semibold text-[#49454F]">Cancelar</Text>
+                            </Pressable>
+                            <Pressable
+                                disabled={saving}
+                                onPress={guardarOrden}
+                                className={`flex-1 rounded-lg px-4 py-3 ${saving ? "bg-[#B8B3BC]" : "bg-[#1857B6]"}`}
+                            >
+                                <Text className="text-center font-semibold text-white">
+                                    {saving ? "Creando..." : "Crear orden"}
+                                </Text>
+                            </Pressable>
+                        </View>
                     </View>
                 </View>
             </View>

@@ -27,6 +27,11 @@ interface posContext {
 type CartContextType = {
   carritoContext: posContext;
   setCarrito: React.Dispatch<React.SetStateAction<posContext>>;
+  // Selección de modificadores en curso: compartida entre ProductosSelector y ModifierModal.
+  productoSeleccionado: ProductoDto | null;
+  setProductoSeleccionado: React.Dispatch<React.SetStateAction<ProductoDto | null>>;
+  opcionesModificador: Record<number, number>;
+  setOpcionesModificador: React.Dispatch<React.SetStateAction<Record<number, number>>>;
 };
 
 export const CartContext = createContext<CartContextType | null>(null);
@@ -38,12 +43,18 @@ export const CartProvider = ({ children }: PropsWithChildren) => {
     tipoOrden: null,
     mesaSeleccionada: null,
   });
+  const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoDto | null>(null);
+  const [opcionesModificador, setOpcionesModificador] = useState<Record<number, number>>({});
 
   return (
     <CartContext.Provider
       value={{
         carritoContext,
         setCarrito,
+        productoSeleccionado,
+        setProductoSeleccionado,
+        opcionesModificador,
+        setOpcionesModificador,
       }}
     >
       {children}

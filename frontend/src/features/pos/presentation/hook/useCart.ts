@@ -1,16 +1,8 @@
 import { MesaDto } from "@/features/mesa/domain/types/mesa.types";
 import { ProductoDto } from "@/features/productos/domain/types/producto.types";
-import { useState, useContext } from "react";
-import { CartContext, itemCarrito } from "../context/CartContext";
-
-const generarClaveLinea = (productoId: number, opcionesCantidad: Record<number, number>): string => {
-    const opcionesOrdenadas = Object.entries(opcionesCantidad)
-        .filter(([_, cantidad]) => cantidad > 0)
-        .sort(([idA], [idB]) => Number(idA) - Number(idB))
-        .map(([id, cantidad]) => `${id}:${cantidad}`)
-        .join("_");
-    return opcionesOrdenadas ? `${productoId}_${opcionesOrdenadas}` : String(productoId);
-};
+import { useContext } from "react";
+import type { OrdenDto, TipoOrden } from "../../domain/types/pos.types";
+import { CartContext } from "../context/CartContext";
 
 const generarLineId = (): string => {
     return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -25,12 +17,14 @@ const useCart = () => {
         throw new Error("useCart debe utilizarse dentro de CartProvider");
     }
 
-    const { carritoContext, setCarrito } = context;
-
-    console.log(carritoContext);
-
-    const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoDto | null>(null);
-    const [opcionesModificador, setOpcionesModificador] = useState<Record<number, number>>({});
+    const {
+        carritoContext,
+        setCarrito,
+        productoSeleccionado,
+        setProductoSeleccionado,
+        opcionesModificador,
+        setOpcionesModificador,
+    } = context;
 
     const subtotal = carritoContext.carrito.reduce((total, linea) => {
         const opciones = linea.producto.modificadores?.flatMap((modificador) => modificador.opciones) ?? [];
@@ -86,33 +80,31 @@ const useCart = () => {
     };
 
     const cambiarCantidad = (itemId: string, delta: number) => {
-        setCarrito((context) => {
-            context.carrito = (context.carrito as itemCarrito[])
+        setCarrito((actual) => ({
+            ...actual,
+            carrito: actual.carrito
                 .map((item) =>
                     item.itemId === itemId ? { ...item, cantidad: item.cantidad + delta } : item
                 )
-                .filter((item) => item.cantidad > 0) as itemCarrito[];
-            return context;
-        });
+                .filter((item) => item.cantidad > 0),
+        }));
     };
 
-    const cambiarCantidadOpcion = (productoId: string, opcionId: number, delta: number) => {
-        setCarrito((actual) => {
-            actual.carrito = (actual.carrito as itemCarrito[])
-                .map((item) => {
-                    if (item.producto.id?.toString() !== productoId) return item;
-                    const cantidad = Math.max(0, (item.opcionesCantidad[opcionId] ?? 0) + delta);
-                    const opcionesCantidad = { ...item.opcionesCantidad };
-                    if (cantidad === 0) {
-                        delete opcionesCantidad[opcionId];
-                    } else {
-                        opcionesCantidad[opcionId] = cantidad;
-                    }
-                    return { ...item, opcionesCantidad };
-                })
-                .filter((item) => item.cantidad > 0) as itemCarrito[];
-            return actual;
-        });
+    const cambiarCantidadOpcion = (itemId: string, opcionId: number, delta: number) => {
+        setCarrito((actual) => ({
+            ...actual,
+            carrito: actual.carrito.map((item) => {
+                if (item.itemId !== itemId) return item;
+                const cantidad = Math.max(0, (item.opcionesCantidad[opcionId] ?? 0) + delta);
+                const opcionesCantidad = { ...item.opcionesCantidad };
+                if (cantidad === 0) {
+                    delete opcionesCantidad[opcionId];
+                } else {
+                    opcionesCantidad[opcionId] = cantidad;
+                }
+                return { ...item, opcionesCantidad };
+            }),
+        }));
     };
 
 
@@ -140,14 +132,21 @@ const useCart = () => {
         setOpcionesModificador({});
     };
 
-    const agregarNota = (itemId: string, nota: string) => {
-        setCarrito((actual) => {
-            actual.carrito = (actual.carrito as itemCarrito[])
-                .map((item) =>
-                    item.itemId === itemId ? { ...item, nota } : item
-                );
-            return actual;
-        });
+    const agregarNota = (itemId: string, notas: string) => {
+        setCarrito((actual) => ({
+            ...actual,
+            carrito: actual.carrito.map((item) =>
+                item.itemId === itemId ? { ...item, notas } : item
+            ),
+        }));
+    };
+
+    const seleccionarTipoOrden = (tipo: TipoOrden) => {
+        setCarrito((actual) => ({
+            ...actual,
+            tipoOrden: tipo,
+            mesaSeleccionada: tipo === "EN_MESA" ? actual.mesaSeleccionada : null,
+        }));
     };
 
     const seleccionarMesa = (mesa: MesaDto | null) => {
@@ -156,6 +155,32 @@ const useCart = () => {
             mesaSeleccionada: mesa,
             tipoOrden: "EN_MESA",
         }));
+    };
+
+    const construirOrden = (sucursalId: number): OrdenDto | null => {
+        const { carrito, tipoOrden, mesaSeleccionada } = carritoContext;
+        if (carrito.length === 0 || !tipoOrden || !ordenValida) return null;
+        return {
+            subtotal,
+            descuento: 0,
+            total: subtotal,
+            sucursalId,
+            tipo: tipoOrden,
+            mesaId: tipoOrden === "EN_MESA" ? mesaSeleccionada?.id ?? null : null,
+            detalles: carrito.map((linea) => ({
+                productoId: linea.producto.id,
+                cantidad: linea.cantidad,
+                notas: linea.notas.trim(),
+                modificadores: (linea.producto.modificadores ?? [])
+                    .flatMap((modificador) => modificador.opciones)
+                    .filter((opcion) => opcion.id !== undefined && (linea.opcionesCantidad[opcion.id] ?? 0) > 0)
+                    .map((opcion) => ({
+                        id: opcion.id,
+                        precio: opcion.precio,
+                        cantidad: linea.opcionesCantidad[opcion.id!],
+                    })),
+            })),
+        };
     };
 
     return {
@@ -174,7 +199,9 @@ const useCart = () => {
         onChangeOpcion,
         clearProductoSeleccionado,
         agregarNota,
+        seleccionarTipoOrden,
         seleccionarMesa,
+        construirOrden,
     };
 
 };
