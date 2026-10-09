@@ -8,6 +8,7 @@ import com.api.apos.domain.inventario.detalle_compra.DetalleCompra;
 import com.api.apos.domain.inventario.existencia.Existencia;
 import com.api.apos.domain.organizacion.empresa.Empresa;
 import com.api.apos.enums.UnidadMedida;
+import com.api.apos.enums.TipoMaterial;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -49,6 +50,9 @@ public class Material {
     private Double precio;
 
     private String descripcion;
+
+    @Enumerated(value = EnumType.STRING)
+    private TipoMaterial tipoMaterial;
     
     @OneToMany(mappedBy = "material", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Existencia > existencias;

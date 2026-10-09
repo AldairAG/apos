@@ -36,4 +36,6 @@ public interface RecetaRepository extends JpaRepository<Receta, Long> {
         List<RecetaDetalle> findDetallesByProductoId(
                         @Param("productoId") Long productoId);
 
+        Receta findByMaterialResultadoId(@Param("materialId") Long materialId);
+
 }

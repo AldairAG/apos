@@ -3,9 +3,9 @@ import { SidebarProvider, useSidebar } from "@/components/siderbar/SiderBarConte
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import {
-    Pressable,
-    Text,
-    View,
+  Pressable,
+  Text,
+  View,
 } from "react-native";
 
 export default function AdminLayout() {
@@ -23,12 +23,12 @@ function AdminLayoutContent() {
     <View className="flex-1 bg-[#F9F7FA]">
 
       {/* Top App Bar */}
-      <View className="relative h-16 shrink-0 flex-row items-center px-4 bg-white border-b border-[#E7E0EC]">
+      <View className="h-16 shrink-0 flex-row items-center px-4 bg-white border-b border-[#E7E0EC]">
 
         {/* Menu */}
         <Pressable
           onPress={openSidebar}
-          className="w-12 h-12 rounded-full items-center justify-center active:bg-[#F1EEF4]"
+          className=" w-15 h-15 rounded-full items-center justify-center active:bg-[#F1EEF4]"
           accessibilityLabel="Abrir menú"
           accessibilityRole="button"
         >
@@ -40,12 +40,14 @@ function AdminLayoutContent() {
         </Pressable>
 
         {/* Title */}
-        <Text
-          className="absolute left-0 right-0 text-center text-base font-medium text-[#1C1B1F]"
-          pointerEvents="none"
-        >
-          Administracion general
-        </Text>
+        <View className="text-center w-full max-w-fit">
+          <Text
+            className="text-center text-base font-medium text-[#1C1B1F]"
+            pointerEvents="none"
+          >
+            Administracion general
+          </Text>
+        </View>
 
       </View>
 

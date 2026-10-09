@@ -40,4 +40,8 @@ public class RecetaService {
         recetaRepository.deleteById(id);
     }
 
+    public Receta findByMaterialId(Long materialId) {
+        return recetaRepository.findByMaterialResultadoId(materialId);
+    }
+
 }

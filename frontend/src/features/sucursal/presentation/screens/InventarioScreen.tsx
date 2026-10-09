@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSucursal } from "../hook/useSucursal";
+import { ExistenciaDto } from "@/features/inventario/domain/types/inventario.types";
 
 type VistaInventario = "existencias" | "movimientos" | "elaborar";
 type OperacionInventario = "entrada" | "salida" | "merma" | "consumo-personal";
@@ -48,6 +49,7 @@ const InventarioScreen = () => {
         registrarMovimiento,
         recetasMaterial,
         producirMaterial,
+        editarExistenciaMinima,
     } = useInventario();
     const [vista, setVista] = useState<VistaInventario>("existencias");
     const [operacion, setOperacion] = useState<OperacionInventario>("entrada");
@@ -60,6 +62,9 @@ const InventarioScreen = () => {
     const [cantidadProduccion, setCantidadProduccion] = useState("");
     const [errorProduccion, setErrorProduccion] = useState<string | null>(null);
     const [operacionModalVisible, setOperacionModalVisible] = useState(false);
+    const [visibleModalEditarExistenciaMinima, setVisibleModalEditarExistenciaMinima] = useState(false);
+    const [existenciaMinima, setExistenciaMinima] = useState("");
+    const [existenciaAEditar, setExistenciaAEditar] = useState<ExistenciaDto | null>(null);
 
     useEffect(() => {
         cargarCatalogos();
@@ -90,13 +95,6 @@ const InventarioScreen = () => {
         () => recetasMaterial
             .filter((receta) => receta.tipoResultado === "MATERIAL")
             .filter((receta) => receta.recetaDetalles.length > 0 && receta.rendimiento > 0)
-            .filter((receta) => receta.recetaDetalles.every((detalle) => {
-                const existencia = existenciasPorMaterial.get(detalle.materialId);
-                return detalle.materialId !== receta.materialResultado?.id
-                    && detalle.cantidad > 0
-                    && existencia !== undefined
-                    && existencia.cantidadActual > 0;
-            }))
             .sort((a, b) => a.nombre.localeCompare(b.nombre)),
         [existenciasPorMaterial, recetasMaterial]
     );
@@ -167,6 +165,27 @@ const InventarioScreen = () => {
         }
     };
 
+    const handleEditarExistenciaMinima = async () => {
+        if (!sucursalId) return;
+        try {
+            if (!existenciaAEditar) return;
+            const existenciaNueva= existenciaAEditar;
+
+            existenciaNueva.cantidadMinima = Number(existenciaMinima);
+
+            await editarExistenciaMinima(existenciaNueva);
+            cargarInventario(sucursalId, 0, TAMANO_EXISTENCIAS_ELABORACION);
+            setPaginaExistencias(0);
+            setPaginaMovimientos(0);
+        } catch {
+            // El error de la operación queda expuesto por el slice.
+        }
+    };
+
+    const seleccionarExistenciaAEditar = (existencia: ExistenciaDto) => {
+        setExistenciaAEditar(existencia);
+    };
+
     return (
         <View className="flex-1 bg-[#FAF9FC]">
             <View className="border-b border-[#E7E0EC] bg-white px-4 pb-3 pt-5">
@@ -232,6 +251,7 @@ const InventarioScreen = () => {
                             <Text className="flex-1 text-xs font-semibold uppercase text-[#79747E]">Material</Text>
                             <Text className="w-24 text-right text-xs font-semibold uppercase text-[#79747E]">Existencia</Text>
                             <Text className="w-24 text-right text-xs font-semibold uppercase text-[#79747E]">Estado</Text>
+                            <Text className="w-24 text-right text-xs font-semibold uppercase text-[#79747E]">Editar Mín</Text>
                         </View>
                         {loading && existencias.length === 0 ? (
                             <ActivityIndicator className="py-12" color="#1857B6" />
@@ -252,6 +272,12 @@ const InventarioScreen = () => {
                                 <Text className={`w-24 text-right text-xs font-medium ${item.estado === "STOCK_BAJO" || item.estado === "SIN_STOCK" ? "text-[#B3261E]" : "text-[#1C7C3F]"}`}>
                                     {ESTADO_LABELS[item.estado]}
                                 </Text>
+                                <Pressable
+                                    onPress={() => setVisibleModalEditarExistenciaMinima(true)}
+                                    className="w-24 text-sm font-semibold text-[#1C1B1F] flex-row items-center justify-center gap-1"
+                                >
+                                    <Ionicons name="pencil-outline" size={20} color="#1857B6" className="text-center" />
+                                </Pressable>
                             </View>
                         ))}
                         {pageInfo.totalPages > 1 && (
@@ -424,6 +450,30 @@ const InventarioScreen = () => {
                 onClose={() => setSelectorMaterialVisible(false)}
             />
 
+            {/** Modal de edición de existencia mínima */}
+            <Modal visible={visibleModalEditarExistenciaMinima}
+                transparent animationType="slide">
+                <View className="flex-1 justify-end bg-black/40">
+                    <View className="rounded-t-2xl bg-white p-4">
+                        <Text className="text-base font-semibold text-[#1C1B1F]">Editar existencia mínima</Text>
+                        <TextInput
+                            value={existenciaMinima}
+                            onChangeText={setExistenciaMinima}
+                            keyboardType="decimal-pad"
+                            placeholder="0.00"
+                            className="border border-[#E7E0EC] bg-white px-3 py-3 text-base text-[#1C1B1F]"
+                        />
+                        <Pressable
+                            onPress={handleEditarExistenciaMinima}
+                            className="mt-4 flex-row items-center justify-center gap-2 px-4 py-3 bg-[#1857B6]"
+                        >
+                            <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                            <Text className="text-sm font-semibold text-white">Guardar</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
+
             <Modal
                 visible={recetaSeleccionada !== null}
                 transparent
@@ -457,8 +507,8 @@ const InventarioScreen = () => {
                         {errorProduccion && <Text className="mt-2 text-sm text-[#B3261E]">{errorProduccion}</Text>}
                         <Pressable
                             onPress={elaborarReceta}
-                            disabled={saving || !Number.isFinite(cantidadProduccionNumerica) || cantidadProduccionNumerica <= 0}
-                            className={`mt-4 flex-row items-center justify-center gap-2 px-4 py-3 ${saving || !Number.isFinite(cantidadProduccionNumerica) || cantidadProduccionNumerica <= 0 ? "bg-[#9EB7DE]" : "bg-[#1857B6]"}`}
+                            disabled={saving}
+                            className={`mt-4 flex-row items-center justify-center gap-2 px-4 py-3 ${saving ? "bg-[#9EB7DE]" : "bg-[#1857B6]"}`}
                         >
                             {saving ? <ActivityIndicator color="#FFFFFF" /> : <Ionicons name="construct-outline" size={18} color="#FFFFFF" />}
                             <Text className="text-sm font-semibold text-white">{saving ? "Elaborando..." : "Elaborar"}</Text>

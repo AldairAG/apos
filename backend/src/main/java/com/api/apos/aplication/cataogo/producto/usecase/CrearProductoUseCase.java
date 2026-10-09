@@ -84,6 +84,7 @@ public class CrearProductoUseCase {
 
                         if (!materialesSinExistencia.isEmpty()) {
                                 for (Long id : materialesSinExistencia) {
+
                                         ExistenciaDto existenciaDto = ExistenciaMapper
                                                         .toDto(new Existencia().initCero());
 
@@ -93,6 +94,8 @@ public class CrearProductoUseCase {
                                         crearExistenciaUseCase.execute(existenciaDto);
                                 }
                         }
+
+
                 }
 
                 // 7. Crear producto

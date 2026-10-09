@@ -62,4 +62,11 @@ public class Existencia {
         return this;
     }
 
+    public void editarCantidadMinima(BigDecimal cantidadMinima){
+        this.cantidadMinima = cantidadMinima;
+        if (this.cantidadActual.compareTo(this.cantidadMinima) < 0) {
+            this.estado = EstadoStock.SIN_STOCK;
+        }
+    }
+
 }

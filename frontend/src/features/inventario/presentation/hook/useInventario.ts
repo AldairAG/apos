@@ -8,10 +8,12 @@ import { obtenerMovimientosThunk } from "../../aplication/query/ObtenerMovimient
 import { producirMaterialThunk } from "../../aplication/usecase/ProducirMaterialThunk";
 import { registrarMovimientoThunk } from "../../aplication/usecase/RegistrarMovimientoThunk";
 import type {
+    ExistenciaDto,
     ProducirMaterialDto,
     RegistrarMovimientoInventarioDto,
     TipoOperacionInventario,
 } from "../../domain/types/inventario.types";
+import { editarExistenciaMinimaThunk } from "../../aplication/usecase/EditarExistenciaMinima";
 
 export const useInventario = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -52,6 +54,12 @@ export const useInventario = () => {
         return response.data;
     }, [actualizarConsultas, dispatch]);
 
+    const editarExistenciaMinima = useCallback(async (existencia: ExistenciaDto) => {
+        const response = await dispatch(editarExistenciaMinimaThunk(existencia)).unwrap();
+        actualizarConsultas(existencia.sucursalId);
+        return response.data;
+    }, [actualizarConsultas, dispatch]);
+
     return {
         ...inventario,
         materiales,
@@ -61,5 +69,6 @@ export const useInventario = () => {
         cargarCatalogos,
         registrarMovimiento,
         producirMaterial,
+        editarExistenciaMinima,
     };
 };

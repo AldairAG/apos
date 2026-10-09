@@ -4,6 +4,7 @@ import { obtenerMovimientosThunk } from "../aplication/query/ObtenerMovimientosT
 import { producirMaterialThunk } from "../aplication/usecase/ProducirMaterialThunk";
 import { registrarMovimientoThunk } from "../aplication/usecase/RegistrarMovimientoThunk";
 import type { ExistenciaDto, InventarioPage, MovimientoInventarioDto } from "../domain/types/inventario.types";
+import { editarExistenciaMinimaThunk } from "../aplication/usecase/EditarExistenciaMinima";
 
 interface InventarioState {
     existencias: ExistenciaDto[];
@@ -79,6 +80,17 @@ const inventarioSlice = createSlice({
         builder.addCase(producirMaterialThunk.rejected, (state, action: PayloadAction<string | undefined>) => {
             state.saving = false;
             state.error = action.payload ?? "Error al producir material";
+        });
+        builder.addCase(editarExistenciaMinimaThunk.pending, (state) => {
+            state.saving = true;
+            state.error = null;
+        });
+        builder.addCase(editarExistenciaMinimaThunk.fulfilled, (state) => {
+            state.saving = false;
+        });
+        builder.addCase(editarExistenciaMinimaThunk.rejected, (state, action: PayloadAction<string | undefined>) => {
+            state.saving = false;
+            state.error = action.payload ?? "Error al editar la existencia mínima";
         });
     },
 });

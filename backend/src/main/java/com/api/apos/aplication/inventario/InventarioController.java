@@ -5,6 +5,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,6 +20,7 @@ import com.api.apos.aplication.inventario.existencia.mapper.MovimientoInventario
 import com.api.apos.aplication.inventario.existencia.query.FindExistenciasBySucursalId;
 import com.api.apos.aplication.inventario.existencia.query.FindMovimientosBySucursalId;
 import com.api.apos.aplication.inventario.existencia.usecase.AjustarExistenciaUseCase;
+import com.api.apos.aplication.inventario.existencia.usecase.EditarCantidadMinimaExistenciaUseCase;
 import com.api.apos.aplication.inventario.existencia.usecase.ProducirMaterialUseCase;
 import com.api.apos.aplication.inventario.existencia.usecase.RegistrarMermaUseCase;
 import com.api.apos.domain.inventario.movimiento_inventario.MovimientoInventario;
@@ -38,6 +40,7 @@ public class InventarioController {
 	private final AjustarExistenciaUseCase ajustarExistencia;
 	private final RegistrarMermaUseCase registrarMerma;
 	private final ProducirMaterialUseCase producirMaterial;
+	private final EditarCantidadMinimaExistenciaUseCase editarCantidadMinimaExistencia;
 
 	@GetMapping("/sucursales/{sucursalId}/existencias")
 	public ResponseEntity<ApiResponseWrapper<PageResponse<ExistenciaDto>>> existencias(
@@ -87,5 +90,12 @@ public class InventarioController {
 
 	private ResponseEntity<ApiResponseWrapper<MovimientoInventarioDto>> movimiento(MovimientoInventario entity) {
 		return ResponseEntity.ok(ApiResponseWrapper.success(MovimientoInventarioMapper.toDto(entity)));
+	}
+
+	@PatchMapping("/existencia/ajustar")
+	public ResponseEntity<ApiResponseWrapper<ExistenciaDto>> ajustarExistencia(
+			@RequestBody ExistenciaDto request) {
+		ExistenciaDto response = editarCantidadMinimaExistencia.execute(request);
+		return ResponseEntity.ok(ApiResponseWrapper.success(response));
 	}
 }

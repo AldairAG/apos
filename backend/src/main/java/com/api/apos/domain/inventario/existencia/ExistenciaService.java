@@ -74,4 +74,11 @@ public class ExistenciaService {
         return existenciaRepository.findAllForUpdateBySucursalAndMaterialIds(sucursalId, materialIds);
     }
 
+    public void editarCantidadMinima(Existencia existencia) {
+        if (existencia == null) {
+            return;
+        }
+        existenciaRepository.save(existencia);
+    }
+
 }
