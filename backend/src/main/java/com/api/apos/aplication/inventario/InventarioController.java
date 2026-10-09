@@ -92,8 +92,8 @@ public class InventarioController {
 		return ResponseEntity.ok(ApiResponseWrapper.success(MovimientoInventarioMapper.toDto(entity)));
 	}
 
-	@PatchMapping("/existencia/ajustar")
-	public ResponseEntity<ApiResponseWrapper<ExistenciaDto>> ajustarExistencia(
+	@PatchMapping("/existencia/ajustar-minima")
+	public ResponseEntity<ApiResponseWrapper<ExistenciaDto>> ajustarExistenciaMinima(
 			@RequestBody ExistenciaDto request) {
 		ExistenciaDto response = editarCantidadMinimaExistencia.execute(request);
 		return ResponseEntity.ok(ApiResponseWrapper.success(response));

@@ -1,7 +1,7 @@
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\categoria\CategoriaController.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\categoria\dto\CategoriaDto.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\categoria\mapper\CategoriaMapper.java
-C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\categoria\query\FindCategoriaBySucursalId.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\categoria\query\FindCategoriaByEmpresaId.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\categoria\usecase\CrearCategoriaUseCase.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\modificadores\dto\ModificadorDto.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\modificadores\dto\OpcionDto.java
@@ -13,7 +13,7 @@ C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\modifica
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\producto\dto\ProductoDto.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\producto\mapper\ProductoMapper.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\producto\ProductoController.java
-C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\producto\query\FindProductosBySucursalId.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\producto\query\FindProductosByEmpresaId.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\cataogo\producto\usecase\CrearProductoUseCase.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\identidad\empresa\controller\EmpresaController.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\identidad\empresa\dto\EmpresaDto.java
@@ -51,6 +51,7 @@ C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\exist
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\existencia\usecase\AjustarExistenciaUseCase.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\existencia\usecase\CrearExistenciaUseCase.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\existencia\usecase\DescontarExistenciaByProductoIds.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\existencia\usecase\EditarCantidadMinimaExistenciaUseCase.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\existencia\usecase\ProducirMaterialUseCase.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\existencia\usecase\RegistrarMermaUseCase.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\inventario\InventarioController.java
@@ -75,11 +76,12 @@ C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\pos\dto\PagarVen
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\pos\dto\ProductoPosDto.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\pos\mapper\PosMapper.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\pos\PosController.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\pos\query\FindCategoriaProductoDtoByEmpresaId.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\pos\query\FindOrdenesBySucursalId.java
-C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\pos\query\FindProductosBySucursaId.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\pos\usecase\ActualizarEstadoOrdenUseCase.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\pos\usecase\CobrarOrdenUseCase.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\pos\usecase\CrearOrdenUseCase.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\reportes\ReportesController.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\tesoreria\caja\CajaController.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\tesoreria\caja\dto\CajaDto.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\aplication\tesoreria\caja\dto\CorteCajaDto.java
@@ -186,8 +188,10 @@ C:\proyectos\apos\backend\src\main\java\com\api\apos\enums\EstadoPago.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\enums\EstadoStock.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\enums\MetodoPago.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\enums\Rol.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\enums\TipoCategoria.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\enums\TipoCuenta.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\enums\TipoGasto.java
+C:\proyectos\apos\backend\src\main\java\com\api\apos\enums\TipoMaterial.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\enums\TipoMovimiento.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\enums\TipoMovimientoCaja.java
 C:\proyectos\apos\backend\src\main\java\com\api\apos\enums\TipoMovimientoInventario.java

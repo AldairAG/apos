@@ -300,10 +300,33 @@ public enum ErrorCode {
         HttpStatus.INTERNAL_SERVER_ERROR
     ),
     
+    //REPORTES
+    REPORTE_SIN_PERMISO(
+        "REPORTE_SIN_PERMISO",
+        "No tienes permiso para consultar reportes",
+        HttpStatus.FORBIDDEN
+    ),
+    REPORTE_SUCURSAL_NO_PERMITIDA(
+        "REPORTE_SUCURSAL_NO_PERMITIDA",
+        "No tienes acceso a la sucursal solicitada",
+        HttpStatus.FORBIDDEN
+    ),
+    REPORTE_RANGO_FECHAS_INVALIDO(
+        "REPORTE_RANGO_FECHAS_INVALIDO",
+        "La fecha de inicio no puede ser posterior a la fecha de fin",
+        HttpStatus.BAD_REQUEST
+    ),
+    REPORTE_RANGO_FECHAS_EXCEDIDO(
+        "REPORTE_RANGO_FECHAS_EXCEDIDO",
+        "El rango de fechas no puede exceder 366 dias",
+        HttpStatus.BAD_REQUEST
+    ),
+    REPORTE_PARAMETRO_INVALIDO(
+        "REPORTE_PARAMETRO_INVALIDO",
+        "Uno de los parametros del reporte es invalido",
+        HttpStatus.BAD_REQUEST
+    ),
     //VALIDACIONES
-    
-
-    
     ;
 
 

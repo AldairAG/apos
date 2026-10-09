@@ -57,7 +57,7 @@ public class CrearExistenciaUseCase {
     public ExistenciaDto crearExistenciaReceta(ExistenciaDto existenciaDto, Material material, Sucursal sucursal) {
         Existencia existencia = Existencia.builder()
                 .cantidadActual(existenciaDto.getCantidadActual())
-                .cantidadMinima(existenciaDto.getCantidadMinima())
+                .cantidadMinima(material.getUnidad().getExistenciaMinimaDefault())
                 .estado(existenciaDto.getEstado())
                 .material(material)
                 .unidadMedida(material.getUnidad())

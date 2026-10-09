@@ -10,7 +10,7 @@ export const editarExistenciaMinimaThunk = createAsyncThunk<
     { rejectValue: string }
 >("inventario/editarExistenciaMinima", async (request, { rejectWithValue }) => {
     try {
-        const response = await api.post<ExistenciaDto>(`${API_BASE_PATH}/inventario/editarExistenciaMinima`, request);
+        const response = await api.patch<ExistenciaDto>(`${API_BASE_PATH}/existencia/ajustar-minima`, request);
         return response.success ? response : rejectWithValue(response.message);
     } catch (error: unknown) {
         return rejectWithValue(error instanceof Error ? error.message : "Error al editar la existencia mínima");

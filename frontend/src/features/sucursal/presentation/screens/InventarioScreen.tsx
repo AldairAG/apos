@@ -143,8 +143,8 @@ const InventarioScreen = () => {
     const elaborarReceta = async () => {
         if (!sucursalId || recetaSeleccionada?.id == null) return;
         const maximo = maximoElaborable(recetaSeleccionada);
-        if (!Number.isFinite(cantidadProduccionNumerica) || cantidadProduccionNumerica <= 0 || cantidadProduccionNumerica > maximo) {
-            setErrorProduccion(`La cantidad debe ser mayor que 0 y no superar ${maximo.toLocaleString("es-MX", { maximumFractionDigits: 2 })}.`);
+        if (!Number.isFinite(cantidadProduccionNumerica) || cantidadProduccionNumerica <= 0) {
+            setErrorProduccion(`La cantidad debe ser mayor que 0`);
             return;
         }
 
@@ -169,20 +169,28 @@ const InventarioScreen = () => {
         if (!sucursalId) return;
         try {
             if (!existenciaAEditar) return;
-            const existenciaNueva= existenciaAEditar;
+            const existenciaNueva = {
+                ...existenciaAEditar,
+                cantidadMinima: Number(existenciaMinima),
+            };
 
-            existenciaNueva.cantidadMinima = Number(existenciaMinima);
+            await editarExistenciaMinima(existenciaNueva);
+
+            cargarInventario(sucursalId, 0, TAMANO_EXISTENCIAS_ELABORACION);
 
             await editarExistenciaMinima(existenciaNueva);
             cargarInventario(sucursalId, 0, TAMANO_EXISTENCIAS_ELABORACION);
             setPaginaExistencias(0);
             setPaginaMovimientos(0);
+            setVisibleModalEditarExistenciaMinima(false);
+            setExistenciaAEditar(null);
         } catch {
             // El error de la operación queda expuesto por el slice.
         }
     };
 
     const seleccionarExistenciaAEditar = (existencia: ExistenciaDto) => {
+        setVisibleModalEditarExistenciaMinima(true);
         setExistenciaAEditar(existencia);
     };
 
@@ -250,6 +258,7 @@ const InventarioScreen = () => {
                         <View className="mb-2 flex-row border-b border-[#D8D4DC] px-3 py-2">
                             <Text className="flex-1 text-xs font-semibold uppercase text-[#79747E]">Material</Text>
                             <Text className="w-24 text-right text-xs font-semibold uppercase text-[#79747E]">Existencia</Text>
+                            <Text className="w-24 text-right text-xs font-semibold uppercase text-[#79747E]">Minima</Text>
                             <Text className="w-24 text-right text-xs font-semibold uppercase text-[#79747E]">Estado</Text>
                             <Text className="w-24 text-right text-xs font-semibold uppercase text-[#79747E]">Editar Mín</Text>
                         </View>
@@ -269,11 +278,14 @@ const InventarioScreen = () => {
                                 <Text className="w-24 text-right text-sm font-semibold text-[#1C1B1F]">
                                     {item.cantidadActual.toLocaleString("es-MX")}
                                 </Text>
+                                <Text className={`w-24 text-right text-xs font-medium ${item.cantidadMinima === 0 || item.cantidadActual < item.cantidadMinima ? "text-[#B3261E]" : "text-[#1C7C3F]"}`}>
+                                    {item.cantidadMinima.toLocaleString("es-MX")}
+                                </Text> 
                                 <Text className={`w-24 text-right text-xs font-medium ${item.estado === "STOCK_BAJO" || item.estado === "SIN_STOCK" ? "text-[#B3261E]" : "text-[#1C7C3F]"}`}>
                                     {ESTADO_LABELS[item.estado]}
                                 </Text>
                                 <Pressable
-                                    onPress={() => setVisibleModalEditarExistenciaMinima(true)}
+                                    onPress={() => seleccionarExistenciaAEditar(item)}
                                     className="w-24 text-sm font-semibold text-[#1C1B1F] flex-row items-center justify-center gap-1"
                                 >
                                     <Ionicons name="pencil-outline" size={20} color="#1857B6" className="text-center" />
@@ -455,7 +467,15 @@ const InventarioScreen = () => {
                 transparent animationType="slide">
                 <View className="flex-1 justify-end bg-black/40">
                     <View className="rounded-t-2xl bg-white p-4">
-                        <Text className="text-base font-semibold text-[#1C1B1F]">Editar existencia mínima</Text>
+                        <View className="flex flex-row items-center justify-between">
+                            <Text className="text-base font-semibold text-[#1C1B1F]">Editar existencia mínima</Text>
+                            <Pressable
+                                onPress={() => setVisibleModalEditarExistenciaMinima(false)}
+                                className="m-4 p-2 bg-white rounded-full"
+                            >
+                                <Ionicons name="close" size={22} color="#1C1B1F" />
+                            </Pressable>
+                        </View>
                         <TextInput
                             value={existenciaMinima}
                             onChangeText={setExistenciaMinima}

@@ -15,6 +15,7 @@ import com.api.apos.domain.inventario.material.MaterialService;
 import com.api.apos.domain.inventario.receta.Receta;
 import com.api.apos.domain.inventario.receta.RecetaService;
 import com.api.apos.domain.inventario.receta_detalle.RecetaDetalle;
+import com.api.apos.enums.TipoMaterial;
 import com.api.apos.enums.TipoResultadoReceta;
 
 import lombok.AllArgsConstructor;
@@ -67,6 +68,7 @@ public class CrearRecetaUseCase {
                                 .cantidad(recetaDto.getRendimiento())
                                 .precio(recetaDto.getCostoTotal().doubleValue())
                                 .empresa(usuario.getEmpresa())
+                                .tipoMaterial(TipoMaterial.PRODUCTO_ELABORADO)
                                 .build());
 
                 // Construye la entidad Receta con la información recibida.
