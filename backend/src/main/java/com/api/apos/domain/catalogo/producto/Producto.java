@@ -90,4 +90,18 @@ public class Producto {
         modificadorProductos.add(modificador);
     }
 
+    public void removeModificador(Long modificadorId) {
+
+        if (modificadorProductos != null) {
+            modificadorProductos.removeIf(mp -> mp.getModificador().getId().equals(modificadorId));
+        }
+    }
+
+    public void removeRecetaDetallePorMaterialId(Long materialId) {
+
+        if (recetaDetalles != null) {
+            recetaDetalles.removeIf(rd -> rd.getMaterial().getId().equals(materialId));
+        }
+    }
+
 }
