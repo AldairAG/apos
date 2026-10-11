@@ -216,7 +216,58 @@ const InventarioScreen = () => {
 
             {error && <Text className="px-4 pt-3 text-sm text-[#B3261E]">{error}</Text>}
 
+
+
             <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+
+                {vista === "existencias" &&
+                    <View className="mt-7 border-t border-[#D8D4DC] pt-5 pb-5">
+                        <Text className="text-base font-bold text-[#1C1B1F]">Registrar operación</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
+                            {OPERACIONES.map((item) => (
+                                <Pressable
+                                    key={item.id}
+                                    onPress={() => {
+                                        setOperacion(item.id);
+                                        setMaterialId(null);
+                                    }}
+                                    className={`mr-2 border px-3 py-2 ${operacion === item.id ? "border-[#1857B6] bg-[#EAF1FC]" : "border-[#D8D4DC] bg-white"}`}
+                                >
+                                    <Text className={`text-xs font-semibold ${operacion === item.id ? "text-[#1857B6]" : "text-[#55515A]"}`}>{item.titulo}</Text>
+                                </Pressable>
+                            ))}
+                        </ScrollView>
+
+                        <Text className="mb-2 mt-4 text-sm font-semibold text-[#1C1B1F]">Material</Text>
+                        <Pressable
+                            onPress={() => setSelectorMaterialVisible(true)}
+                            className="flex-row items-center justify-between border border-[#D8D4DC] bg-white px-3 py-3"
+                        >
+                            <Text className={`text-sm font-medium ${materialSeleccionado ? "text-[#1C1B1F]" : "text-[#79747E]"}`}>
+                                {materialSeleccionado ? materialSeleccionado.nombre : "Buscar y seleccionar material"}
+                            </Text>
+                            <Ionicons name="search" size={18} color="#79747E" />
+                        </Pressable>
+
+                        <Text className="mb-2 mt-4 text-sm font-semibold text-[#1C1B1F]">Cantidad</Text>
+                        <TextInput
+                            className="border border-[#D8D4DC] bg-white px-3 py-3 text-base text-[#1C1B1F]"
+                            placeholder="0.00"
+                            placeholderTextColor="#79747E"
+                            keyboardType="decimal-pad"
+                            value={cantidad}
+                            onChangeText={setCantidad}
+                        />
+                        <Pressable
+                            onPress={enviarOperacion}
+                            disabled={saving || seleccionInvalida || !Number.isFinite(cantidadNumerica) || cantidadNumerica <= 0}
+                            className={`mt-3 flex-row items-center justify-center gap-2 px-4 py-3 ${saving || seleccionInvalida || cantidadNumerica <= 0 ? "bg-[#9EB7DE]" : "bg-[#1857B6]"}`}
+                        >
+                            {saving ? <ActivityIndicator color="#FFFFFF" /> : <Ionicons name="checkmark" size={18} color="#FFFFFF" />}
+                            <Text className="text-sm font-semibold text-white">{saving ? "Guardando..." : "Confirmar"}</Text>
+                        </Pressable>
+                    </View>}
+
                 {vista === "existencias" ? (
                     <View>
                         {materialesStockBajo.length > 0 && (
@@ -255,12 +306,15 @@ const InventarioScreen = () => {
                                 ))}
                             </View>
                         )}
-                        <View className="mb-2 flex-row border-b border-[#D8D4DC] px-3 py-2">
-                            <Text className="flex-1 text-xs font-semibold uppercase text-[#79747E]">Material</Text>
-                            <Text className="w-24 text-right text-xs font-semibold uppercase text-[#79747E]">Existencia</Text>
-                            <Text className="w-24 text-right text-xs font-semibold uppercase text-[#79747E]">Minima</Text>
-                            <Text className="w-24 text-right text-xs font-semibold uppercase text-[#79747E]">Estado</Text>
-                            <Text className="w-24 text-right text-xs font-semibold uppercase text-[#79747E]">Editar Mín</Text>
+                        <View className="mb-2 flex-row border-b border-[#D8D4DC] px-3 py-2 justify-around">
+                            <Text className="text-xs font-semibold uppercase text-[#79747E]">Material</Text>
+                            <Text className="text-right text-xs font-semibold uppercase text-[#79747E]">Existencia</Text>
+                            <Text className="text-right text-xs font-semibold uppercase text-[#79747E]">Minima</Text>
+                            <Text className=" text-right text-xs font-semibold uppercase text-[#79747E]">Estado</Text>
+                            <Text className=" text-right text-xs font-semibold uppercase text-[#79747E]">Editar Mín</Text>
+                            {/* 
+                            
+                             */}
                         </View>
                         {loading && existencias.length === 0 ? (
                             <ActivityIndicator className="py-12" color="#1857B6" />
@@ -270,23 +324,22 @@ const InventarioScreen = () => {
                                 <Text className="mt-3 text-sm text-[#79747E]">No hay existencias registradas.</Text>
                             </View>
                         ) : existencias.map((item) => (
-                            <View key={item.id} className="flex-row items-center border-b border-[#E7E0EC] px-3 py-3">
-                                <View className="flex-1 pr-2">
+                            <View key={item.id} className="flex-row grid border-b border-[#E7E0EC] px-3 py-3">
+                                <View className="flex-1">
                                     <Text className="text-sm font-semibold text-[#1C1B1F]">{item.material.nombre}</Text>
-                                    <Text className="mt-0.5 text-xs text-[#79747E]">{item.unidadMedida}</Text>
                                 </View>
-                                <Text className="w-24 text-right text-sm font-semibold text-[#1C1B1F]">
+                                <Text className="flex-1 flex-wrap text-center text-sm font-semibold text-[#1C1B1F]">
                                     {item.cantidadActual.toLocaleString("es-MX")}
                                 </Text>
-                                <Text className={`w-24 text-right text-xs font-medium ${item.cantidadMinima === 0 || item.cantidadActual < item.cantidadMinima ? "text-[#B3261E]" : "text-[#1C7C3F]"}`}>
+                                <Text className={`flex-1 text-center text-xs font-medium ${item.cantidadMinima === 0 || item.cantidadActual < item.cantidadMinima ? "text-[#B3261E]" : "text-[#1C7C3F]"}`}>
                                     {item.cantidadMinima.toLocaleString("es-MX")}
-                                </Text> 
-                                <Text className={`w-24 text-right text-xs font-medium ${item.estado === "STOCK_BAJO" || item.estado === "SIN_STOCK" ? "text-[#B3261E]" : "text-[#1C7C3F]"}`}>
+                                </Text>
+                                <Text className={`flex-1 text-center text-xs font-medium ${item.estado === "STOCK_BAJO" || item.estado === "SIN_STOCK" ? "text-[#B3261E]" : "text-[#1C7C3F]"}`}>
                                     {ESTADO_LABELS[item.estado]}
                                 </Text>
                                 <Pressable
                                     onPress={() => seleccionarExistenciaAEditar(item)}
-                                    className="w-24 text-sm font-semibold text-[#1C1B1F] flex-row items-center justify-center gap-1"
+                                    className="flex-1 text-sm font-semibold text-[#1C1B1F] flex-row items-center justify-center gap-1"
                                 >
                                     <Ionicons name="pencil-outline" size={20} color="#1857B6" className="text-center" />
                                 </Pressable>
@@ -397,52 +450,7 @@ const InventarioScreen = () => {
                     </View>
                 )}
 
-                {vista === "existencias" && <View className="mt-7 border-t border-[#D8D4DC] pt-5">
-                    <Text className="text-base font-bold text-[#1C1B1F]">Registrar operación</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
-                        {OPERACIONES.map((item) => (
-                            <Pressable
-                                key={item.id}
-                                onPress={() => {
-                                    setOperacion(item.id);
-                                    setMaterialId(null);
-                                }}
-                                className={`mr-2 border px-3 py-2 ${operacion === item.id ? "border-[#1857B6] bg-[#EAF1FC]" : "border-[#D8D4DC] bg-white"}`}
-                            >
-                                <Text className={`text-xs font-semibold ${operacion === item.id ? "text-[#1857B6]" : "text-[#55515A]"}`}>{item.titulo}</Text>
-                            </Pressable>
-                        ))}
-                    </ScrollView>
 
-                    <Text className="mb-2 mt-4 text-sm font-semibold text-[#1C1B1F]">Material</Text>
-                    <Pressable
-                        onPress={() => setSelectorMaterialVisible(true)}
-                        className="flex-row items-center justify-between border border-[#D8D4DC] bg-white px-3 py-3"
-                    >
-                        <Text className={`text-sm font-medium ${materialSeleccionado ? "text-[#1C1B1F]" : "text-[#79747E]"}`}>
-                            {materialSeleccionado ? materialSeleccionado.nombre : "Buscar y seleccionar material"}
-                        </Text>
-                        <Ionicons name="search" size={18} color="#79747E" />
-                    </Pressable>
-
-                    <Text className="mb-2 mt-4 text-sm font-semibold text-[#1C1B1F]">Cantidad</Text>
-                    <TextInput
-                        className="border border-[#D8D4DC] bg-white px-3 py-3 text-base text-[#1C1B1F]"
-                        placeholder="0.00"
-                        placeholderTextColor="#79747E"
-                        keyboardType="decimal-pad"
-                        value={cantidad}
-                        onChangeText={setCantidad}
-                    />
-                    <Pressable
-                        onPress={enviarOperacion}
-                        disabled={saving || seleccionInvalida || !Number.isFinite(cantidadNumerica) || cantidadNumerica <= 0}
-                        className={`mt-3 flex-row items-center justify-center gap-2 px-4 py-3 ${saving || seleccionInvalida || cantidadNumerica <= 0 ? "bg-[#9EB7DE]" : "bg-[#1857B6]"}`}
-                    >
-                        {saving ? <ActivityIndicator color="#FFFFFF" /> : <Ionicons name="checkmark" size={18} color="#FFFFFF" />}
-                        <Text className="text-sm font-semibold text-white">{saving ? "Guardando..." : "Confirmar"}</Text>
-                    </Pressable>
-                </View>}
             </ScrollView>
 
             {/* Botón flotante para abrir modal de operación */}

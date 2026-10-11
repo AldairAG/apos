@@ -88,8 +88,6 @@ const CrearCompraScreen = () => {
 	const materialesDisponibles = useMemo(
 		() => existencias.filter((existencia) =>
 			existencia.sucursalId === sucursalId
-			&& existencia.cantidadActual > 0
-			&& existencia.estado !== "SIN_STOCK"
 		),
 		[existencias, sucursalId]
 	);
@@ -99,6 +97,7 @@ const CrearCompraScreen = () => {
 			existencia.material.nombre.toLocaleLowerCase("es-MX").includes(query)
 		);
 	}, [busquedaMaterial, materialesDisponibles]);
+
 	const materialSeleccionado = materialesDisponibles.find((item) => item.materialId === materialId);
 	const cuentas = usuario?.empresa?.cuentas ?? [];
 	const cuentasFiltradas = useMemo(() => {

@@ -20,6 +20,7 @@ const CATEGORIA_LABELS: Partial<Record<CategoriaMovimiento, string>> = {
   [CategoriaMovimiento.IMPUESTOS]: "Impuestos",
   [CategoriaMovimiento.OTROS]: "Otros",
   [CategoriaMovimiento.TRANSPORTE]: "Transporte",
+  [CategoriaMovimiento.INSUMOS]: "Insumos",
 };
 
 const CATEGORIAS: CategoriaMovimiento[] = [
@@ -32,6 +33,7 @@ const CATEGORIAS: CategoriaMovimiento[] = [
   CategoriaMovimiento.IMPUESTOS,
   CategoriaMovimiento.OTROS,
   CategoriaMovimiento.TRANSPORTE,
+  CategoriaMovimiento.INSUMOS,
 ];
 
 interface CrearGastoForm {
