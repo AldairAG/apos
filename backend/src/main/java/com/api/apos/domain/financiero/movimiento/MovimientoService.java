@@ -55,9 +55,9 @@ public class MovimientoService {
     }
 
     public BigDecimal getTotalGastosByCorteCajaId(Long corteCajaId) {
-        List<Movimiento> gastos = movimientoRepository.findByCorteCajaIdAndCategoriaNot(
+        List<Movimiento> gastos = movimientoRepository.findByCorteCajaIdAndCategoriaNotIn(
                 corteCajaId,
-                CategoriaMovimiento.VENTA);
+                List.of(CategoriaMovimiento.VENTA, CategoriaMovimiento.INGRESO));
 
         return gastos.stream()
                 .map(Movimiento::getMonto)

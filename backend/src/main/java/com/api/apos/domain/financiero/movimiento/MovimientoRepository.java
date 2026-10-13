@@ -44,4 +44,9 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
 
         List<Movimiento> findByCorteCajaId(Long corteCajaId);
 
+        List<Movimiento> findByCorteCajaIdAndCategoriaNotIn(
+    Long corteCajaId,
+    List<CategoriaMovimiento> categorias
+);
+
 }
